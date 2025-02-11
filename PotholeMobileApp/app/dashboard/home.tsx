@@ -5,7 +5,6 @@ import {
   FlatList,
   Image,
   Modal,
-  TouchableOpacity,
 } from "react-native";
 import {
   Text,
