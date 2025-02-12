@@ -4,56 +4,114 @@ import {
   StyleSheet,
   FlatList,
   Image,
-  Modal,
 } from "react-native";
 import {
   Text,
-  FAB,
-  Card,
-  Button,
-  Chip,
   Searchbar,
-  Portal,
-  Provider,
+  Avatar,
+  PaperProvider,
+  Chip,
+  FAB,
 } from "react-native-paper";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import theme from "../theme";
 import MapView, { Marker } from "react-native-maps";
+import { lightTheme } from "../theme";
+import { MotiView, MotiImage } from "moti";
 
 interface Pothole {
   id: string;
-  images: string[];
+  images: any[];
   location: string;
   reportedBy: string;
+  profilePic: any;
   date: string;
   severity: string;
   status: string;
-  coordinates: { latitude: number; longitude: number };
+  coordinates?: { latitude: number; longitude: number };
+  description: string;
 }
 
 const potholes: Pothole[] = [
   {
     id: "1",
     images: [
-      "https://source.unsplash.com/400x300/?pothole,road",
-      "https://source.unsplash.com/400x300/?pothole,street",
+      require("../assets/hole-1.jpeg"),
+      require("../assets/hole-1.jpeg"),
     ],
-    location: "Downtown Street, CityX",
-    reportedBy: "User123",
-    date: "Feb 10, 2025",
-    severity: "High",
+    location: "5th Ave Main St, Halifax, Nova Scotia",
+    reportedBy: "Kandarp Patel",
+    profilePic: require("../assets/hole-1.jpeg"),
+    date: "Mar 25, 2022",
+    severity: "Danger",
     status: "In Progress",
-    coordinates: { latitude: 37.78825, longitude: -122.4324 },
+    coordinates: { latitude: 44.6488, longitude: -63.5752 },
+    description: "Large pothole causing major vehicle damage. Needs urgent repair!"
   },
+  {
+    id: "2",
+    images: [
+      require("../assets/hole-1.jpeg"),
+      require("../assets/hole-1.jpeg"),
+    ],
+    location: "5th Ave Main St, Halifax, Nova Scotia",
+    reportedBy: "Kandarp Patel",
+    profilePic: require("../assets/hole-1.jpeg"),
+    date: "Mar 25, 2022",
+    severity: "Danger",
+    status: "In Progress",
+    coordinates: { latitude: 44.6488, longitude: -63.5752 },
+    description: "Large pothole causing major vehicle damage. Needs urgent repair!"
+  },
+  {
+    id: "3",
+    images: [
+      require("../assets/hole-1.jpeg"),
+      require("../assets/hole-1.jpeg"),
+    ],
+    location: "5th Ave Main St, Halifax, Nova Scotia",
+    reportedBy: "Kandarp Patel",
+    profilePic: require("../assets/hole-1.jpeg"),
+    date: "Mar 25, 2022",
+    severity: "Danger",
+    status: "In Progress",
+    coordinates: { latitude: 44.6488, longitude: -63.5752 },
+    description: "Large pothole causing major vehicle damage. Needs urgent repair!"
+  }
 ];
+
+// ✅ Function to determine severity chip color
+const getSeverityColor = (severity: string) => {
+  switch (severity.toLowerCase()) {
+    case "danger":
+      return "#E63946"; // Red
+    case "medium":
+      return "#F4A261"; // Orange
+    case "low":
+      return "#2A9D8F"; // Green
+    default:
+      return lightTheme.colors.primary;
+  }
+};
+
+// ✅ Function to determine status chip color
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case "in progress":
+      return "#1D4ED8"; // Blue
+    case "fixed":
+      return "#22C55E"; // Green
+    case "rejected":
+      return "#6B7280"; // Gray
+    default:
+      return lightTheme.colors.textSecondary;
+  }
+};
 
 const HomeScreen = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [filteredPotholes, setFilteredPotholes] = useState<Pothole[]>(potholes);
-  const [selectedPothole, setSelectedPothole] = useState<Pothole | null>(null);
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -63,184 +121,210 @@ const HomeScreen = () => {
     setFilteredPotholes(filtered);
   };
 
-  const handleFilter = (severity: string) => {
-    const filtered = severity === "All"
-      ? potholes
-      : potholes.filter((pothole) => pothole.severity === severity);
-    setFilteredPotholes(filtered);
-  };
-
-  const handleViewDetails = (pothole: Pothole) => {
-    setSelectedPothole(pothole);
-    setModalVisible(true);
-  };
-
   return (
-    <Provider>
+    <PaperProvider theme={lightTheme}>
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <Text style={styles.title}>PotholeX - Report & Track</Text>
-          <Searchbar
-            placeholder="Search by location"
-            onChangeText={handleSearch}
-            value={searchQuery}
-            style={styles.searchBar}
-            inputStyle={{ color: "#fff" }}
-            iconColor="#fff"
+        {/* HEADER */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Pothole Reports</Text>
+          <Avatar.Image
+            size={40}
+            source={require("../assets/hole-1.jpeg")}
           />
-          <View style={styles.filterContainer}>
-            {["All", "High", "Medium", "Low"].map((severity) => (
-              <Chip
-                key={severity}
-                onPress={() => handleFilter(severity)}
-                style={[
-                  styles.chip,
-                  severity === "All" && styles.selectedChip,
-                ]}
-                textStyle={styles.chipText}
-              >
-                {severity} Severity
-              </Chip>
-            ))}
-          </View>
-          <FlatList
-            data={filteredPotholes}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <Card style={styles.card}>
-                <FlatList
-                  horizontal
-                  data={item.images}
-                  keyExtractor={(image, index) => index.toString()}
-                  renderItem={({ item: image }) => (
-                    <Image source={{ uri: image }} style={styles.image} />
-                  )}
-                />
-                <Card.Content>
-                  <Text style={styles.location}>{item.location}</Text>
-                  <Text style={styles.details}>Reported by: {item.reportedBy}</Text>
-                  <Text style={styles.details}>Date: {item.date}</Text>
-                  <Text style={[styles.severityTag, getSeverityStyle(item.severity)]}>
-                    {item.severity} Severity
-                  </Text>
-                  <Text style={[styles.statusTag, getStatusStyle(item.status)]}>
-                    {item.status}
-                  </Text>
-                </Card.Content>
-                <Card.Actions>
-                  <Button
-                    mode="outlined"
-                    icon="map-marker"
-                    onPress={() => handleViewDetails(item)}
-                    style={styles.viewButton}
-                  >
-                    View Details
-                  </Button>
-                </Card.Actions>
-              </Card>
-            )}
-          />
-          <FAB
-            icon="plus"
-            style={styles.fab}
-            onPress={() => router.push("/report")}
-            label="Report Pothole"
-          />
-          <Portal>
-            <Modal visible={modalVisible} onDismiss={() => setModalVisible(false)}>
-              <View style={styles.modalContainer}>
-                {selectedPothole && (
-                  <>
-                    <Text style={styles.modalTitle}>{selectedPothole.location}</Text>
-                    <FlatList
-                      horizontal
-                      data={selectedPothole.images}
-                      keyExtractor={(image, index) => index.toString()}
-                      renderItem={({ item: image }) => (
-                        <Image source={{ uri: image }} style={styles.modalImage} />
-                      )}
-                    />
-                    <Text style={styles.modalText}>Reported by: {selectedPothole.reportedBy}</Text>
-                    <Text style={styles.modalText}>Date: {selectedPothole.date}</Text>
-                    <Text style={styles.modalText}>Severity: {selectedPothole.severity}</Text>
-                    <Text style={styles.modalText}>Status: {selectedPothole.status}</Text>
-                    <MapView
-                      style={styles.map}
-                      initialRegion={{
-                        latitude: selectedPothole.coordinates.latitude,
-                        longitude: selectedPothole.coordinates.longitude,
-                        latitudeDelta: 0.01,
-                        longitudeDelta: 0.01,
-                      }}
-                    >
-                      <Marker coordinate={selectedPothole.coordinates} title={selectedPothole.location} />
-                    </MapView>
-                    <Button mode="contained" onPress={() => setModalVisible(false)}>Close</Button>
-                  </>
-                )}
-              </View>
-            </Modal>
-          </Portal>
         </View>
+
+        {/* SEARCH BAR */}
+        <Searchbar
+          placeholder="Search pothole reports..."
+          placeholderTextColor={lightTheme.colors.placeholder}
+          onChangeText={handleSearch}
+          value={searchQuery}
+          style={styles.searchBar}
+        />
+
+        {/* LIST OF REPORTS */}
+        <FlatList
+          data={filteredPotholes}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item, index }) => (
+            <MotiView
+              from={{ opacity: 0, translateY: 50 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ type: "spring", delay: index * 100 }}
+              style={styles.card}
+            >
+              {/* User Info */}
+              <View style={styles.userInfo}>
+                <Avatar.Image size={40} source={item.profilePic} />
+                <View style={styles.userDetails}>
+                  <Text style={styles.userName}>{item.reportedBy}</Text>
+                  <Text style={styles.date}>{item.date}</Text>
+                </View>
+              </View>
+
+              {/* Location */}
+              <Text style={styles.location}>{item.location}</Text>
+
+              {/* Map & Images (Equal Height) */}
+              <View style={styles.contentRow}>
+                <MapView
+                  style={styles.map}
+                  initialRegion={{
+                    latitude: item.coordinates?.latitude || 0,
+                    longitude: item.coordinates?.longitude || 0,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  }}
+                >
+                  {item.coordinates && (
+                    <Marker coordinate={item.coordinates} title="Pothole Location" />
+                  )}
+                </MapView>
+
+                {/* Images Column */}
+                <View style={styles.imageContainer}>
+                  {item.images.map((img, index) => (
+                    <MotiImage
+                      key={index}
+                      source={img}
+                      style={styles.image}
+                      from={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ type: "timing", duration: 500 }}
+                    />
+                  ))}
+                </View>
+              </View>
+
+              {/* Description */}
+              <Text style={styles.description}>{item.description}</Text>
+
+              {/* Severity & Status Chips */}
+              <View style={styles.tagsContainer}>
+                <Chip
+                  style={[styles.chip, { backgroundColor: getSeverityColor(item.severity) }]}
+                  textStyle={{ color: "white" }}
+                >
+                  {item.severity}
+                </Chip>
+
+                <Chip
+                  style={[styles.chip, { backgroundColor: getStatusColor(item.status) }]}
+                  textStyle={{ color: "white" }}
+                >
+                  {item.status}
+                </Chip>
+              </View>
+            </MotiView>
+          )}
+        />
+
+        {/* Floating Action Button */}
+        <FAB
+          style={styles.fab}
+          icon="plus"
+          onPress={() => router.push("/report")}
+        />
       </SafeAreaView>
-    </Provider>
+    </PaperProvider>
   );
 };
 
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: "#121212" },
-    container: { flex: 1, padding: 20 },
-    title: { fontSize: 22, fontWeight: "bold", color: "#42a5f5", textAlign: "center" },
-    searchBar: { marginVertical: 10, backgroundColor: "#333", borderRadius: 20 },
-    filterContainer: { flexDirection: "row", justifyContent: "center", marginBottom: 10 },
-    chip: { marginHorizontal: 5, backgroundColor: "#444" },
-    selectedChip: { backgroundColor: "#42a5f5" },
-    chipText: { color: "#fff" },
-    card: { marginBottom: 15, backgroundColor: "#222", borderRadius: 10 },
-    image: { width: 300, height: 180, borderRadius: 10, margin: 5 },
-    location: { fontSize: 18, fontWeight: "bold", color: "#fff" },
-    details: { fontSize: 14, color: "#bbb" },
-    severityTag: { fontWeight: "bold", marginTop: 5 },
-    tagHigh: { color: "#ff3d00" },
-    tagMedium: { color: "#ff9800" },
-    tagLow: { color: "#4caf50" },
-    statusTag: { fontWeight: "bold", marginTop: 5 },
-    statusPending: { color: "#ffeb3b" },
-    statusInProgress: { color: "#03a9f4" },
-    statusFixed: { color: "#8bc34a" },
-    viewButton: { marginTop: 10 },
-    fab: { position: "absolute", right: 20, bottom: 20, backgroundColor: "#42a5f5" },
-    modalContainer: { backgroundColor: "#222", padding: 20, borderRadius: 10 },
-    modalTitle: { fontSize: 22, fontWeight: "bold", color: "#fff" },
-    modalImage: { width: 300, height: 180, marginBottom: 10 },
-    modalText: { fontSize: 16, color: "#fff", marginBottom: 5 },
-    map: { width: "100%", height: 200, marginVertical: 10 },
-  });
-
-  const getSeverityStyle = (severity: string) => {
-    switch (severity) {
-      case "High":
-        return styles.tagHigh;
-      case "Medium":
-        return styles.tagMedium;
-      case "Low":
-        return styles.tagLow;
-      default:
-        return styles.tagLow;
-    }
-  };
-  
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case "Pending":
-        return styles.statusPending;
-      case "In Progress":
-        return styles.statusInProgress;
-      case "Fixed":
-        return styles.statusFixed;
-      default:
-        return styles.statusPending;
-    }
-  };
+  safeArea: {
+    flex: 1,
+    paddingHorizontal: 16,
+    backgroundColor: lightTheme.colors.background,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+    paddingVertical: 10,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: lightTheme.colors.primary,
+  },
+  searchBar: {
+    marginBottom: 16,
+    borderRadius: 10,
+  },
+  card: {
+    backgroundColor: lightTheme.colors.surface,
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  userInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  userDetails: {
+    marginLeft: 10,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: lightTheme.colors.text,
+  },
+  date: {
+    fontSize: 12,
+    color: lightTheme.colors.textSecondary,
+  },
+  location: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#5A67D8",
+    marginTop: 5,
+  },
+  contentRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  map: {
+    flex: 1,
+    height: 150,
+    borderRadius: 10,
+  },
+  imageContainer: {
+    flexDirection: "column",
+    justifyContent: "space-between",
+    marginLeft: 10,
+  },
+  image: {
+    width: 100,
+    height: 70,
+    borderRadius: 10,
+  },
+  description: {
+    fontSize: 14,
+    marginTop: 10,
+  },
+  tagsContainer: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 10,
+  },
+  chip: {
+    alignSelf: "flex-start",
+  },
+  fab: {
+    position: "absolute",
+    marginBottom: 50,
+    marginHorizontal: 20,
+    right: 0,
+    bottom: 0,
+    backgroundColor: lightTheme.colors.primary,
+  },
+});
 
 export default HomeScreen;

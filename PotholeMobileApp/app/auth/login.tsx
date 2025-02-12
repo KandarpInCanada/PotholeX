@@ -11,7 +11,7 @@ import { Text, TextInput, Button, PaperProvider } from "react-native-paper";
 import RadarLoader from "../component/radar-loader";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
-import theme from "../theme";
+import { lightTheme } from "../theme"; // Now using the updated light theme
 
 // Necessary for Google authentication on web
 WebBrowser.maybeCompleteAuthSession();
@@ -21,7 +21,7 @@ const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [secureText, setSecureText] = useState(true);
-  
+
   // Google Authentication Hook
   const [request, response, promptGoogleLogin] = Google.useAuthRequest({
     clientId: "YOUR_GOOGLE_WEB_CLIENT_ID",
@@ -44,12 +44,13 @@ const LoginScreen = () => {
   };
 
   return (
-    <PaperProvider theme={theme}>
+    <PaperProvider theme={lightTheme}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
-          <RadarLoader size={200} />
-          <Text style={styles.title}>PotholeX</Text>
+          <RadarLoader size={150} />
+          <Text style={styles.title}>Welcome Back!</Text>
           <Text style={styles.subtitle}>Login to continue</Text>
+
           <TextInput
             label="Email"
             mode="outlined"
@@ -59,7 +60,13 @@ const LoginScreen = () => {
             keyboardType="email-address"
             autoCapitalize="none"
             style={styles.input}
-            theme={{ colors: { primary: theme.colors.primary, text: theme.colors.text } }}
+            theme={{
+              colors: {
+                primary: lightTheme.colors.primary,
+                text: lightTheme.colors.text,
+                background: lightTheme.colors.surface,
+              },
+            }}
           />
           <TextInput
             label="Password"
@@ -75,13 +82,26 @@ const LoginScreen = () => {
               />
             }
             style={styles.input}
-            theme={{ colors: { primary: theme.colors.primary, text: theme.colors.text } }}
+            theme={{
+              colors: {
+                primary: lightTheme.colors.primary,
+                text: lightTheme.colors.text,
+                background: lightTheme.colors.surface,
+              },
+            }}
           />
-          <Button mode="contained" onPress={handleLogin} style={styles.button}>
-            <Text style={styles.buttonText}>Login</Text>
-          </Button>
+          
           <Button
             mode="contained"
+            onPress={handleLogin}
+            style={styles.button}
+            labelStyle={styles.buttonText}
+          >
+            Login
+          </Button>
+
+          <Button
+            mode="outlined"
             icon={() => (
               <Image
                 source={require("../assets/google-logo.jpeg")}
@@ -95,74 +115,78 @@ const LoginScreen = () => {
           >
             Continue with Google
           </Button>
+
           <Button onPress={() => router.push("/auth/register")} uppercase={false}>
-            Don't have an account? <Text style={styles.registerText}>Register</Text>
+            Don't have an account?{" "}
+            <Text style={styles.registerText}>Register</Text>
           </Button>
         </View>
       </TouchableWithoutFeedback>
     </PaperProvider>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: theme.colors.background,
+    backgroundColor: lightTheme.colors.background,
     padding: 20,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "bold",
-    color: theme.colors.primary,
-    marginBottom: 10,
+    color: lightTheme.colors.primary,
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: theme.colors.placeholder,
-    marginBottom: 30,
+    color: lightTheme.colors.textSecondary,
+    marginBottom: 24,
   },
   input: {
     width: "100%",
-    backgroundColor: theme.colors.surface,
+    backgroundColor: lightTheme.colors.surface,
     borderRadius: 10,
-    marginBottom: 15,
+    marginBottom: 12,
   },
   button: {
     width: "100%",
-    backgroundColor: theme.colors.buttonBackground,
-    paddingVertical: 10,
+    backgroundColor: lightTheme.colors.buttonBackground,
+    paddingVertical: 12,
+    borderRadius: 12,
     marginTop: 10,
-    borderRadius: 10,
   },
   buttonText: {
-    color: theme.colors.buttonText,
+    color: lightTheme.colors.buttonText,
     fontSize: 18,
     fontWeight: "bold",
   },
   socialButton: {
     width: "100%",
     height: 50,
-    borderRadius: 10,
+    borderRadius: 12,
     justifyContent: "center",
-    marginTop: 10,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: lightTheme.colors.outline,
     backgroundColor: "#ffffff",
     flexDirection: "row",
     alignItems: "center",
   },
   googleLogo: {
-    width: 24,
-    height: 24,
-    marginRight: 10,
+    width: 22,
+    height: 22,
+    marginRight: 8,
   },
   socialText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#000",
+    color: lightTheme.colors.text,
   },
   registerText: {
-    color: theme.colors.primary,
+    color: lightTheme.colors.primary,
     fontSize: 16,
   },
 });
