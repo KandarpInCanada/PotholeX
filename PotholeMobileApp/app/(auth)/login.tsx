@@ -31,13 +31,13 @@ const LoginScreen = () => {
 
   useEffect(() => {
     if (response?.type === "success") {
-      router.replace("/dashboard/home");
+      router.replace("/home");
     }
   }, [response]);
 
   const handleLogin = () => {
     if (email === "test@example.com" && password === "password") {
-      router.replace("/dashboard/home");
+      router.replace("/home");
     } else {
       alert("Invalid email or password");
     }
@@ -116,7 +116,7 @@ const LoginScreen = () => {
             Continue with Google
           </Button>
 
-          <Button onPress={() => router.push("/auth/register")} uppercase={false}>
+          <Button onPress={() => router.push("/register")} uppercase={false}>
             Don't have an account?{" "}
             <Text style={styles.registerText}>Register</Text>
           </Button>

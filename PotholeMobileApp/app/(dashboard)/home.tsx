@@ -80,29 +80,27 @@ const potholes: Pothole[] = [
   }
 ];
 
-// ✅ Function to determine severity chip color
 const getSeverityColor = (severity: string) => {
   switch (severity.toLowerCase()) {
     case "danger":
-      return "#E63946"; // Red
+      return "#E63946";
     case "medium":
-      return "#F4A261"; // Orange
+      return "#F4A261";
     case "low":
-      return "#2A9D8F"; // Green
+      return "#2A9D8F";
     default:
       return lightTheme.colors.primary;
   }
 };
 
-// ✅ Function to determine status chip color
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
     case "in progress":
-      return "#1D4ED8"; // Blue
+      return "#1D4ED8";
     case "fixed":
-      return "#22C55E"; // Green
+      return "#22C55E";
     case "rejected":
-      return "#6B7280"; // Gray
+      return "#6B7280";
     default:
       return lightTheme.colors.textSecondary;
   }
@@ -124,16 +122,10 @@ const HomeScreen = () => {
   return (
     <PaperProvider theme={lightTheme}>
       <SafeAreaView style={styles.safeArea}>
-        {/* HEADER */}
         <View style={styles.header}>
           <Text style={styles.title}>Pothole Reports</Text>
-          <Avatar.Image
-            size={40}
-            source={require("../assets/hole-1.jpeg")}
-          />
         </View>
 
-        {/* SEARCH BAR */}
         <Searchbar
           placeholder="Search pothole reports..."
           placeholderTextColor={lightTheme.colors.placeholder}
@@ -142,7 +134,6 @@ const HomeScreen = () => {
           style={styles.searchBar}
         />
 
-        {/* LIST OF REPORTS */}
         <FlatList
           data={filteredPotholes}
           keyExtractor={(item) => item.id}
@@ -153,7 +144,6 @@ const HomeScreen = () => {
               transition={{ type: "spring", delay: index * 100 }}
               style={styles.card}
             >
-              {/* User Info */}
               <View style={styles.userInfo}>
                 <Avatar.Image size={40} source={item.profilePic} />
                 <View style={styles.userDetails}>
@@ -161,11 +151,7 @@ const HomeScreen = () => {
                   <Text style={styles.date}>{item.date}</Text>
                 </View>
               </View>
-
-              {/* Location */}
               <Text style={styles.location}>{item.location}</Text>
-
-              {/* Map & Images (Equal Height) */}
               <View style={styles.contentRow}>
                 <MapView
                   style={styles.map}
@@ -180,8 +166,6 @@ const HomeScreen = () => {
                     <Marker coordinate={item.coordinates} title="Pothole Location" />
                   )}
                 </MapView>
-
-                {/* Images Column */}
                 <View style={styles.imageContainer}>
                   {item.images.map((img, index) => (
                     <MotiImage
@@ -195,11 +179,7 @@ const HomeScreen = () => {
                   ))}
                 </View>
               </View>
-
-              {/* Description */}
               <Text style={styles.description}>{item.description}</Text>
-
-              {/* Severity & Status Chips */}
               <View style={styles.tagsContainer}>
                 <Chip
                   style={[styles.chip, { backgroundColor: getSeverityColor(item.severity) }]}
@@ -207,7 +187,6 @@ const HomeScreen = () => {
                 >
                   {item.severity}
                 </Chip>
-
                 <Chip
                   style={[styles.chip, { backgroundColor: getStatusColor(item.status) }]}
                   textStyle={{ color: "white" }}
@@ -217,13 +196,6 @@ const HomeScreen = () => {
               </View>
             </MotiView>
           )}
-        />
-
-        {/* Floating Action Button */}
-        <FAB
-          style={styles.fab}
-          icon="plus"
-          onPress={() => router.push("/report")}
         />
       </SafeAreaView>
     </PaperProvider>
