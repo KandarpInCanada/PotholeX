@@ -1,6 +1,0 @@
-@PotholeBackendApp_HostAddress = http://localhost:5087
-
-GET {{PotholeBackendApp_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
