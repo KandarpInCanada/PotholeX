@@ -1,0 +1,47 @@
+{
+    "expo": {
+      "name": "PotholeX",
+      "slug": "potholex",
+      "version": "1.0.0",
+      "orientation": "portrait",
+      "icon": "./assets/icon.png",
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      },
+      "updates": {
+        "fallbackToCacheTimeout": 0
+      },
+      "assetBundlePatterns": ["**/*"],
+      "ios": {
+        "supportsTablet": true,
+        "bundleIdentifier": "com.potholex.app"
+      },
+      "android": {
+        "package": "com.potholex.app",
+        "adaptiveIcon": {
+          "foregroundImage": "./assets/adaptive-icon.png",
+          "backgroundColor": "#FFFFFF"
+        },
+        "permissions": [
+          "ACCESS_FINE_LOCATION",
+          "ACCESS_COARSE_LOCATION",
+          "CAMERA"
+        ]
+      },
+      "web": {
+        "favicon": "./assets/favicon.png"
+      },
+      "extra": {
+        "firebase": {
+          "apiKey": "YOUR_FIREBASE_API_KEY",
+          "authDomain": "YOUR_FIREBASE_AUTH_DOMAIN",
+          "projectId": "YOUR_FIREBASE_PROJECT_ID",
+          "storageBucket": "YOUR_FIREBASE_STORAGE_BUCKET",
+          "messagingSenderId": "YOUR_FIREBASE_MESSAGING_ID",
+          "appId": "YOUR_FIREBASE_APP_ID"
+        }
+      }
+    }
+  }

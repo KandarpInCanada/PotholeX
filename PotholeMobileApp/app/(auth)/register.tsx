@@ -115,7 +115,7 @@ const RegisterScreen = () => {
               Continue with Google
             </Button>
 
-            <Button onPress={() => router.push("/auth/login")} uppercase={false}>
+            <Button onPress={() => router.push("/login")} uppercase={false}>
               Already have an account? <Text style={styles.loginText}>Login</Text>
             </Button>
           </View>

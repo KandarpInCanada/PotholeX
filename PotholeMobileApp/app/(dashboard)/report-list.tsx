@@ -1,192 +1,181 @@
 import React, { useState } from "react";
 import {
-View,
-Text,
-StyleSheet,
-Image,
-TouchableOpacity,
-Keyboard,
-TouchableWithoutFeedback,
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  FlatList,
+  TextInput,
 } from "react-native";
-import { Button, TextInput, Chip } from "react-native-paper";
-import * as ImagePicker from "expo-image-picker";
-import MapView, { Marker } from "react-native-maps";
-import { useRouter } from "expo-router";
+import { Chip, Card } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { lightTheme } from "../theme"; // Import light theme
 
-export default function AddReportScreen() {
-const router = useRouter();
-const [image, setImage] = useState<string | null>(null);
-const [description, setDescription] = useState<string>("");
-const [severity, setSeverity] = useState<"Low" | "Medium" | "Danger">("Medium");
-const [location, setLocation] = useState<{ latitude: number; longitude: number }>({
-    latitude: 44.6488,
-    longitude: -63.5752,
-});
-
-// Handle Image Selection
-const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: true,
-    aspect: [4, 3],
-    quality: 1,
-    });
-    if (!result.canceled && result.assets.length > 0) {
-    setImage(result.assets[0].uri);
-    }
-};
-
-// Handle Severity Selection
-const setSeverityLevel = (level: "Low" | "Medium" | "Danger") => {
-    setSeverity(level);
-};
-
-// Handle Report Submission
-const submitReport = () => {
-    if (!image || !description) {
-    alert("Please add an image and description.");
-    return;
-    }
-    alert("Pothole report submitted successfully!");
-    router.replace("/dashboard/home");
-};
-
-return (
-    <SafeAreaView style={styles.safeArea}>
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
-        <Text style={styles.title}>Report a Pothole</Text>
-
-        {/* Image Selection */}
-        <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-            {image ? (
-            <Image source={{ uri: image }} style={styles.image} />
-            ) : (
-            <Text style={styles.imagePlaceholder}>Tap to select an image</Text>
-            )}
-        </TouchableOpacity>
-
-        {/* Description Input */}
-        <TextInput
-            label="Description"
-            mode="outlined"
-            placeholder="Describe the pothole..."
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            style={styles.input}
-        />
-
-        {/* Severity Selection */}
-        <View style={styles.severityContainer}>
-            <Text style={styles.label}>Severity Level:</Text>
-            <View style={styles.chipContainer}>
-            {["Low", "Medium", "Danger"].map((level) => (
-                <Chip
-                key={level}
-                selected={severity === level}
-                onPress={() => setSeverityLevel(level as "Low" | "Medium" | "Danger")}
-                style={[
-                    styles.chip,
-                    { backgroundColor: severity === level ? "#007AFF" : "#ccc" },
-                ]}
-                textStyle={{ color: severity === level ? "#fff" : "#000" }}
-                >
-                {level}
-                </Chip>
-            ))}
-            </View>
-        </View>
-
-        {/* Map for Location Pinning */}
-        <MapView
-            style={styles.map}
-            initialRegion={{
-            latitude: location.latitude,
-            longitude: location.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-            }}
-            onPress={(e) => setLocation(e.nativeEvent.coordinate)}
-        >
-            <Marker coordinate={location} title="Pinned Location" />
-        </MapView>
-
-        {/* Submit Button */}
-        <Button mode="contained" onPress={submitReport} style={styles.submitButton}>
-            Submit Report
-        </Button>
-        </View>
-    </TouchableWithoutFeedback>
-    </SafeAreaView>
-);
+interface Report {
+  id: string;
+  image: any; // For static images
+  description: string;
+  status: "Fixed" | "In Progress" | "Rejected";
+  location: string;
 }
 
+// Sample Reports Data
+const sampleReports: Report[] = [
+  {
+    id: "1",
+    image: require("../assets/hole-1.jpeg"),
+    description: "Large pothole on Main Street.",
+    status: "In Progress",
+    location: "Halifax, Nova Scotia",
+  },
+  {
+    id: "2",
+    image: require("../assets/hole-2.jpeg"),
+    description: "Deep pothole causing car damage.",
+    status: "Fixed",
+    location: "Toronto, Ontario",
+  },
+  {
+    id: "3",
+    image: require("../assets/hole-2.jpeg"),
+    description: "Dangerous pothole near school area.",
+    status: "Rejected",
+    location: "Vancouver, British Columbia",
+  },
+];
+
+export default function MyReportsScreen() {
+  const [reports, setReports] = useState<Report[]>(sampleReports);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter reports based on search
+  const filteredReports = reports.filter(
+    (report) =>
+      report.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Render each report item
+  const renderReport = ({ item }: { item: Report }) => (
+    <Card style={styles.card}>
+      <Image source={item.image} style={styles.image} />
+      <Card.Content>
+        <Text style={styles.location}>{item.location}</Text>
+        <Text style={styles.description}>{item.description}</Text>
+        <View style={styles.statusContainer}>
+          <Chip
+            style={[
+              styles.chip,
+              item.status === "Fixed" ? styles.fixed :
+              item.status === "In Progress" ? styles.inProgress :
+              styles.rejected,
+            ]}
+            textStyle={{ color: "white" }}
+          >
+            {item.status}
+          </Chip>
+        </View>
+      </Card.Content>
+    </Card>
+  );
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <Text style={styles.title}>My Reports</Text>
+
+      {/* Search Bar */}
+      <TextInput
+        style={styles.searchBar}
+        placeholder="Search reports..."
+        placeholderTextColor={lightTheme.colors.placeholder}
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
+
+      {filteredReports.length === 0 ? (
+        <Text style={styles.noReports}>No reports found.</Text>
+      ) : (
+        <FlatList
+          data={filteredReports}
+          keyExtractor={(item) => item.id}
+          renderItem={renderReport}
+          contentContainerStyle={styles.listContainer}
+        />
+      )}
+    </SafeAreaView>
+  );
+}
+
+// Styles
 const styles = StyleSheet.create({
-safeArea: {
+  safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
-},
-container: {
-    flex: 1,
-    padding: 20,
-},
-title: {
+    backgroundColor: lightTheme.colors.background,
+    padding: 15,
+  },
+  title: {
     fontSize: 24,
     fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 20,
-},
-imagePicker: {
-    height: 200,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#eee",
+    color: lightTheme.colors.primary,
+    textAlign: "left",
+    marginBottom: 10,
+  },
+  searchBar: {
+    backgroundColor: "#ECECEC",
     borderRadius: 10,
+    padding: 10,
+    fontSize: 16,
     marginBottom: 15,
-},
-image: {
+  },
+  listContainer: {
+    paddingBottom: 20,
+  },
+  card: {
+    backgroundColor: lightTheme.colors.surface,
+    marginBottom: 15,
+    borderRadius: 10,
+    padding: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+  image: {
     width: "100%",
-    height: "100%",
+    height: 150,
     borderRadius: 10,
-},
-imagePlaceholder: {
-    fontSize: 16,
-    color: "#666",
-},
-input: {
-    marginBottom: 15,
-    backgroundColor: "#fff",
-},
-severityContainer: {
-    marginBottom: 15,
-},
-label: {
-    fontSize: 16,
+  },
+  location: {
+    fontSize: 14,
     fontWeight: "bold",
-},
-chipContainer: {
-    flexDirection: "row",
-    gap: 10,
+    color: lightTheme.colors.textSecondary,
     marginTop: 5,
-},
-chip: {
-    paddingHorizontal: 10,
+  },
+  description: {
+    fontSize: 16,
+    color: lightTheme.colors.text,
+    marginVertical: 5,
+  },
+  statusContainer: {
+    marginTop: 5,
+  },
+  chip: {
     paddingVertical: 5,
-},
-map: {
-    width: "100%",
-    height: 200,
-    borderRadius: 10,
-    marginBottom: 15,
-},
-submitButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 8,
-    borderRadius: 10,
-},
-backButton: {
-    marginTop: 10,
-},
+    alignSelf: "flex-start",
+  },
+  fixed: {
+    backgroundColor: "green",
+  },
+  inProgress: {
+    backgroundColor: "orange",
+  },
+  rejected: {
+    backgroundColor: "red",
+  },
+  noReports: {
+    fontSize: 16,
+    textAlign: "center",
+    marginTop: 20,
+    color: lightTheme.colors.textSecondary,
+  },
 });
