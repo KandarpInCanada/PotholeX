@@ -1,23 +1,30 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Searchbar, FAB, Avatar } from "react-native-paper"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Image,
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Searchbar, FAB, Avatar } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 interface Pothole {
-  id: string
-  images: any[]
-  location: string
-  reportedBy: string
-  profilePic: any
-  date: string
-  severity: string
-  status: string
-  description: string
-  likes: number
-  comments: number
+  id: string;
+  images: any[];
+  location: string;
+  reportedBy: string;
+  profilePic: any;
+  date: string;
+  severity: string;
+  status: string;
+  description: string;
+  likes: number;
+  comments: number;
 }
 
 const potholes: Pothole[] = [
@@ -30,34 +37,37 @@ const potholes: Pothole[] = [
     date: "Mar 25, 2022",
     severity: "Danger",
     status: "In Progress",
-    description: "Large pothole causing major vehicle damage. Needs urgent repair!",
+    description:
+      "Large pothole causing major vehicle damage. Needs urgent repair!",
     likes: 24,
     comments: 12,
   },
   // ... add more sample data as needed
-]
+];
 
 const SEVERITY_COLORS = {
   Danger: "#DC2626",
   Medium: "#F59E0B",
   Low: "#10B981",
-}
+};
 
 const STATUS_COLORS = {
   "In Progress": "#2563EB",
   Fixed: "#059669",
   Rejected: "#6B7280",
-}
+};
 
 const HomeScreen = () => {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filteredPotholes, setFilteredPotholes] = useState(potholes)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredPotholes, setFilteredPotholes] = useState(potholes);
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query)
-    const filtered = potholes.filter((pothole) => pothole.location.toLowerCase().includes(query.toLowerCase()))
-    setFilteredPotholes(filtered)
-  }
+    setSearchQuery(query);
+    const filtered = potholes.filter((pothole) =>
+      pothole.location.toLowerCase().includes(query.toLowerCase())
+    );
+    setFilteredPotholes(filtered);
+  };
 
   const renderCard = ({ item }: { item: Pothole }) => (
     <View style={styles.card}>
@@ -86,7 +96,12 @@ const HomeScreen = () => {
         <View
           style={[
             styles.tag,
-            { backgroundColor: SEVERITY_COLORS[item.severity as keyof typeof SEVERITY_COLORS] || "#6B7280" },
+            {
+              backgroundColor:
+                SEVERITY_COLORS[
+                  item.severity as keyof typeof SEVERITY_COLORS
+                ] || "#6B7280",
+            },
           ]}
         >
           <Text style={styles.tagText}>{item.severity}</Text>
@@ -94,7 +109,11 @@ const HomeScreen = () => {
         <View
           style={[
             styles.tag,
-            { backgroundColor: STATUS_COLORS[item.status as keyof typeof STATUS_COLORS] || "#6B7280" },
+            {
+              backgroundColor:
+                STATUS_COLORS[item.status as keyof typeof STATUS_COLORS] ||
+                "#6B7280",
+            },
           ]}
         >
           <Text style={styles.tagText}>{item.status}</Text>
@@ -103,19 +122,31 @@ const HomeScreen = () => {
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.interactionButton}>
-          <MaterialCommunityIcons name="thumb-up-outline" size={20} color="#6B7280" />
+          <MaterialCommunityIcons
+            name="thumb-up-outline"
+            size={20}
+            color="#6B7280"
+          />
           <Text style={styles.interactionText}>{item.likes}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.interactionButton}>
-          <MaterialCommunityIcons name="comment-outline" size={20} color="#6B7280" />
+          <MaterialCommunityIcons
+            name="comment-outline"
+            size={20}
+            color="#6B7280"
+          />
           <Text style={styles.interactionText}>{item.comments}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.interactionButton}>
-          <MaterialCommunityIcons name="share-outline" size={20} color="#6B7280" />
+          <MaterialCommunityIcons
+            name="share-outline"
+            size={20}
+            color="#6B7280"
+          />
         </TouchableOpacity>
       </View>
     </View>
-  )
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -138,10 +169,14 @@ const HomeScreen = () => {
         contentContainerStyle={styles.listContainer}
       />
 
-      <FAB icon="plus" style={styles.fab} onPress={() => console.log("Add new report")} />
+      <FAB
+        icon="plus"
+        style={styles.fab}
+        onPress={() => console.log("Add new report")}
+      />
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -259,7 +294,6 @@ const styles = StyleSheet.create({
     bottom: 16,
     backgroundColor: "#0284c7",
   },
-})
+});
 
-export default HomeScreen
-
+export default HomeScreen;

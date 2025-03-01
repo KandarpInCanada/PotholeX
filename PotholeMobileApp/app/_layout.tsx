@@ -1,21 +1,10 @@
 import { Stack } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { firebase_auth } from "../firebaseConfig";
+import React from "react";
 import { View, ActivityIndicator } from "react-native";
+import { AuthProvider, useAuth } from "../context/auth-context";
 
-export default function RootLayout() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(firebase_auth, (authUser) => {
-      setUser(authUser);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+function RootLayoutInner() {
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -36,5 +25,14 @@ export default function RootLayout() {
         <Stack.Screen name="(dashboard)" />
       )}
     </Stack>
+  );
+}
+
+// Wrap the entire app with AuthProvider
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <RootLayoutInner />
+    </AuthProvider>
   );
 }

@@ -1,10 +1,11 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import {
   View,
   TouchableWithoutFeedback,
   Keyboard,
   StyleSheet,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -22,11 +23,8 @@ import { MotiView } from "moti";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Svg, { Defs, Pattern, Rect, Circle } from "react-native-svg";
 import NewRadarLoader from "../animation/RadarLoader";
-import * as Google from "expo-auth-session/providers/google";
-import * as WebBrowser from "expo-web-browser";
 import { lightTheme } from "../theme";
-
-WebBrowser.maybeCompleteAuthSession();
+import { useAuth } from "../../context/auth-context";
 
 const BackgroundPattern = () => (
   <Svg height="100%" width="100%" style={StyleSheet.absoluteFillObject}>
@@ -47,27 +45,36 @@ const BackgroundPattern = () => (
 
 const LoginScreen = () => {
   const router = useRouter();
+  const { signIn, signInWithGoogle, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [secureText, setSecureText] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showError, setShowError] = useState(false);
-  const [request, response, promptGoogleLogin] = Google.useAuthRequest({
-    clientId: "YOUR_GOOGLE_WEB_CLIENT_ID",
-    iosClientId: "YOUR_GOOGLE_IOS_CLIENT_ID",
-    androidClientId: "YOUR_GOOGLE_ANDROID_CLIENT_ID",
-  });
+
+  // Redirect if user is already logged in
   useEffect(() => {
-    if (response?.type === "success") {
-      handleSuccessfulLogin();
+    if (user) {
+      router.replace("/(dashboard)/Home");
     }
-  }, [response]);
-  const handleSuccessfulLogin = async () => {
+  }, [user, router]);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError("Please enter your credentials");
+      setShowError(true);
+      return;
+    }
+
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      router.replace("/(dashboard)/Home");
+      const { error: signInError } = await signIn(email, password);
+
+      if (signInError) {
+        setError(signInError.message || "Authentication failed");
+        setShowError(true);
+      }
     } catch (err) {
       setError("Authentication failed");
       setShowError(true);
@@ -76,26 +83,12 @@ const LoginScreen = () => {
     }
   };
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError("Please enter your credentials");
-      setShowError(true);
-      return;
-    }
-    setLoading(true);
+  const handleGoogleLogin = async () => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      if (email === "test@example.com" && password === "password") {
-        router.replace("/(dashboard)/Home");
-      } else {
-        setError("Invalid credentials");
-        setShowError(true);
-      }
+      await signInWithGoogle();
     } catch (err) {
-      setError("Authentication failed");
+      setError("Google authentication failed");
       setShowError(true);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -204,8 +197,8 @@ const LoginScreen = () => {
               </View>
               <Button
                 mode="outlined"
-                onPress={() => promptGoogleLogin()}
-                disabled={!request || loading}
+                onPress={handleGoogleLogin}
+                disabled={loading}
                 style={styles.googleButton}
                 contentStyle={styles.googleButtonContent}
                 labelStyle={styles.googleButtonText}

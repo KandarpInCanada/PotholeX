@@ -1,95 +1,115 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import {
   View,
   TouchableWithoutFeedback,
   Keyboard,
   StyleSheet,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
-} from "react-native"
-import { useRouter } from "expo-router"
-import { Text, TextInput, Button, PaperProvider } from "react-native-paper"
-import { LinearGradient } from "expo-linear-gradient"
-import { MotiView } from "moti"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
-import Svg, { Defs, Pattern, Rect, Circle } from "react-native-svg"
-import * as Google from "expo-auth-session/providers/google"
-import * as WebBrowser from "expo-web-browser"
-import { lightTheme } from "../theme"
-
-const { width, height } = Dimensions.get("window")
-
-WebBrowser.maybeCompleteAuthSession()
+} from "react-native";
+import { useRouter } from "expo-router";
+import {
+  Text,
+  TextInput,
+  Button,
+  PaperProvider,
+  Portal,
+  Dialog,
+} from "react-native-paper";
+import { LinearGradient } from "expo-linear-gradient";
+import { MotiView } from "moti";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Svg, { Defs, Pattern, Rect, Circle } from "react-native-svg";
+import { lightTheme } from "../theme";
+import { useAuth } from "../../context/auth-context";
 
 const BackgroundPattern = () => (
   <Svg height="100%" width="100%" style={StyleSheet.absoluteFillObject}>
     <Defs>
-      <Pattern id="pattern" patternUnits="userSpaceOnUse" width="60" height="60" patternTransform="rotate(45)">
+      <Pattern
+        id="pattern"
+        patternUnits="userSpaceOnUse"
+        width="60"
+        height="60"
+        patternTransform="rotate(45)"
+      >
         <Circle cx="30" cy="30" r="1.5" fill="rgba(66, 133, 244, 0.1)" />
       </Pattern>
     </Defs>
     <Rect width="100%" height="100%" fill="url(#pattern)" />
   </Svg>
-)
+);
 
 const RegisterScreen = () => {
-  const router = useRouter()
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [secureText, setSecureText] = useState(true)
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const { signUp, signInWithGoogle, user } = useAuth();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [secureText, setSecureText] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showError, setShowError] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const [request, response, promptGoogleSignUp] = Google.useAuthRequest({
-    clientId: "YOUR_GOOGLE_WEB_CLIENT_ID",
-    iosClientId: "YOUR_GOOGLE_IOS_CLIENT_ID",
-    androidClientId: "YOUR_GOOGLE_ANDROID_CLIENT_ID",
-  })
-
+  // Redirect if user is already logged in
   useEffect(() => {
-    if (response?.type === "success") {
-      handleSuccessfulRegister()
+    if (user) {
+      router.replace("/(dashboard)/Home");
     }
-  }, [response])
-
-  const handleSuccessfulRegister = async () => {
-    setLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      router.replace("/(dashboard)/Home")
-    } catch (err) {
-      alert("Registration failed")
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [user, router]);
 
   const handleRegister = async () => {
     if (!name.trim() || !email.includes("@") || password.length < 6) {
-      alert("Please enter valid details.")
-      return
+      setError(
+        "Please enter valid details. Password must be at least 6 characters."
+      );
+      setShowError(true);
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      router.replace("/(dashboard)/Home")
+      const { error: signUpError } = await signUp(email, password, { name });
+
+      if (signUpError) {
+        setError(signUpError.message || "Registration failed");
+        setShowError(true);
+      } else {
+        setShowSuccess(true);
+      }
     } catch (err) {
-      alert("Registration failed")
+      setError("Registration failed");
+      setShowError(true);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const handleGoogleSignUp = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setError("Google authentication failed");
+      setShowError(true);
+    }
+  };
 
   return (
     <PaperProvider theme={lightTheme}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
         <BackgroundPattern />
         <LinearGradient
-          colors={["rgba(66, 133, 244, 0.08)", "rgba(52, 168, 83, 0.05)", "transparent"]}
+          colors={[
+            "rgba(66, 133, 244, 0.08)",
+            "rgba(52, 168, 83, 0.05)",
+            "transparent",
+          ]}
           style={StyleSheet.absoluteFillObject}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -204,12 +224,18 @@ const RegisterScreen = () => {
 
               <Button
                 mode="outlined"
-                onPress={() => promptGoogleSignUp()}
-                disabled={!request || loading}
+                onPress={handleGoogleSignUp}
+                disabled={loading}
                 style={styles.googleButton}
                 contentStyle={styles.googleButtonContent}
                 labelStyle={styles.googleButtonText}
-                icon={() => <MaterialCommunityIcons name="google" size={24} color="#34A853" />}
+                icon={() => (
+                  <MaterialCommunityIcons
+                    name="google"
+                    size={24}
+                    color="#34A853"
+                  />
+                )}
               >
                 Continue with Google
               </Button>
@@ -231,15 +257,62 @@ const RegisterScreen = () => {
                 style={styles.loginButton}
                 labelStyle={styles.loginButtonText}
               >
-                Already have an account? <Text style={styles.loginButtonTextHighlight}>Sign in</Text>
+                Already have an account?{" "}
+                <Text style={styles.loginButtonTextHighlight}>Sign in</Text>
               </Button>
             </MotiView>
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      <Portal>
+        <Dialog
+          visible={showError}
+          onDismiss={() => setShowError(false)}
+          style={styles.dialog}
+        >
+          <Dialog.Title style={styles.dialogTitle}>Error</Dialog.Title>
+          <Dialog.Content>
+            <Text style={styles.dialogContent}>{error}</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setShowError(false)} textColor="#4285F4">
+              OK
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        <Dialog
+          visible={showSuccess}
+          onDismiss={() => {
+            setShowSuccess(false);
+            router.replace("/Login");
+          }}
+          style={styles.dialog}
+        >
+          <Dialog.Title style={styles.dialogTitle}>Success</Dialog.Title>
+          <Dialog.Content>
+            <Text style={styles.dialogContent}>
+              Account created successfully! Please check your email to verify
+              your account.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              onPress={() => {
+                setShowSuccess(false);
+                router.replace("/Login");
+              }}
+              textColor="#4285F4"
+            >
+              OK
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </PaperProvider>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -344,7 +417,22 @@ const styles = StyleSheet.create({
     color: lightTheme.colors.primary,
     fontWeight: "600",
   },
-})
+  dialog: {
+    backgroundColor: lightTheme.colors.surface,
+    borderRadius: 16,
+  },
+  dialogTitle: {
+    color: lightTheme.colors.text,
+    fontSize: 20,
+    letterSpacing: 0.25,
+    fontWeight: "600",
+  },
+  dialogContent: {
+    color: lightTheme.colors.textSecondary,
+    fontSize: 16,
+    letterSpacing: 0.25,
+    lineHeight: 24,
+  },
+});
 
-export default RegisterScreen
-
+export default RegisterScreen;
