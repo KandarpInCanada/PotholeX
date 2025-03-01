@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import {
   View,
   TouchableWithoutFeedback,
@@ -7,91 +7,111 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
-} from "react-native"
-import { useRouter } from "expo-router"
-import { Text, TextInput, Button, PaperProvider, Portal, Dialog } from "react-native-paper"
-import { LinearGradient } from "expo-linear-gradient"
-import { MotiView } from "moti"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
-import Svg, { Defs, Pattern, Rect, Circle } from "react-native-svg"
-import NewRadarLoader from "../animation/RadarLoader"
-import * as Google from "expo-auth-session/providers/google"
-import * as WebBrowser from "expo-web-browser"
-import { lightTheme } from "../theme"
+} from "react-native";
+import { useRouter } from "expo-router";
+import {
+  Text,
+  TextInput,
+  Button,
+  PaperProvider,
+  Portal,
+  Dialog,
+} from "react-native-paper";
+import { LinearGradient } from "expo-linear-gradient";
+import { MotiView } from "moti";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Svg, { Defs, Pattern, Rect, Circle } from "react-native-svg";
+import NewRadarLoader from "../animation/RadarLoader";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
+import { lightTheme } from "../theme";
 
-WebBrowser.maybeCompleteAuthSession()
+WebBrowser.maybeCompleteAuthSession();
 
 const BackgroundPattern = () => (
   <Svg height="100%" width="100%" style={StyleSheet.absoluteFillObject}>
     <Defs>
-      <Pattern id="pattern" patternUnits="userSpaceOnUse" width="60" height="60" patternTransform="rotate(45)">
+      <Pattern
+        id="pattern"
+        patternUnits="userSpaceOnUse"
+        width="60"
+        height="60"
+        patternTransform="rotate(45)"
+      >
         <Circle cx="30" cy="30" r="1.5" fill="rgba(66, 133, 244, 0.1)" />
       </Pattern>
     </Defs>
     <Rect width="100%" height="100%" fill="url(#pattern)" />
   </Svg>
-)
+);
 
 const LoginScreen = () => {
-  const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [secureText, setSecureText] = useState(true)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [showError, setShowError] = useState(false)
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [secureText, setSecureText] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showError, setShowError] = useState(false);
   const [request, response, promptGoogleLogin] = Google.useAuthRequest({
     clientId: "YOUR_GOOGLE_WEB_CLIENT_ID",
     iosClientId: "YOUR_GOOGLE_IOS_CLIENT_ID",
     androidClientId: "YOUR_GOOGLE_ANDROID_CLIENT_ID",
-  })
+  });
   useEffect(() => {
     if (response?.type === "success") {
-      handleSuccessfulLogin()
+      handleSuccessfulLogin();
     }
-  }, [response])
+  }, [response]);
   const handleSuccessfulLogin = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      router.replace("/(dashboard)/Home")
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      router.replace("/(dashboard)/Home");
     } catch (err) {
-      setError("Authentication failed")
-      setShowError(true)
+      setError("Authentication failed");
+      setShowError(true);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError("Please enter your credentials")
-      setShowError(true)
-      return
+      setError("Please enter your credentials");
+      setShowError(true);
+      return;
     }
-    setLoading(true)
+    setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       if (email === "test@example.com" && password === "password") {
-        router.replace("/(dashboard)/Home")
+        router.replace("/(dashboard)/Home");
       } else {
-        setError("Invalid credentials")
-        setShowError(true)
+        setError("Invalid credentials");
+        setShowError(true);
       }
     } catch (err) {
-      setError("Authentication failed")
-      setShowError(true)
+      setError("Authentication failed");
+      setShowError(true);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <PaperProvider theme={lightTheme}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
         <BackgroundPattern />
         <LinearGradient
-          colors={["rgba(66, 133, 244, 0.08)", "rgba(52, 168, 83, 0.05)", "transparent"]}
+          colors={[
+            "rgba(66, 133, 244, 0.08)",
+            "rgba(52, 168, 83, 0.05)",
+            "transparent",
+          ]}
           style={StyleSheet.absoluteFillObject}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -108,7 +128,7 @@ const LoginScreen = () => {
               }}
               style={styles.headerContainer}
             >
-              <NewRadarLoader/>
+              <NewRadarLoader />
               <Text style={styles.title}>Welcome Back</Text>
               <Text style={styles.subtitle}>Sign in to your account</Text>
             </MotiView>
@@ -189,7 +209,13 @@ const LoginScreen = () => {
                 style={styles.googleButton}
                 contentStyle={styles.googleButtonContent}
                 labelStyle={styles.googleButtonText}
-                icon={() => <MaterialCommunityIcons name="google" size={24} color="#673AB7" />}
+                icon={() => (
+                  <MaterialCommunityIcons
+                    name="google"
+                    size={24}
+                    color="#673AB7"
+                  />
+                )}
               >
                 Continue with Google
               </Button>
@@ -210,14 +236,19 @@ const LoginScreen = () => {
                 style={styles.registerButton}
                 labelStyle={styles.registerButtonText}
               >
-                Don't have an account? <Text style={styles.registerButtonTextHighlight}>Sign up</Text>
+                Don't have an account?{" "}
+                <Text style={styles.registerButtonTextHighlight}>Sign up</Text>
               </Button>
             </MotiView>
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
       <Portal>
-        <Dialog visible={showError} onDismiss={() => setShowError(false)} style={styles.dialog}>
+        <Dialog
+          visible={showError}
+          onDismiss={() => setShowError(false)}
+          style={styles.dialog}
+        >
           <Dialog.Title style={styles.dialogTitle}>Error</Dialog.Title>
           <Dialog.Content>
             <Text style={styles.dialogContent}>{error}</Text>
@@ -230,8 +261,8 @@ const LoginScreen = () => {
         </Dialog>
       </Portal>
     </PaperProvider>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -353,6 +384,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.25,
     lineHeight: 24,
   },
-})
+});
 
-export default LoginScreen
+export default LoginScreen;

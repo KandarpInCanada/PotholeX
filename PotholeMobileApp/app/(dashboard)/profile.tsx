@@ -1,16 +1,11 @@
 import React, { useState } from "react";
-import { 
-  View, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Alert 
-} from "react-native";
-import { 
-  Button, 
-  Text, 
-  Avatar, 
-  Divider, 
-  PaperProvider 
+import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import {
+  Button,
+  Text,
+  Avatar,
+  Divider,
+  PaperProvider,
 } from "react-native-paper";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -65,15 +60,18 @@ export default function ProfileScreen() {
 
           {/* Action Buttons */}
           <View style={styles.actions}>
-            <TouchableOpacity onPress={handleEditProfile} style={styles.editProfileButton}>
+            <TouchableOpacity
+              onPress={handleEditProfile}
+              style={styles.editProfileButton}
+            >
               <Text style={styles.editProfileText}>Edit Profile</Text>
             </TouchableOpacity>
 
-            <Button 
-              mode="contained" 
-              onPress={handleLogout} 
+            <Button
+              mode="contained"
+              onPress={handleLogout}
               style={styles.logoutButton}
-              labelStyle={{ color: lightTheme.colors.buttonText }} 
+              labelStyle={{ color: lightTheme.colors.buttonText }}
               buttonColor={lightTheme.colors.buttonBackground}
             >
               Logout
