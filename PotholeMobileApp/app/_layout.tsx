@@ -2,6 +2,8 @@ import { Stack } from "expo-router";
 import React from "react";
 import { View, ActivityIndicator } from "react-native";
 import { AuthProvider, useAuth } from "../context/auth-context";
+import { Provider as PaperProvider } from "react-native-paper";
+import { lightTheme } from "./theme";
 
 function RootLayoutInner() {
   const { user, loading } = useAuth();
@@ -32,7 +34,9 @@ function RootLayoutInner() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootLayoutInner />
+      <PaperProvider theme={lightTheme}>
+        <RootLayoutInner />
+      </PaperProvider>
     </AuthProvider>
   );
 }

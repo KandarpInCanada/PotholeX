@@ -7,15 +7,13 @@ export default function DashboardLayout() {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
-          if (route.name === "Home") {
+          if (route.name === "home") {
             iconName = focused ? "home" : "home-outline";
           } else if (route.name === "AddReport") {
             iconName = focused ? "add-circle" : "add-circle-outline";
           } else if (route.name === "ReportList") {
             iconName = focused ? "document-text" : "document-text-outline";
-          } else if (route.name === "Profile") {
-            iconName = focused ? "person-circle" : "person-circle-outline";
-          } else if (route.name === "Map") {
+          } else if (route.name === "map") {
             iconName = focused ? "map" : "map-outline";
           }
           return <Ionicons name={iconName as any} size={size} color={color} />;
@@ -25,11 +23,19 @@ export default function DashboardLayout() {
         headerShown: false, // Hide header globally
       })}
     >
-      <Tabs.Screen name="Home" options={{ title: "Home", headerShown: false }} />
-      <Tabs.Screen name="AddReport" options={{ title: "Add Report", headerShown: false }} />
-      <Tabs.Screen name="ReportList" options={{ title: "Reports", headerShown: false }} />
-      <Tabs.Screen name="Map" options={{ title: "Map", headerShown: false }} /> {/* New Map tab */}
-      <Tabs.Screen name="Profile" options={{ title: "Profile", headerShown: false }} />
+      <Tabs.Screen
+        name="home"
+        options={{ title: "Home", headerShown: false }}
+      />
+      <Tabs.Screen
+        name="AddReport"
+        options={{ title: "Add Report", headerShown: false }}
+      />
+      <Tabs.Screen
+        name="ReportList"
+        options={{ title: "Reports", headerShown: false }}
+      />
+      <Tabs.Screen name="map" options={{ title: "Map", headerShown: false }} />{" "}
     </Tabs>
   );
 }

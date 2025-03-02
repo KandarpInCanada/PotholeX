@@ -83,7 +83,7 @@ const GetStartedScreen = () => {
         animated: true,
       });
     } else {
-      router.replace("/Login");
+      router.replace("/login");
     }
   };
 
@@ -118,7 +118,10 @@ const GetStartedScreen = () => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.skipButton} onPress={() => router.replace("/login")}>
+      <TouchableOpacity
+        style={styles.skipButton}
+        onPress={() => router.replace("/login")}
+      >
         <Text style={styles.skipText}>Skip</Text>
       </TouchableOpacity>
 
@@ -139,22 +142,58 @@ const GetStartedScreen = () => {
         {onboardingData.map((_, index) => {
           const dotStyle = useAnimatedStyle(() => {
             const input = scrollX.value / windowWidth;
-            const opacity = interpolate(input, [index - 1, index, index + 1], [0.3, 1, 0.3], "clamp");
-            const width = interpolate(input, [index - 1, index, index + 1], [8, 24, 8], "clamp");
+            const opacity = interpolate(
+              input,
+              [index - 1, index, index + 1],
+              [0.3, 1, 0.3],
+              "clamp"
+            );
+            const width = interpolate(
+              input,
+              [index - 1, index, index + 1],
+              [8, 24, 8],
+              "clamp"
+            );
             return { opacity, width };
           });
 
-          return <Animated.View key={index.toString()} style={[styles.dot, dotStyle]} />;
+          return (
+            <Animated.View
+              key={index.toString()}
+              style={[styles.dot, dotStyle]}
+            />
+          );
         })}
       </View>
 
-      <MotiView from={{ opacity: 0, translateY: 50 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 700, delay: 700 }} style={styles.bottomContainer}>
+      <MotiView
+        from={{ opacity: 0, translateY: 50 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: "timing", duration: 700, delay: 700 }}
+        style={styles.bottomContainer}
+      >
         <TouchableOpacity style={styles.button} onPress={handleNext}>
-          <LinearGradient colors={onboardingData[currentIndex].gradient} style={styles.buttonGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+          <LinearGradient
+            colors={onboardingData[currentIndex].gradient}
+            style={styles.buttonGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
             <Text style={styles.buttonText}>
-              {currentIndex === onboardingData.length - 1 ? "Get Started" : "Next"}
+              {currentIndex === onboardingData.length - 1
+                ? "Get Started"
+                : "Next"}
             </Text>
-            <MaterialCommunityIcons name={currentIndex === onboardingData.length - 1 ? "arrow-right-circle" : "arrow-right"} size={24} color="white" style={styles.buttonIcon} />
+            <MaterialCommunityIcons
+              name={
+                currentIndex === onboardingData.length - 1
+                  ? "arrow-right-circle"
+                  : "arrow-right"
+              }
+              size={24}
+              color="white"
+              style={styles.buttonIcon}
+            />
           </LinearGradient>
         </TouchableOpacity>
       </MotiView>
@@ -241,10 +280,10 @@ const styles = StyleSheet.create({
   },
   buttonGradient: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-},
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
 
 export default GetStartedScreen;
