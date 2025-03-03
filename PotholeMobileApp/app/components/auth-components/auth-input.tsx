@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { TextInput } from "react-native-paper";
-import { lightTheme } from "../../app/theme";
+import { lightTheme } from "../../../app/theme";
 
 interface AuthInputProps {
   label: string;

@@ -7,7 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { lightTheme } from "../../app/theme";
+import { lightTheme } from "../../../app/theme";
 import { BackgroundPattern } from "./background-pattern";
 import { LinearGradient } from "expo-linear-gradient";
 

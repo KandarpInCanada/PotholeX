@@ -1,35 +1,25 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   View,
-  Text,
   StyleSheet,
-  Image,
-  TouchableOpacity,
-  Keyboard,
   TouchableWithoutFeedback,
+  Keyboard,
   Pressable,
   ActionSheetIOS,
   Platform,
   Alert,
   ScrollView,
+  Text,
   StatusBar,
 } from "react-native";
-import {
-  Button,
-  TextInput,
-  HelperText,
-  ActivityIndicator,
-  IconButton,
-} from "react-native-paper";
+import { Button, ActivityIndicator, IconButton } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
-import MapView, { Marker } from "react-native-maps";
 import { useRouter, useFocusEffect } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MotiView } from "moti";
 import * as Location from "expo-location";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { saveReport, uploadReportImages } from "../services/report-service";
 import {
   type PotholeReport,
@@ -40,21 +30,13 @@ import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "../../lib/supabase";
 
-const POTHOLE_CATEGORIES = [
-  "Surface Break",
-  "Deep Hole",
-  "Cracking",
-  "Edge Damage",
-  "Sinkhole",
-];
-
-const ROAD_CONDITIONS = ["Dry", "Wet", "Snow/Ice", "Construction"];
-
-const SEVERITY_LEVELS = [
-  { label: SeverityLevel.LOW, color: "#10B981", icon: "alert-circle-outline" },
-  { label: SeverityLevel.MEDIUM, color: "#F59E0B", icon: "alert-circle" },
-  { label: SeverityLevel.DANGER, color: "#DC2626", icon: "alert-octagon" },
-];
+import ImageGallery from "../components/dashboard-components/add-report/image-gallery";
+import DescriptionInput from "../components/dashboard-components/add-report/description-input";
+import CategorySelector from "../components/dashboard-components/add-report/category-selector";
+import SeveritySelector from "../components/dashboard-components/add-report/severity-selector";
+import RoadConditionSelector from "../components/dashboard-components/add-report/road-condition-selector";
+import LocationPicker from "../components/dashboard-components/add-report/location-picker";
+import SectionHeader from "../components/dashboard-components/add-report/section-header";
 
 export default function AddReportScreen() {
   const router = useRouter();
@@ -72,7 +54,6 @@ export default function AddReportScreen() {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [pressed, setPressed] = useState(false);
   const [reportId, setReportId] = useState<string | null>(null);
-  const mapRef = useRef<MapView>(null);
 
   useEffect(() => {
     if (!reportId) {
@@ -80,6 +61,7 @@ export default function AddReportScreen() {
     }
   }, [reportId]);
 
+  // This function is now only used for initial location fetching
   const fetchLocation = useCallback(async () => {
     try {
       setLoading(true);
@@ -107,14 +89,6 @@ export default function AddReportScreen() {
         } ${postalCode || ""}, ${country || ""}`;
         setAddress(formattedAddress);
       }
-
-      if (mapRef.current) {
-        mapRef.current.animateToRegion({
-          ...newLocation,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        });
-      }
     } catch (error) {
       Alert.alert("Error", "Failed to fetch location. Please try again.");
     } finally {
@@ -123,6 +97,8 @@ export default function AddReportScreen() {
   }, []);
 
   useEffect(() => {
+    // Only fetch location initially to set default values
+    // The LocationPicker component will handle updates
     fetchLocation();
   }, [fetchLocation]);
 
@@ -341,253 +317,65 @@ export default function AddReportScreen() {
               <Text style={styles.title}>Report a Pothole</Text>
               {loading && <ActivityIndicator color="#0284c7" size={24} />}
             </View>
+
             <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <MaterialCommunityIcons
-                  name="camera"
-                  size={20}
-                  color="#0284c7"
-                />
-                <Text style={styles.sectionTitle}>Photos</Text>
-                <Text style={styles.required}>*Required</Text>
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.imageGallery}
-              >
-                <TouchableOpacity
-                  style={styles.addImageButton}
-                  onPress={handleImagePicker}
-                >
-                  <MaterialCommunityIcons
-                    name="camera-plus"
-                    size={28}
-                    color="#0284c7"
-                  />
-                  <Text style={styles.addImageSubtext}>
-                    Add Photo{"\n"}({images.length}/5)
-                  </Text>
-                </TouchableOpacity>
-                {images.map((uri, index) => (
-                  <View key={index} style={styles.imageContainer}>
-                    <Image source={{ uri }} style={styles.thumbnailImage} />
-                    <TouchableOpacity
-                      style={styles.removeImageButton}
-                      onPress={() => removeImage(index)}
-                    >
-                      <MaterialCommunityIcons
-                        name="close-circle"
-                        size={24}
-                        color="#DC2626"
-                      />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </ScrollView>
-              {errors.images && (
-                <HelperText
-                  type="error"
-                  visible={true}
-                  style={styles.errorText}
-                >
-                  {errors.images}
-                </HelperText>
-              )}
+              <SectionHeader icon="camera" title="Photos" required />
+              <ImageGallery
+                images={images}
+                onAddImage={handleImagePicker}
+                onRemoveImage={removeImage}
+                error={errors.images}
+              />
             </View>
+
             <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <MaterialCommunityIcons name="text" size={20} color="#0284c7" />
-                <Text style={styles.sectionTitle}>Description</Text>
-                <Text style={styles.required}>*Required</Text>
-              </View>
-              <TextInput
-                mode="outlined"
-                placeholder="Describe the pothole size, depth, and any hazards..."
+              <SectionHeader icon="text" title="Description" required />
+              <DescriptionInput
                 value={description}
                 onChangeText={setDescription}
-                multiline
-                numberOfLines={4}
-                style={styles.input}
-                outlineStyle={styles.inputOutline}
-                outlineColor={errors.description ? "#DC2626" : "#E2E8F0"}
-                activeOutlineColor="#0284c7"
-                error={!!errors.description}
+                error={errors.description}
               />
-              {errors.description && (
-                <HelperText
-                  type="error"
-                  visible={true}
-                  style={styles.errorText}
-                >
-                  {errors.description}
-                </HelperText>
-              )}
             </View>
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <MaterialCommunityIcons
-                  name="shape"
-                  size={20}
-                  color="#0284c7"
-                />
-                <Text style={styles.sectionTitle}>Pothole Type</Text>
-                <Text style={styles.required}>*Required</Text>
-              </View>
-              <View style={styles.categoryGrid}>
-                {POTHOLE_CATEGORIES.map((cat) => (
-                  <TouchableOpacity
-                    key={cat}
-                    style={[
-                      styles.categoryButton,
-                      category === cat && styles.selectedCategoryButton,
-                    ]}
-                    onPress={() => setCategory(cat)}
-                  >
-                    <Text
-                      style={[
-                        styles.categoryButtonText,
-                        category === cat && styles.selectedCategoryButtonText,
-                      ]}
-                    >
-                      {cat}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              {errors.category && (
-                <HelperText
-                  type="error"
-                  visible={true}
-                  style={styles.errorText}
-                >
-                  {errors.category}
-                </HelperText>
-              )}
-            </View>
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <MaterialCommunityIcons
-                  name="alert"
-                  size={20}
-                  color="#0284c7"
-                />
-                <Text style={styles.sectionTitle}>Severity Level</Text>
-              </View>
-              <View style={styles.severityContainer}>
-                {SEVERITY_LEVELS.map((level) => (
-                  <MotiView
-                    key={level.label}
-                    from={{ scale: 1 }}
-                    animate={{ scale: severity === level.label ? 1.05 : 1 }}
-                    transition={{ type: "spring" }}
-                    style={styles.severityItem}
-                  >
-                    <TouchableOpacity
-                      style={[
-                        styles.severityButton,
-                        { borderColor: level.color },
-                        severity === level.label && {
-                          backgroundColor: level.color,
-                        },
-                      ]}
-                      onPress={() => setSeverity(level.label as SeverityLevel)}
-                    >
-                      <MaterialCommunityIcons
-                        name={level.icon as any}
-                        size={24}
-                        color={
-                          severity === level.label ? "#FFFFFF" : level.color
-                        }
-                      />
-                      <Text
-                        style={[
-                          styles.severityText,
-                          {
-                            color:
-                              severity === level.label ? "#FFFFFF" : "#0F172A",
-                          },
-                        ]}
-                      >
-                        {level.label}
-                      </Text>
-                    </TouchableOpacity>
-                  </MotiView>
-                ))}
-              </View>
-            </View>
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <MaterialCommunityIcons name="road" size={20} color="#0284c7" />
-                <Text style={styles.sectionTitle}>Road Condition</Text>
-              </View>
-              <View style={styles.conditionContainer}>
-                {ROAD_CONDITIONS.map((condition) => (
-                  <TouchableOpacity
-                    key={condition}
-                    style={[
-                      styles.conditionButton,
-                      roadCondition === condition &&
-                        styles.selectedConditionButton,
-                    ]}
-                    onPress={() => setRoadCondition(condition)}
-                  >
-                    <Text
-                      style={[
-                        styles.conditionButtonText,
-                        roadCondition === condition &&
-                          styles.selectedConditionButtonText,
-                      ]}
-                    >
-                      {condition}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <MaterialCommunityIcons
-                  name="map-marker"
-                  size={20}
-                  color="#0284c7"
-                />
-                <Text style={styles.sectionTitle}>Location</Text>
-              </View>
-              <View style={styles.mapContainer}>
-                <MapView
-                  ref={mapRef}
-                  style={styles.map}
-                  initialRegion={{
-                    ...location,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                  }}
-                  onPress={(e) => setLocation(e.nativeEvent.coordinate)}
-                >
-                  <Marker
-                    coordinate={location}
-                    title="Pothole Location"
-                    description="Drag to adjust location"
-                    draggable
-                    onDragEnd={(e) => setLocation(e.nativeEvent.coordinate)}
-                  />
-                </MapView>
-                <TouchableOpacity
-                  style={styles.recenterButton}
-                  onPress={fetchLocation}
-                  disabled={loading}
-                >
-                  <MaterialCommunityIcons
-                    name="crosshairs-gps"
-                    size={24}
-                    color="#0284c7"
-                  />
-                </TouchableOpacity>
-              </View>
 
-              <Text style={styles.address}>{address}</Text>
+            <View style={styles.section}>
+              <SectionHeader icon="shape" title="Pothole Type" required />
+              <CategorySelector
+                selectedCategory={category}
+                onSelectCategory={setCategory}
+                error={errors.category}
+              />
             </View>
+
+            <View style={styles.section}>
+              <SectionHeader icon="alert" title="Severity Level" />
+              <SeveritySelector
+                selectedSeverity={severity}
+                onSelectSeverity={setSeverity}
+              />
+            </View>
+
+            <View style={styles.section}>
+              <SectionHeader icon="road" title="Road Condition" />
+              <RoadConditionSelector
+                selectedCondition={roadCondition}
+                onSelectCondition={setRoadCondition}
+              />
+            </View>
+
+            <View style={styles.section}>
+              <SectionHeader icon="map-marker" title="Location" />
+              <LocationPicker
+                initialLocation={location}
+                address={address}
+                onLocationChange={(newLocation) => {
+                  setLocation(newLocation);
+                }}
+                onAddressChange={(newAddress) => {
+                  setAddress(newAddress);
+                }}
+              />
+            </View>
+
             <View style={styles.actionButtons}>
               <Pressable
                 onPressIn={() => setPressed(true)}
@@ -649,28 +437,8 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     flex: 1,
   },
-  progressContainer: {
-    marginBottom: 16,
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: "#E2E8F0",
-    borderRadius: 3,
-    overflow: "hidden",
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#0284c7",
-    borderRadius: 3,
-  },
-  progressText: {
-    fontSize: 12,
-    color: "#64748B",
-    textAlign: "right",
-  },
   section: {
-    marginBottom: 24,
+    marginBottom: 5,
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
@@ -679,183 +447,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 5,
     elevation: 1,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#0F172A",
-    marginLeft: 8,
-    flex: 1,
-  },
-  required: {
-    fontSize: 12,
-    color: "#DC2626",
-    fontWeight: "500",
-  },
-  imageGallery: {
-    flexGrow: 0,
-    marginBottom: 8,
-  },
-  addImageButton: {
-    width: 110,
-    height: 110,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F1F5F9",
-    borderRadius: 12,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderStyle: "dashed",
-  },
-  addImageSubtext: {
-    fontSize: 12,
-    color: "#64748B",
-    textAlign: "center",
-    marginTop: 6,
-  },
-  imageContainer: {
-    position: "relative",
-    marginRight: 12,
-  },
-  thumbnailImage: {
-    width: 110,
-    height: 110,
-    borderRadius: 12,
-  },
-  removeImageButton: {
-    position: "absolute",
-    top: -8,
-    right: -8,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
-  },
-  errorText: {
-    color: "#DC2626",
-    fontSize: 12,
-    marginTop: 4,
-  },
-  input: {
-    backgroundColor: "#FFFFFF",
-    fontSize: 15,
-  },
-  inputOutline: {
-    borderRadius: 12,
-  },
-  categoryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  categoryButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: "#F1F5F9",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  selectedCategoryButton: {
-    backgroundColor: "#0284c7",
-    borderColor: "#0284c7",
-  },
-  categoryButtonText: {
-    fontSize: 14,
-    color: "#334155",
-    fontWeight: "500",
-  },
-  selectedCategoryButtonText: {
-    color: "#FFFFFF",
-  },
-  severityContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  severityItem: {
-    flex: 1,
-    maxWidth: "32%",
-  },
-  severityButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    backgroundColor: "transparent",
-  },
-  severityText: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 6,
-  },
-  conditionContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  conditionButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: "#F1F5F9",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  selectedConditionButton: {
-    backgroundColor: "#0284c7",
-    borderColor: "#0284c7",
-  },
-  conditionButtonText: {
-    fontSize: 14,
-    color: "#334155",
-    fontWeight: "500",
-  },
-  selectedConditionButtonText: {
-    color: "#FFFFFF",
-  },
-  mapContainer: {
-    width: "100%",
-    height: 200,
-    borderRadius: 12,
-    overflow: "hidden",
-    marginBottom: 8,
-  },
-  map: {
-    width: "100%",
-    height: "100%",
-  },
-  recenterButton: {
-    position: "absolute",
-    bottom: 16,
-    right: 16,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  address: {
-    fontSize: 14,
-    color: "#334155",
-    marginTop: 8,
-    marginBottom: 4,
-    fontStyle: "italic",
   },
   actionButtons: {
     marginBottom: 24,

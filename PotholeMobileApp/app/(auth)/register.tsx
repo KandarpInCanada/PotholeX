@@ -7,22 +7,21 @@ import { Portal } from "react-native-paper";
 import { useAuth } from "../../context/auth-context";
 import { useGoogleAuth } from "../services/google-auth";
 import { useFormState } from "../hooks/use-form-state";
-import { AuthContainer } from "../components/auth-container";
-import { AuthHeader } from "../components/auth-header";
-import { AuthForm } from "../components/auth-form";
-import { AuthInput } from "../components/auth-input";
-import AuthButton from "../components/auth-button";
-import { AuthDivider } from "../components/auth-divider";
-import { GoogleButton } from "../components/google-button";
-import { AuthFooter } from "../components/auth-footer";
-import { AuthDialog } from "../components/auth-dialog";
+import { AuthContainer } from "../components/auth-components/auth-container";
+import { AuthHeader } from "../components/auth-components/auth-header";
+import { AuthForm } from "../components/auth-components/auth-form";
+import { AuthInput } from "../components/auth-components/auth-input";
+import AuthButton from "../components/auth-components/auth-button";
+import { AuthDivider } from "../components/auth-components/auth-divider";
+import { GoogleButton } from "../components/auth-components/google-button";
+import { AuthFooter } from "../components/auth-components/auth-footer";
+import { AuthDialog } from "../components/auth-components/auth-dialog";
 
 const RegisterScreen = () => {
   const router = useRouter();
   const { signUp, user } = useAuth();
   const { signInWithGoogle, googleUser, googleError, googleAuthLoading } =
     useGoogleAuth();
-
   const {
     values,
     handleChange,
@@ -34,31 +33,25 @@ const RegisterScreen = () => {
     email: "",
     password: "",
   });
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showError, setShowError] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Initialize secure text entry for password
   useEffect(() => {
     initSecureTextEntry("password", true);
-  }, [initSecureTextEntry]); // Added initSecureTextEntry to dependencies
+  }, [initSecureTextEntry]);
 
-  // Redirect if user is already logged in
   useEffect(() => {
     if (user) {
       router.replace("/(dashboard)/home");
     }
   }, [user, router]);
 
-  // Handle Google auth result
   useEffect(() => {
     if (googleUser) {
-      // Your auth context should handle this user data
       console.log("Google user authenticated:", googleUser);
     }
-
     if (googleError) {
       setError(googleError);
       setShowError(true);
@@ -77,7 +70,6 @@ const RegisterScreen = () => {
       setShowError(true);
       return;
     }
-
     setLoading(true);
     try {
       const { error: signUpError } = await signUp(

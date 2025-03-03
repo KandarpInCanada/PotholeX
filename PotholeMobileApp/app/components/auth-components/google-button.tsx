@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import AuthButton from "../components/auth-button";
+import AuthButton from "../auth-components/auth-button";
 
 interface GoogleButtonProps {
   onPress: () => void;

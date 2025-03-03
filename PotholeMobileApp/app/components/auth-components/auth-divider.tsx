@@ -1,6 +1,6 @@
 import { View, StyleSheet } from "react-native";
 import { Text } from "react-native-paper";
-import { lightTheme } from "../../app/theme";
+import { lightTheme } from "../../../app/theme";
 
 export const AuthDivider = ({ text = "or" }: { text?: string }) => {
   return (

@@ -2,7 +2,7 @@ import type React from "react";
 import { StyleSheet } from "react-native";
 import { Text } from "react-native-paper";
 import { MotiView } from "moti";
-import { lightTheme } from "../../app/theme";
+import { lightTheme } from "../../../app/theme";
 
 interface AuthHeaderProps {
   title: string;

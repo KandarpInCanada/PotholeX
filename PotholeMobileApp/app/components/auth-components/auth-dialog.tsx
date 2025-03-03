@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { Text, Button, Dialog } from "react-native-paper";
-import { lightTheme } from "../../app/theme";
+import { lightTheme } from "../../../app/theme";
 
 interface AuthDialogProps {
   visible: boolean;
