@@ -42,7 +42,6 @@ const STATUS_COLORS = {
   [ReportStatus.IN_PROGRESS]: "#2563EB",
   [ReportStatus.FIXED]: "#059669",
   [ReportStatus.REJECTED]: "#6B7280",
-  [ReportStatus.DRAFT]: "#9CA3AF",
 };
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -52,7 +51,6 @@ const STATUS_ICONS: Record<ReportStatus, IconName> = {
   [ReportStatus.IN_PROGRESS]: "progress-clock",
   [ReportStatus.FIXED]: "check-circle",
   [ReportStatus.REJECTED]: "close-circle",
-  [ReportStatus.DRAFT]: "pencil-outline",
 };
 
 export default function ReportListScreen() {
@@ -237,36 +235,6 @@ export default function ReportListScreen() {
               >
                 {item.severity}
               </Chip>
-
-              {item.status === ReportStatus.DRAFT && (
-                <View style={styles.actionButtons}>
-                  <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() =>
-                      router.push(`/dashboard/edit-report/${item.id}`)
-                    }
-                  >
-                    <MaterialCommunityIcons
-                      name="pencil"
-                      size={16}
-                      color="#0284c7"
-                    />
-                    <Text style={styles.editButtonText}>Edit</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => item.id && handleDeleteReport(item.id)}
-                  >
-                    <MaterialCommunityIcons
-                      name="delete"
-                      size={16}
-                      color="#DC2626"
-                    />
-                    <Text style={styles.deleteButtonText}>Delete</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
             </View>
           </View>
         </View>
@@ -304,7 +272,7 @@ export default function ReportListScreen() {
             icon="plus"
             size={24}
             iconColor="#0284c7"
-            onPress={() => router.push("/dashboard/add-report")}
+            onPress={() => router.push("/(dashboard)/AddReport")}
           />
         </View>
 
@@ -325,7 +293,6 @@ export default function ReportListScreen() {
           contentContainerStyle={styles.filterContent}
         >
           {renderFilterButton("all", "All")}
-          {renderFilterButton(ReportStatus.DRAFT, "Drafts")}
           {renderFilterButton(ReportStatus.SUBMITTED, "Submitted")}
           {renderFilterButton(ReportStatus.IN_PROGRESS, "In Progress")}
           {renderFilterButton(ReportStatus.FIXED, "Fixed")}

@@ -17,16 +17,10 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
       <Text style={styles.title}>{title}</Text>
       <View style={styles.headerActions}>
         <IconButton
-          icon="tune-vertical"
-          size={24}
-          iconColor="#0284c7"
-          onPress={() => router.push("/dashboard/filters")}
-        />
-        <IconButton
           icon="map"
           size={24}
           iconColor="#0284c7"
-          onPress={() => router.push("/dashboard/map")}
+          onPress={() => router.push("/(dashboard)/map")}
         />
       </View>
     </View>

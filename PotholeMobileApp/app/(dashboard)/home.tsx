@@ -122,7 +122,7 @@ const HomeScreen: React.FC = () => {
         icon="plus"
         style={styles.fab}
         color="#FFFFFF"
-        onPress={() => router.push("/dashboard/add-report")}
+        onPress={() => router.push("/(dashboard)/AddReport")}
       />
     </SafeAreaView>
   );

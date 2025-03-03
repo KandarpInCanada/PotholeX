@@ -9,14 +9,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
-  Dimensions,
 } from "react-native";
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
 import type { MapPressEvent } from "react-native-maps";
 import * as Location from "expo-location";
 import { MaterialIcons } from "@expo/vector-icons";
-
-const { width, height } = Dimensions.get("window");
 
 interface LocationPickerProps {
   initialLocation?: { latitude: number; longitude: number };
@@ -52,20 +49,22 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   const [locationPermission, setLocationPermission] = useState(false);
   const [displayAddress, setDisplayAddress] = useState(address);
 
+  console.log("Component Rendered: currentLocation:", currentLocation);
+
   const fetchAddress = useCallback(
     async (location: { latitude: number; longitude: number }) => {
+      console.log("Fetching address for location:", location);
       try {
         const geocode = await Location.reverseGeocodeAsync({
           latitude: location.latitude,
           longitude: location.longitude,
         });
-
         if (geocode?.[0]) {
           const { street, city, region, postalCode, country } = geocode[0];
           const formattedAddress = [street, city, region, postalCode, country]
             .filter(Boolean)
             .join(", ");
-
+          console.log("Fetched Address:", formattedAddress);
           setDisplayAddress(formattedAddress);
           onAddressChange?.(formattedAddress);
         }
@@ -78,20 +77,20 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
 
   useEffect(() => {
     const initializeLocation = async () => {
+      console.log("Initializing location...");
       try {
         setLoading(true);
         const { status } = await Location.requestForegroundPermissionsAsync();
-
+        console.log("Location Permission Status:", status);
         if (status === "granted") {
           setLocationPermission(true);
-
           if (initialLocation) {
-            // Use provided initial location
+            console.log("Using initialLocation:", initialLocation);
             setCurrentLocation(initialLocation);
             setSelectedLocation(initialLocation);
             if (!address) fetchAddress(initialLocation);
           } else {
-            // Fetch current location
+            console.log("Fetching current location...");
             const location = await Location.getCurrentPositionAsync({
               accuracy: Location.Accuracy.High,
             });
@@ -99,12 +98,14 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
               latitude: location.coords.latitude,
               longitude: location.coords.longitude,
             };
-
+            console.log("Current Location Fetched:", newLocation);
             setCurrentLocation(newLocation);
             setSelectedLocation(newLocation);
             onLocationChange(newLocation);
             fetchAddress(newLocation);
           }
+        } else {
+          console.warn("Location permission denied.");
         }
       } catch (error) {
         console.error("Error initializing location:", error);
@@ -112,18 +113,16 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         setLoading(false);
       }
     };
-
     initializeLocation();
   }, [initialLocation, address]);
 
   const handleMapPress = useCallback(
     (e: MapPressEvent) => {
       const newLocation = e.nativeEvent.coordinate;
+      console.log("Map Pressed. New Location:", newLocation);
       setSelectedLocation(newLocation);
       onLocationChange(newLocation);
       fetchAddress(newLocation);
-
-      // Center map on selected location
       mapRef.current?.animateToRegion(
         {
           ...newLocation,
@@ -137,9 +136,12 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   );
 
   const handleRecenter = useCallback(async () => {
-    if (!locationPermission) return;
-
+    if (!locationPermission) {
+      console.warn("Cannot recenter, location permission not granted.");
+      return;
+    }
     setLoading(true);
+    console.log("Recentering map...");
     try {
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
@@ -148,12 +150,11 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       };
-
+      console.log("Recentered Location:", newLocation);
       setCurrentLocation(newLocation);
       setSelectedLocation(newLocation);
       onLocationChange(newLocation);
       fetchAddress(newLocation);
-
       mapRef.current?.animateToRegion(
         {
           ...newLocation,
@@ -187,7 +188,10 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
           style={styles.map}
           provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
           onPress={handleMapPress}
-          onMapReady={() => setMapReady(true)}
+          onMapReady={() => {
+            console.log("Map is ready");
+            setMapReady(true);
+          }}
           showsUserLocation={locationPermission}
           showsMyLocationButton={false}
           initialRegion={{
@@ -202,6 +206,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
               draggable
               onDragEnd={(e) => {
                 const newLocation = e.nativeEvent.coordinate;
+                console.log("Marker dragged to:", newLocation);
                 setSelectedLocation(newLocation);
                 onLocationChange(newLocation);
                 fetchAddress(newLocation);

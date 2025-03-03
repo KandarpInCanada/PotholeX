@@ -17,7 +17,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Report status types
 export enum ReportStatus {
-  DRAFT = 'draft',
   SUBMITTED = 'submitted',
   IN_PROGRESS = 'in_progress',
   FIXED = 'fixed',

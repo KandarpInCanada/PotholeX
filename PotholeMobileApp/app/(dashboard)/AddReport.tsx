@@ -303,7 +303,7 @@ export default function AddReportScreen() {
       Alert.alert(
         "Success",
         "Thank you for reporting this pothole. Your report has been submitted successfully.",
-        [{ text: "OK", onPress: () => router.replace("/dashboard/home") }]
+        [{ text: "OK", onPress: () => router.replace("/(dashboard)/home") }]
       );
     } catch (error: any) {
       console.error("Submit report error:", error);
