@@ -1,41 +1,90 @@
-import type React from "react";
-import { StyleSheet } from "react-native";
-import { Searchbar } from "react-native-paper";
+import React from "react";
+import { View, StyleSheet, TextInput, TouchableOpacity } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 interface SearchBarProps {
   value: string;
   onChangeText: (text: string) => void;
+  placeholder?: string;
+  onSubmit?: () => void;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ value, onChangeText }) => {
+const SearchBar: React.FC<SearchBarProps> = ({
+  value,
+  onChangeText,
+  placeholder = "Search reports, locations...",
+  onSubmit,
+}) => {
+  const clearSearch = () => {
+    onChangeText("");
+  };
+
   return (
-    <Searchbar
-      placeholder="Search by location or description..."
-      onChangeText={onChangeText}
-      value={value}
-      style={styles.searchBar}
-      inputStyle={styles.searchInput}
-      iconColor="#64748B"
-      placeholderTextColor="#94A3B8"
-    />
+    <View style={styles.container}>
+      <View style={styles.searchBarWrapper}>
+        <View style={styles.searchBar}>
+          <MaterialCommunityIcons
+            name="magnify"
+            size={22}
+            color="#64748B"
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder={placeholder}
+            placeholderTextColor="#94A3B8"
+            value={value}
+            onChangeText={onChangeText}
+            returnKeyType="search"
+            onSubmitEditing={onSubmit}
+          />
+          {value.length > 0 && (
+            <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+              <MaterialCommunityIcons
+                name="close-circle"
+                size={18}
+                color="#94A3B8"
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  searchBar: {
-    elevation: 0,
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    borderRadius: 14,
-    height: 58,
-    shadowColor: "#0284c7",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 8,
+  container: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    zIndex: 10,
   },
-  searchInput: {
+  searchBarWrapper: {
+    borderRadius: 12,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "transparent",
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    height: 48,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
     fontSize: 15,
-    color: "#334155",
+    fontWeight: "400",
+    color: "#0F172A",
+    padding: 0,
+    backgroundColor: "transparent",
+  },
+  clearButton: {
+    padding: 4,
   },
 });
 

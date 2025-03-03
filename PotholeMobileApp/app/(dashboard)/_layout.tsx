@@ -55,10 +55,7 @@ export default function DashboardLayout() {
         name="AddReport"
         options={{ title: "Add Report", headerShown: false }}
       />
-      <Tabs.Screen
-        name="ReportList"
-        options={{ title: "Reports", headerShown: false }}
-      />
+      <Tabs.Screen name="ReportList" options={{ title: "Reports" }} />
       <Tabs.Screen name="map" options={{ title: "Map", headerShown: false }} />
     </Tabs>
   );

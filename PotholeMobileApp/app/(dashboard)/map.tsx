@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -8,90 +8,183 @@ import {
   TouchableOpacity,
   Text,
   Alert,
+  ActivityIndicator,
 } from "react-native";
-import MapView, { Marker, Polyline, type Region } from "react-native-maps";
+import MapView, {
+  Marker,
+  Polyline,
+  type Region,
+  Callout,
+} from "react-native-maps";
 import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { lightTheme } from "../theme";
 import { getAllReports } from "../services/report-service";
 import type { PotholeReport } from "../../lib/supabase";
 
 // Define types
-type LocationType = {
+interface LocationType {
   latitude: number;
   longitude: number;
-};
+}
 
-type PotholeType = {
-  latitude: number;
-  longitude: number;
+interface MapScreenState {
+  location: LocationType | null;
+  destination: string;
+  routeCoordinates: LocationType[];
+  potholes: PotholeReport[];
+  isLoading: boolean;
+  isRouteFetching: boolean;
+  errorMessage: string | null;
+}
+
+const DEFAULT_LOCATION = {
+  latitude: 37.7749, // San Francisco
+  longitude: -122.4194,
+  latitudeDelta: 0.01,
+  longitudeDelta: 0.01,
 };
 
 export default function MapScreen() {
-  const [location, setLocation] = useState<LocationType | null>(null);
-  const [destination, setDestination] = useState<string>("");
-  const [routeCoordinates, setRouteCoordinates] = useState<LocationType[]>([]);
-  const [potholes, setPotholes] = useState<PotholeReport[]>([]);
+  const [state, setState] = useState<MapScreenState>({
+    location: null,
+    destination: "",
+    routeCoordinates: [],
+    potholes: [],
+    isLoading: true,
+    isRouteFetching: false,
+    errorMessage: null,
+  });
+
   const mapRef = useRef<MapView | null>(null);
 
+  // Destructure state for convenience
+  const {
+    location,
+    destination,
+    routeCoordinates,
+    potholes,
+    isLoading,
+    isRouteFetching,
+    errorMessage,
+  } = state;
+
+  // Initialize map data on component mount
   useEffect(() => {
-    fetchLocation();
+    initMapData();
   }, []);
 
-  const fetchLocation = async () => {
+  // Initialize map with location and pothole data
+  const initMapData = async () => {
+    try {
+      setState((prev) => ({ ...prev, isLoading: true, errorMessage: null }));
+
+      // Get location permission and current position
+      await fetchUserLocation();
+
+      // Fetch pothole data
+      const reports = await getAllReports();
+      setState((prev) => ({
+        ...prev,
+        potholes: reports,
+        isLoading: false,
+      }));
+    } catch (error) {
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        errorMessage: "Failed to initialize map data",
+      }));
+      console.error("Map initialization error:", error);
+    }
+  };
+
+  // Get user's current location
+  const fetchUserLocation = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permission Denied",
-          "Location permission is required for this feature."
-        );
+        setState((prev) => ({
+          ...prev,
+          errorMessage: "Location permission denied",
+        }));
         return;
       }
 
-      const currentLocation = await Location.getCurrentPositionAsync({});
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
       const newLocation = {
         latitude: currentLocation.coords.latitude,
         longitude: currentLocation.coords.longitude,
       };
-      setLocation(newLocation);
+
+      setState((prev) => ({ ...prev, location: newLocation }));
 
       // Move map to current location
-      if (mapRef.current) {
-        const region: Region = {
-          ...newLocation,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        };
-        mapRef.current.animateToRegion(region);
-      }
-
-      // Fetch actual pothole reports from the database
-      const reports = await getAllReports();
-      setPotholes(reports);
+      animateToRegion(newLocation);
     } catch (error) {
-      Alert.alert("Error", "Failed to get current location or pothole data");
-      console.error(error);
+      setState((prev) => ({
+        ...prev,
+        errorMessage: "Failed to get current location",
+      }));
+      console.error("Location fetch error:", error);
     }
   };
 
+  // Animate map to a specific region
+  const animateToRegion = (coords: LocationType, padding = 0) => {
+    if (mapRef.current) {
+      const region: Region = {
+        ...coords,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      };
+      mapRef.current.animateToRegion(region, 1000);
+    }
+  };
+
+  // Handle destination input change
+  const handleDestinationChange = (text: string) => {
+    setState((prev) => ({ ...prev, destination: text }));
+  };
+
+  // Fetch route between current location and destination
   const fetchRoute = async () => {
-    if (!location || !destination) {
+    if (!location) {
+      Alert.alert("Error", "Current location unavailable. Please try again.");
+      return;
+    }
+
+    if (!destination.trim()) {
       Alert.alert("Error", "Please enter a destination");
       return;
     }
 
     try {
+      setState((prev) => ({
+        ...prev,
+        isRouteFetching: true,
+        errorMessage: null,
+      }));
+
+      // Geocode destination address to coordinates
       const geocodeResponse = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
           destination
-        )}`
+        )}&limit=1`
       );
+
       const geocodeData = await geocodeResponse.json();
 
       if (!geocodeData || geocodeData.length === 0) {
-        Alert.alert("Error", "Could not find the destination");
+        setState((prev) => ({
+          ...prev,
+          isRouteFetching: false,
+          errorMessage: "Destination not found",
+        }));
         return;
       }
 
@@ -100,9 +193,11 @@ export default function MapScreen() {
         longitude: Number.parseFloat(geocodeData[0].lon),
       };
 
+      // Get route from OSRM
       const osrmResponse = await fetch(
         `https://router.project-osrm.org/route/v1/driving/${location.longitude},${location.latitude};${destinationLocation.longitude},${destinationLocation.latitude}?overview=full&geometries=geojson`
       );
+
       const osrmData = await osrmResponse.json();
 
       if (
@@ -111,10 +206,15 @@ export default function MapScreen() {
         !osrmData.routes ||
         osrmData.routes.length === 0
       ) {
-        Alert.alert("Error", "Could not fetch the route");
+        setState((prev) => ({
+          ...prev,
+          isRouteFetching: false,
+          errorMessage: "Route calculation failed",
+        }));
         return;
       }
 
+      // Process route coordinates
       const coordinates = osrmData.routes[0].geometry.coordinates.map(
         (coord: [number, number]) => ({
           latitude: coord[1],
@@ -122,19 +222,73 @@ export default function MapScreen() {
         })
       );
 
-      setRouteCoordinates(coordinates);
+      setState((prev) => ({
+        ...prev,
+        routeCoordinates: coordinates,
+        isRouteFetching: false,
+      }));
 
+      // Fit map to show the entire route
       if (mapRef.current && coordinates.length > 0) {
         mapRef.current.fitToCoordinates(coordinates, {
-          edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+          edgePadding: { top: 80, right: 80, bottom: 80, left: 80 },
           animated: true,
         });
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to fetch route");
-      console.error(error);
+      setState((prev) => ({
+        ...prev,
+        isRouteFetching: false,
+        errorMessage: "Failed to calculate route",
+      }));
+      console.error("Route fetch error:", error);
     }
   };
+
+  // Get marker color based on pothole severity
+  const getPotholeMarkerColor = (severity: string) => {
+    switch (severity) {
+      case "Danger":
+        return lightTheme.colors.error;
+      case "Medium":
+        return "#F59E0B"; // Amber
+      default:
+        return lightTheme.colors.success;
+    }
+  };
+
+  // Clear the current route
+  const clearRoute = () => {
+    setState((prev) => ({
+      ...prev,
+      routeCoordinates: [],
+      destination: "",
+    }));
+  };
+
+  // Memoized render function for pothole markers to optimize rendering
+  const renderPotholeMarkers = useCallback(() => {
+    return potholes.map((pothole, index) => (
+      <Marker
+        key={`pothole-${pothole.id || index}`}
+        coordinate={{
+          latitude: pothole.latitude,
+          longitude: pothole.longitude,
+        }}
+        pinColor={getPotholeMarkerColor(pothole.severity)}
+      >
+        <Callout>
+          <View style={styles.callout}>
+            <Text style={styles.calloutTitle}>{pothole.category}</Text>
+            <Text style={styles.calloutDescription}>{pothole.description}</Text>
+            <Text style={styles.calloutSeverity}>
+              Severity: {pothole.severity}
+            </Text>
+          </View>
+        </Callout>
+      </Marker>
+    ));
+  }, [potholes]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["right", "left"]}>
@@ -142,14 +296,13 @@ export default function MapScreen() {
         <MapView
           ref={mapRef}
           style={styles.map}
-          initialRegion={{
-            latitude: 37.7749, // San Francisco coordinates as default
-            longitude: -122.4194,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }}
+          initialRegion={DEFAULT_LOCATION}
           showsUserLocation
-          followsUserLocation
+          showsMyLocationButton={false}
+          showsCompass={true}
+          showsScale={true}
+          showsTraffic={false}
+          loadingEnabled
         >
           {location && (
             <Marker
@@ -159,54 +312,104 @@ export default function MapScreen() {
             />
           )}
 
-          {potholes.map((pothole, index) => (
-            <Marker
-              key={index}
-              coordinate={{
-                latitude: pothole.latitude,
-                longitude: pothole.longitude,
-              }}
-              title={pothole.category}
-              description={pothole.description}
-              pinColor={
-                pothole.severity === "Danger"
-                  ? lightTheme.colors.error
-                  : pothole.severity === "Medium"
-                  ? "#F59E0B"
-                  : lightTheme.colors.success
-              }
-            />
-          ))}
+          {renderPotholeMarkers()}
 
           {routeCoordinates.length > 0 && (
             <Polyline
               coordinates={routeCoordinates}
               strokeColor={lightTheme.colors.primary}
               strokeWidth={4}
+              lineDashPattern={[0]}
             />
           )}
         </MapView>
 
+        {/* Search Bar and Navigation Controls */}
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
             placeholder="Enter destination"
             placeholderTextColor={lightTheme.colors.placeholder}
             value={destination}
-            onChangeText={setDestination}
+            onChangeText={handleDestinationChange}
+            returnKeyType="search"
+            onSubmitEditing={fetchRoute}
+            editable={!isRouteFetching}
           />
-          <TouchableOpacity style={styles.button} onPress={fetchRoute}>
-            <Text style={styles.buttonText}>Get Route</Text>
-          </TouchableOpacity>
+          {destination.length > 0 && !isRouteFetching && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={() => setState((prev) => ({ ...prev, destination: "" }))}
+            >
+              <Ionicons
+                name="close-circle"
+                size={20}
+                color={lightTheme.colors.text}
+              />
+            </TouchableOpacity>
+          )}
+          {isRouteFetching ? (
+            <ActivityIndicator
+              size="small"
+              color={lightTheme.colors.primary}
+              style={styles.routeButton}
+            />
+          ) : (
+            <TouchableOpacity
+              style={[styles.routeButton]}
+              onPress={fetchRoute}
+              disabled={!location || !destination.trim()}
+            >
+              <Text style={styles.buttonText}>Route</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        <TouchableOpacity style={styles.recenterButton} onPress={fetchLocation}>
-          <Ionicons
-            name="locate"
-            size={24}
-            color={lightTheme.colors.background}
-          />
-        </TouchableOpacity>
+        {/* Action Buttons */}
+        <View style={styles.actionButtonsContainer}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={fetchUserLocation}
+          >
+            <Ionicons
+              name="locate"
+              size={22}
+              color={lightTheme.colors.background}
+            />
+          </TouchableOpacity>
+
+          {routeCoordinates.length > 0 && (
+            <TouchableOpacity style={styles.actionButton} onPress={clearRoute}>
+              <MaterialIcons
+                name="clear"
+                size={22}
+                color={lightTheme.colors.background}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Loading Indicator */}
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={lightTheme.colors.primary} />
+          </View>
+        )}
+
+        {/* Error Message */}
+        {errorMessage && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{errorMessage}</Text>
+            <TouchableOpacity
+              style={styles.dismissButton}
+              onPress={() =>
+                setState((prev) => ({ ...prev, errorMessage: null }))
+              }
+            >
+              <Text style={styles.dismissText}>Dismiss</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -226,11 +429,11 @@ const styles = StyleSheet.create({
   inputContainer: {
     position: "absolute",
     top: 10,
-    left: 20,
-    right: 20,
+    left: 15,
+    right: 15,
     backgroundColor: lightTheme.colors.surface,
     borderRadius: lightTheme.roundness,
-    padding: 10,
+    padding: 12,
     flexDirection: "row",
     alignItems: "center",
     elevation: 5,
@@ -238,7 +441,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
-    marginTop: 70,
+    marginTop: 20,
   },
   input: {
     flex: 1,
@@ -246,13 +449,20 @@ const styles = StyleSheet.create({
     borderColor: lightTheme.colors.outline,
     borderWidth: 1,
     borderRadius: lightTheme.roundness / 2,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
+    paddingRight: 35,
     backgroundColor: lightTheme.colors.inputBackground,
     color: lightTheme.colors.text,
   },
-  button: {
+  clearButton: {
+    position: "absolute",
+    right: 85,
+    top: 22,
+    zIndex: 1,
+  },
+  routeButton: {
     marginLeft: 10,
-    backgroundColor: lightTheme.colors.buttonBackground,
+    backgroundColor: lightTheme.colors.primary,
     borderRadius: lightTheme.roundness / 2,
     paddingVertical: 10,
     paddingHorizontal: 15,
@@ -261,14 +471,19 @@ const styles = StyleSheet.create({
     color: lightTheme.colors.buttonText,
     fontWeight: "bold",
   },
-  recenterButton: {
+  actionButtonsContainer: {
     position: "absolute",
     bottom: 30,
-    right: 20,
+    right: 15,
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 10,
+  },
+  actionButton: {
     backgroundColor: lightTheme.colors.primary,
-    borderRadius: 50,
-    width: 50,
-    height: 50,
+    borderRadius: 30,
+    width: 45,
+    height: 45,
     justifyContent: "center",
     alignItems: "center",
     elevation: 5,
@@ -276,5 +491,56 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
+  },
+  loadingContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.2)",
+  },
+  errorContainer: {
+    position: "absolute",
+    bottom: 90,
+    left: 15,
+    right: 15,
+    backgroundColor: "rgba(255, 59, 48, 0.9)",
+    padding: 12,
+    borderRadius: lightTheme.roundness,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  errorText: {
+    color: "white",
+    flex: 1,
+  },
+  dismissButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  dismissText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  callout: {
+    width: 200,
+    padding: 10,
+  },
+  calloutTitle: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  calloutDescription: {
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  calloutSeverity: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 });

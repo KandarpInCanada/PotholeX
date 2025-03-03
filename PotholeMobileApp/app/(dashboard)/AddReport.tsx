@@ -323,26 +323,6 @@ export default function AddReportScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
-      {/* Fixed Header */}
-      <View style={styles.stickyHeader}>
-        <IconButton
-          icon="arrow-left"
-          size={24}
-          onPress={() => router.back()}
-          style={styles.backButton}
-        />
-        <Text style={styles.title}>Report a Pothole</Text>
-        {loading && (
-          <ActivityIndicator
-            color="#0284c7"
-            size={24}
-            style={styles.loadingIndicator}
-          />
-        )}
-      </View>
-
-      {/* Content ScrollView without sticky header indices */}
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
@@ -472,8 +452,8 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "600",
+    fontSize: 26,
+    fontWeight: "800",
     color: "#0F172A",
     flex: 1,
     marginLeft: 8,

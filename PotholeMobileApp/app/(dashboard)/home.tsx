@@ -8,7 +8,6 @@ import { FAB } from "react-native-paper";
 import { useRouter, useFocusEffect } from "expo-router";
 import { getAllReports, likeReport } from "../services/report-service";
 import type { PotholeReport } from "../../lib/supabase";
-import Header from "../components/dashboard-components/home/header";
 import SearchBar from "../components/dashboard-components/home/search-bar";
 import ReportCard from "../components/dashboard-components/home/report-card";
 import EmptyState from "../components/dashboard-components/home/empty-state";
@@ -83,11 +82,7 @@ const HomeScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
-      <View style={styles.header}>
-        <Header title="Pothole Reports" />
-        <SearchBar value={searchQuery} onChangeText={handleSearch} />
-      </View>
+      <SearchBar value={searchQuery} onChangeText={handleSearch} />
       {loading && !refreshing ? (
         <LoadingState />
       ) : filteredReports.length === 0 ? (
@@ -128,21 +123,7 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
     paddingBottom: 0,
-  },
-  header: {
-    paddingTop: 12,
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 0,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 3,
-    zIndex: 1,
   },
   listContainer: {
     padding: 16,
