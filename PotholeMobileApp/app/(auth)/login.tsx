@@ -11,7 +11,7 @@ import { AuthContainer } from "../components/auth-container";
 import { AuthHeader } from "../components/auth-header";
 import { AuthForm } from "../components/auth-form";
 import { AuthInput } from "../components/auth-input";
-import { AuthButton } from "../components/auth-button";
+import AuthButton from "../components/auth-button";
 import { AuthDivider } from "../components/auth-divider";
 import { GoogleButton } from "../components/google-button";
 import { AuthFooter } from "../components/auth-footer";
@@ -58,7 +58,6 @@ const LoginScreen = () => {
       // This is just a placeholder for the integration
       console.log("Google user authenticated:", googleUser);
     }
-
     if (googleError) {
       setError(googleError);
       setShowError(true);
@@ -71,14 +70,12 @@ const LoginScreen = () => {
       setShowError(true);
       return;
     }
-
     setLoading(true);
     try {
       const { error: signInError } = await signIn(
         values.email,
         values.password
       );
-
       if (signInError) {
         setError(signInError.message || "Authentication failed");
         setShowError(true);
@@ -98,7 +95,6 @@ const LoginScreen = () => {
         subtitle="Sign in to your account"
         icon={<NewRadarLoader />}
       />
-
       <AuthForm>
         <View style={styles.inputContainer}>
           <AuthInput
@@ -108,7 +104,6 @@ const LoginScreen = () => {
             keyboardType="email-address"
             icon="email"
           />
-
           <AuthInput
             label="Password"
             value={values.password}
@@ -118,25 +113,20 @@ const LoginScreen = () => {
             icon="lock"
           />
         </View>
-
         <AuthButton onPress={handleLogin} loading={loading}>
           {loading ? "Signing in..." : "Sign In"}
         </AuthButton>
-
         <AuthDivider />
-
         <GoogleButton
           onPress={signInWithGoogle}
           disabled={loading || googleAuthLoading}
         />
       </AuthForm>
-
       <AuthFooter
         text="Don't have an account?"
         linkText="Sign up"
         onPress={() => router.replace("/register")}
       />
-
       <Portal>
         <AuthDialog
           visible={showError}

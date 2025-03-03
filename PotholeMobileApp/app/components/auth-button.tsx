@@ -13,7 +13,7 @@ interface AuthButtonProps {
   disabled?: boolean;
 }
 
-export const AuthButton = ({
+const AuthButton = ({
   onPress,
   loading = false,
   mode = "contained",
@@ -80,3 +80,5 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 });
+
+export default AuthButton;

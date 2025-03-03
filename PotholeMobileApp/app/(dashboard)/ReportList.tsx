@@ -1,249 +1,602 @@
-"use client"
+"use client";
 
-import { useState, useCallback } from "react"
-import { View, Text, StyleSheet, Image, FlatList, Alert } from "react-native"
-import { Chip, Card, Searchbar, IconButton, Button, Dialog, Portal } from "react-native-paper"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { lightTheme } from "../theme"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  StatusBar,
+  RefreshControl,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  Dimensions,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Chip,
+  Searchbar,
+  Button,
+  Divider,
+  IconButton,
+} from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter, useFocusEffect } from "expo-router";
+import { getUserReports, deleteReport } from "../services/report-service";
+import { PotholeReport, ReportStatus, SeverityLevel } from "../../lib/supabase";
+import { formatDistanceToNow } from "date-fns";
+import { MotiView } from "moti";
 
-interface Report {
-  id: string
-  image: any
-  description: string
-  status: "Fixed" | "In Progress" | "Rejected" | "Pending"
-  location: string
-  date: string
-}
+const { width } = Dimensions.get("window");
 
-const sampleReports: Report[] = [
-  {
-    id: "1",
-    image: require("../assets/hole-1.jpeg"),
-    description: "Large pothole on Main Street.",
-    status: "In Progress",
-    location: "Halifax, Nova Scotia",
-    date: "2023-05-15",
-  },
-  {
-    id: "2",
-    image: require("../assets/hole-2.jpeg"),
-    description: "Deep pothole causing car damage.",
-    status: "Fixed",
-    location: "Toronto, Ontario",
-    date: "2023-05-10",
-  },
-  {
-    id: "3",
-    image: require("../assets/hole-2.jpeg"),
-    description: "Dangerous pothole near school area.",
-    status: "Rejected",
-    location: "Vancouver, British Columbia",
-    date: "2023-05-05",
-  },
-  {
-    id: "4",
-    image: require("../assets/hole-1.jpeg"),
-    description: "Small pothole on residential street.",
-    status: "Pending",
-    location: "Montreal, Quebec",
-    date: "2023-05-20",
-  },
-]
+const SEVERITY_COLORS = {
+  [SeverityLevel.DANGER]: "#DC2626",
+  [SeverityLevel.MEDIUM]: "#F59E0B",
+  [SeverityLevel.LOW]: "#10B981",
+};
 
-export default function ReportList() {
-  const [reports, setReports] = useState<Report[]>(sampleReports)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null)
-  const [isDialogVisible, setIsDialogVisible] = useState(false)
+const STATUS_COLORS = {
+  [ReportStatus.SUBMITTED]: "#64748B",
+  [ReportStatus.IN_PROGRESS]: "#2563EB",
+  [ReportStatus.FIXED]: "#059669",
+  [ReportStatus.REJECTED]: "#6B7280",
+  [ReportStatus.DRAFT]: "#9CA3AF",
+};
 
-  const filteredReports = reports.filter(
-    (report) =>
-      report.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.description.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
-  const handleSearch = (query: string) => setSearchQuery(query)
+const STATUS_ICONS: Record<ReportStatus, IconName> = {
+  [ReportStatus.SUBMITTED]: "check-circle-outline",
+  [ReportStatus.IN_PROGRESS]: "progress-clock",
+  [ReportStatus.FIXED]: "check-circle",
+  [ReportStatus.REJECTED]: "close-circle",
+  [ReportStatus.DRAFT]: "pencil-outline",
+};
 
-  const handleRevertReport = useCallback((report: Report) => {
-    setSelectedReport(report)
-    setIsDialogVisible(true)
-  }, [])
+export default function ReportListScreen() {
+  const router = useRouter();
+  const [reports, setReports] = useState<PotholeReport[]>([]);
+  const [filteredReports, setFilteredReports] = useState<PotholeReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<ReportStatus | "all">("all");
 
-  const confirmRevert = useCallback(() => {
-    if (selectedReport) {
-      setReports((prevReports) => prevReports.filter((report) => report.id !== selectedReport.id))
-      Alert.alert("Report Reverted", "Your report has been successfully reverted.")
+  const fetchReports = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await getUserReports();
+      setReports(data);
+      setFilteredReports(data);
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+    } finally {
+      setLoading(false);
     }
-    setIsDialogVisible(false)
-  }, [selectedReport])
+  }, []);
 
-  const getStatusColor = (status: Report["status"]) => {
-    switch (status) {
-      case "Fixed":
-        return "#10B981"
-      case "In Progress":
-        return "#F59E0B"
-      case "Rejected":
-        return "#EF4444"
-      case "Pending":
-        return "#6B7280"
-      default:
-        return lightTheme.colors.primary
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchReports();
+    }, [fetchReports])
+  );
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    filterReports(query, activeFilter);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchReports();
+    setRefreshing(false);
+  };
+
+  const handleFilter = (filter: ReportStatus | "all") => {
+    setActiveFilter(filter);
+    filterReports(searchQuery, filter);
+  };
+
+  const filterReports = (query: string, filter: ReportStatus | "all") => {
+    let filtered = reports;
+
+    // Apply status filter
+    if (filter !== "all") {
+      filtered = filtered.filter((report) => report.status === filter);
     }
-  }
 
-  const renderReport = ({ item }: { item: Report }) => (
-    <Card style={styles.card}>
-      <Image source={item.image} style={styles.image} />
-      <Card.Content>
-        <View style={styles.headerContainer}>
-          <Text style={styles.location}>{item.location}</Text>
-          <Chip style={[styles.chip, { backgroundColor: getStatusColor(item.status) }]} textStyle={styles.chipText}>
+    // Apply search filter
+    if (query.trim() !== "") {
+      filtered = filtered.filter(
+        (report) =>
+          report.location.toLowerCase().includes(query.toLowerCase()) ||
+          report.description.toLowerCase().includes(query.toLowerCase()) ||
+          report.category.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+
+    setFilteredReports(filtered);
+  };
+
+  const handleDeleteReport = async (reportId: string) => {
+    const success = await deleteReport(reportId);
+    if (success) {
+      // Update local state
+      const updatedReports = reports.filter((report) => report.id !== reportId);
+      setReports(updatedReports);
+      setFilteredReports(updatedReports);
+    }
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "";
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  const renderReportItem = ({
+    item,
+    index,
+  }: {
+    item: PotholeReport;
+    index: number;
+  }) => (
+    <MotiView
+      from={{ opacity: 0, translateX: -20 }}
+      animate={{ opacity: 1, translateX: 0 }}
+      transition={{
+        type: "timing",
+        duration: 300,
+        delay: index * 50,
+      }}
+    >
+      <TouchableOpacity
+        style={styles.reportItem}
+        onPress={() => router.push(`/dashboard/report-details/${item.id}`)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.reportHeader}>
+          <View style={styles.reportInfo}>
+            <Text style={styles.reportCategory}>{item.category}</Text>
+            <Text style={styles.reportDate}>{formatDate(item.created_at)}</Text>
+          </View>
+          <Chip
+            style={[
+              styles.statusChip,
+              {
+                backgroundColor:
+                  STATUS_COLORS[item.status as ReportStatus] || "#6B7280",
+              },
+            ]}
+            textStyle={styles.chipText}
+            icon={() => (
+              <MaterialCommunityIcons
+                name={STATUS_ICONS[item.status as ReportStatus]}
+                size={16}
+                color="#FFFFFF"
+              />
+            )}
+          >
             {item.status}
           </Chip>
         </View>
-        <Text style={styles.description}>{item.description}</Text>
-        <Text style={styles.date}>Reported on: {item.date}</Text>
-      </Card.Content>
-      <Card.Actions>
-        <Button
-          icon="undo"
-          mode="outlined"
-          onPress={() => handleRevertReport(item)}
-          disabled={item.status === "Fixed" || item.status === "Rejected"}
-        >
-          Revert Report
-        </Button>
-      </Card.Actions>
-    </Card>
-  )
+
+        <View style={styles.reportContent}>
+          {item.images && item.images.length > 0 ? (
+            <Image
+              source={{ uri: item.images[0] }}
+              style={styles.reportImage}
+              defaultSource={require("../assets/placeholder-image.svg")}
+            />
+          ) : (
+            <View style={styles.noImageContainer}>
+              <MaterialCommunityIcons
+                name="image-off"
+                size={24}
+                color="#94A3B8"
+              />
+            </View>
+          )}
+
+          <View style={styles.reportDetails}>
+            <View style={styles.locationContainer}>
+              <MaterialCommunityIcons
+                name="map-marker"
+                size={14}
+                color="#0284c7"
+              />
+              <Text style={styles.location} numberOfLines={1}>
+                {item.location}
+              </Text>
+            </View>
+
+            <Text style={styles.description} numberOfLines={2}>
+              {item.description}
+            </Text>
+
+            <View style={styles.reportFooter}>
+              <Chip
+                style={[
+                  styles.severityChip,
+                  {
+                    backgroundColor:
+                      SEVERITY_COLORS[item.severity as SeverityLevel] ||
+                      "#6B7280",
+                  },
+                ]}
+                textStyle={styles.chipText}
+              >
+                {item.severity}
+              </Chip>
+
+              {item.status === ReportStatus.DRAFT && (
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() =>
+                      router.push(`/dashboard/edit-report/${item.id}`)
+                    }
+                  >
+                    <MaterialCommunityIcons
+                      name="pencil"
+                      size={16}
+                      color="#0284c7"
+                    />
+                    <Text style={styles.editButtonText}>Edit</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => item.id && handleDeleteReport(item.id)}
+                  >
+                    <MaterialCommunityIcons
+                      name="delete"
+                      size={16}
+                      color="#DC2626"
+                    />
+                    <Text style={styles.deleteButtonText}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </MotiView>
+  );
+
+  const renderFilterButton = (filter: ReportStatus | "all", label: string) => (
+    <TouchableOpacity
+      style={[
+        styles.filterButton,
+        activeFilter === filter && styles.activeFilterButton,
+      ]}
+      onPress={() => handleFilter(filter)}
+    >
+      <Text
+        style={[
+          styles.filterButtonText,
+          activeFilter === filter && styles.activeFilterButtonText,
+        ]}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+
       <View style={styles.header}>
-        <Text style={styles.title}>My Reports</Text>
-        <IconButton
-          icon="filter-variant"
-          size={24}
-          onPress={() => {
-            /* Implement filter functionality */
-          }}
+        <View style={styles.headerTop}>
+          <Text style={styles.title}>My Reports</Text>
+          <IconButton
+            icon="plus"
+            size={24}
+            iconColor="#0284c7"
+            onPress={() => router.push("/dashboard/add-report")}
+          />
+        </View>
+
+        <Searchbar
+          placeholder="Search reports..."
+          onChangeText={handleSearch}
+          value={searchQuery}
+          style={styles.searchBar}
+          inputStyle={styles.searchInput}
+          iconColor="#64748B"
+          placeholderTextColor="#94A3B8"
         />
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterContainer}
+          contentContainerStyle={styles.filterContent}
+        >
+          {renderFilterButton("all", "All")}
+          {renderFilterButton(ReportStatus.DRAFT, "Drafts")}
+          {renderFilterButton(ReportStatus.SUBMITTED, "Submitted")}
+          {renderFilterButton(ReportStatus.IN_PROGRESS, "In Progress")}
+          {renderFilterButton(ReportStatus.FIXED, "Fixed")}
+          {renderFilterButton(ReportStatus.REJECTED, "Rejected")}
+        </ScrollView>
       </View>
 
-      <Searchbar
-        placeholder="Search reports..."
-        onChangeText={handleSearch}
-        value={searchQuery}
-        style={styles.searchBar}
-      />
-
-      {filteredReports.length === 0 ? (
-        <View style={styles.emptyState}>
-          <MaterialCommunityIcons name="clipboard-text-off" size={64} color={lightTheme.colors.textSecondary} />
-          <Text style={styles.noReports}>No reports found.</Text>
+      {loading && !refreshing ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0284c7" />
+          <Text style={styles.loadingText}>Loading your reports...</Text>
+        </View>
+      ) : filteredReports.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <MaterialCommunityIcons
+            name="clipboard-text-outline"
+            size={64}
+            color="#94A3B8"
+          />
+          <Text style={styles.emptyText}>No reports found</Text>
+          <Text style={styles.emptySubtext}>
+            {searchQuery || activeFilter !== "all"
+              ? "Try changing your filters"
+              : "You haven't reported any potholes yet"}
+          </Text>
+          <Button
+            mode="contained"
+            style={styles.createButton}
+            contentStyle={styles.createButtonContent}
+            onPress={() => router.push("/dashboard/add-report")}
+          >
+            Create New Report
+          </Button>
         </View>
       ) : (
         <FlatList
           data={filteredReports}
-          keyExtractor={(item) => item.id}
-          renderItem={renderReport}
+          keyExtractor={(item) => item.id || Math.random().toString()}
+          renderItem={renderReportItem}
           contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <Divider style={styles.divider} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={["#0284c7"]}
+              tintColor="#0284c7"
+            />
+          }
         />
       )}
-
-      <Portal>
-        <Dialog visible={isDialogVisible} onDismiss={() => setIsDialogVisible(false)}>
-          <Dialog.Title>Revert Report</Dialog.Title>
-          <Dialog.Content>
-            <Text>Are you sure you want to revert this report? This action cannot be undone.</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setIsDialogVisible(false)}>Cancel</Button>
-            <Button onPress={confirmRevert}>Confirm</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: lightTheme.colors.background,
+    backgroundColor: "#F8FAFC",
   },
   header: {
+    paddingTop: 8,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 16,
+    marginBottom: 12,
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: lightTheme.colors.primary,
+    color: "#0F172A",
+    letterSpacing: -0.5,
   },
   searchBar: {
-    margin: 16,
+    marginHorizontal: 16,
+    marginBottom: 12,
     elevation: 0,
-    backgroundColor: lightTheme.colors.inputBackground,
+    backgroundColor: "#F1F5F9",
     borderWidth: 1,
-    borderColor: lightTheme.colors.outline,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    height: 46,
   },
-  listContainer: {
-    padding: 16,
+  searchInput: {
+    fontSize: 15,
   },
-  card: {
-    marginBottom: 16,
-    borderRadius: lightTheme.roundness,
-    overflow: "hidden",
+  filterContainer: {
+    marginBottom: 12,
   },
-  image: {
-    width: "100%",
-    height: 200,
-    resizeMode: "cover",
+  filterContent: {
+    paddingHorizontal: 16,
+    gap: 8,
   },
-  headerContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
+  filterButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: "#F1F5F9",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
-  location: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: lightTheme.colors.text,
+  activeFilterButton: {
+    backgroundColor: "#0284c7",
+    borderColor: "#0284c7",
   },
-  description: {
+  filterButtonText: {
     fontSize: 14,
-    color: lightTheme.colors.textSecondary,
-    marginBottom: 8,
+    fontWeight: "500",
+    color: "#334155",
   },
-  date: {
-    fontSize: 12,
-    color: lightTheme.colors.textSecondary,
-  },
-  chip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  chipText: {
+  activeFilterButtonText: {
     color: "#FFFFFF",
-    fontWeight: "600",
   },
-  emptyState: {
+  loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  noReports: {
+  loadingText: {
+    marginTop: 12,
     fontSize: 16,
-    textAlign: "center",
-    marginTop: 16,
-    color: lightTheme.colors.textSecondary,
+    color: "#64748B",
   },
-})
-
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#334155",
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: "#64748B",
+    textAlign: "center",
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  createButton: {
+    backgroundColor: "#0284c7",
+  },
+  createButtonContent: {
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+  },
+  listContainer: {
+    padding: 16,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#E2E8F0",
+    marginVertical: 8,
+  },
+  reportItem: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#64748B",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  reportHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  reportInfo: {
+    flex: 1,
+  },
+  reportCategory: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#0F172A",
+  },
+  reportDate: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 2,
+  },
+  statusChip: {
+    height: 28,
+  },
+  chipText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
+    marginVertical: 0,
+  },
+  reportContent: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  reportImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  noImageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  reportDetails: {
+    flex: 1,
+  },
+  locationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  location: {
+    fontSize: 13,
+    color: "#0284c7",
+    marginLeft: 4,
+    fontWeight: "500",
+    flex: 1,
+  },
+  description: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#334155",
+    marginBottom: 8,
+  },
+  reportFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  severityChip: {
+    height: 24,
+  },
+  actionButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  editButtonText: {
+    fontSize: 12,
+    color: "#0284c7",
+    marginLeft: 4,
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  deleteButtonText: {
+    fontSize: 12,
+    color: "#DC2626",
+    marginLeft: 4,
+  },
+});

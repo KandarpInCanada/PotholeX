@@ -19,7 +19,6 @@ import {
 import {
   Button,
   TextInput,
-  Chip,
   HelperText,
   ActivityIndicator,
   IconButton,
@@ -31,6 +30,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MotiView } from "moti";
 import * as Location from "expo-location";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { saveReport, uploadReportImages } from "../services/report-service";
+import {
+  type PotholeReport,
+  ReportStatus,
+  SeverityLevel,
+} from "../../lib/supabase";
+import "react-native-get-random-values";
+import { v4 as uuidv4 } from "uuid";
+import { supabase } from "../../lib/supabase";
 
 const POTHOLE_CATEGORIES = [
   "Surface Break",
@@ -43,26 +51,34 @@ const POTHOLE_CATEGORIES = [
 const ROAD_CONDITIONS = ["Dry", "Wet", "Snow/Ice", "Construction"];
 
 const SEVERITY_LEVELS = [
-  { label: "Low", color: "#10B981", icon: "alert-circle-outline" },
-  { label: "Medium", color: "#F59E0B", icon: "alert-circle" },
-  { label: "Danger", color: "#DC2626", icon: "alert-octagon" },
+  { label: SeverityLevel.LOW, color: "#10B981", icon: "alert-circle-outline" },
+  { label: SeverityLevel.MEDIUM, color: "#F59E0B", icon: "alert-circle" },
+  { label: SeverityLevel.DANGER, color: "#DC2626", icon: "alert-octagon" },
 ];
 
 export default function AddReportScreen() {
   const router = useRouter();
   const [images, setImages] = useState<string[]>([]);
   const [description, setDescription] = useState("");
-  const [severity, setSeverity] = useState("Medium");
+  const [severity, setSeverity] = useState<SeverityLevel>(SeverityLevel.MEDIUM);
   const [category, setCategory] = useState("");
   const [roadCondition, setRoadCondition] = useState("Dry");
   const [location, setLocation] = useState({
     latitude: 44.6488,
     longitude: -63.5752,
   });
+  const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [pressed, setPressed] = useState(false);
+  const [reportId, setReportId] = useState<string | null>(null);
   const mapRef = useRef<MapView>(null);
+
+  useEffect(() => {
+    if (!reportId) {
+      setReportId(uuidv4());
+    }
+  }, [reportId]);
 
   const fetchLocation = useCallback(async () => {
     try {
@@ -75,7 +91,6 @@ export default function AddReportScreen() {
         );
         return;
       }
-
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       });
@@ -84,6 +99,14 @@ export default function AddReportScreen() {
         longitude: location.coords.longitude,
       };
       setLocation(newLocation);
+      const geocode = await Location.reverseGeocodeAsync(newLocation);
+      if (geocode && geocode.length > 0) {
+        const { street, city, region, postalCode, country } = geocode[0];
+        const formattedAddress = `${street || ""}, ${city || ""}, ${
+          region || ""
+        } ${postalCode || ""}, ${country || ""}`;
+        setAddress(formattedAddress);
+      }
 
       if (mapRef.current) {
         mapRef.current.animateToRegion({
@@ -114,7 +137,6 @@ export default function AddReportScreen() {
       Alert.alert("Maximum Images", "You can only upload up to 5 images.");
       return;
     }
-
     const options = ["Cancel", "Take Photo", "Choose from Library"];
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
@@ -146,14 +168,12 @@ export default function AddReportScreen() {
         );
         return;
       }
-
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
       });
-
       if (!result.canceled && result.assets.length > 0) {
         setImages((prev) => [...prev, result.assets[0].uri]);
       }
@@ -166,13 +186,10 @@ export default function AddReportScreen() {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
         quality: 0.8,
         allowsMultipleSelection: true,
         selectionLimit: 5 - images.length,
       });
-
       if (!result.canceled && result.assets.length > 0) {
         setImages((prev) => [
           ...prev,
@@ -190,19 +207,15 @@ export default function AddReportScreen() {
 
   const validateForm = useCallback(() => {
     const newErrors: { [key: string]: string } = {};
-
     if (images.length === 0) {
       newErrors.images = "Please add at least one image";
     }
-
     if (description.length < 10) {
       newErrors.description = "Description must be at least 10 characters";
     }
-
     if (!category) {
       newErrors.category = "Please select a pothole category";
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [images.length, description, category]);
@@ -218,20 +231,91 @@ export default function AddReportScreen() {
 
     try {
       setLoading(true);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Check user session first
+      const {
+        data: { user },
+        error: sessionError,
+      } = await supabase.auth.getUser();
+      if (sessionError || !user) {
+        Alert.alert("Session Expired", "Please log in again to continue.", [
+          {
+            text: "OK",
+            onPress: () => {
+              // Navigate to login or handle re-authentication
+              router.replace("/auth/login");
+            },
+          },
+        ]);
+        return;
+      }
+
+      // Rest of your existing submit logic...
+      const safeReportId = reportId || uuidv4();
+      const imageUrls = await uploadReportImages(images, safeReportId);
+
+      const report: PotholeReport = {
+        id: safeReportId,
+        images: imageUrls.length > 0 ? imageUrls : images,
+        location: address || "Unknown location",
+        latitude: location.latitude,
+        longitude: location.longitude,
+        description: description || "No description provided",
+        category: category || "Surface Break",
+        severity: severity || SeverityLevel.MEDIUM,
+        road_condition: roadCondition || "Dry",
+        status: ReportStatus.SUBMITTED,
+      };
+
+      const { success, error, data } = await saveReport(report);
+      if (!success || !data) {
+        if (error?.includes("permission") || error?.includes("not found")) {
+          Alert.alert(
+            "Permission Error",
+            "You don't have permission to submit this report. Please try creating a new report.",
+            [
+              {
+                text: "Create New",
+                onPress: () => {
+                  setReportId(null);
+                  // Reset other necessary state...
+                },
+              },
+              { text: "Cancel", style: "cancel" },
+            ]
+          );
+        } else {
+          throw new Error(error || "Failed to submit report");
+        }
+        return;
+      }
 
       Alert.alert(
         "Success",
         "Thank you for reporting this pothole. Your report has been submitted successfully.",
         [{ text: "OK", onPress: () => router.replace("/dashboard/home") }]
       );
-    } catch (error) {
-      Alert.alert("Error", "Failed to submit report. Please try again.");
+    } catch (error: any) {
+      console.error("Submit report error:", error);
+      Alert.alert(
+        "Error",
+        "Failed to submit report. Please check your connection and try again."
+      );
     } finally {
       setLoading(false);
     }
-  }, [validateForm, router]);
+  }, [
+    validateForm,
+    reportId,
+    images,
+    address,
+    location,
+    description,
+    category,
+    severity,
+    roadCondition,
+    router,
+  ]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -257,16 +341,6 @@ export default function AddReportScreen() {
               <Text style={styles.title}>Report a Pothole</Text>
               {loading && <ActivityIndicator color="#0284c7" size={24} />}
             </View>
-
-            {/* Progress Indicator */}
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: "60%" }]} />
-              </View>
-              <Text style={styles.progressText}>Step 2 of 3</Text>
-            </View>
-
-            {/* Section: Photos */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons
@@ -277,7 +351,6 @@ export default function AddReportScreen() {
                 <Text style={styles.sectionTitle}>Photos</Text>
                 <Text style={styles.required}>*Required</Text>
               </View>
-
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -322,15 +395,12 @@ export default function AddReportScreen() {
                 </HelperText>
               )}
             </View>
-
-            {/* Section: Description */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons name="text" size={20} color="#0284c7" />
                 <Text style={styles.sectionTitle}>Description</Text>
                 <Text style={styles.required}>*Required</Text>
               </View>
-
               <TextInput
                 mode="outlined"
                 placeholder="Describe the pothole size, depth, and any hazards..."
@@ -354,8 +424,6 @@ export default function AddReportScreen() {
                 </HelperText>
               )}
             </View>
-
-            {/* Section: Pothole Type */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons
@@ -366,7 +434,6 @@ export default function AddReportScreen() {
                 <Text style={styles.sectionTitle}>Pothole Type</Text>
                 <Text style={styles.required}>*Required</Text>
               </View>
-
               <View style={styles.categoryGrid}>
                 {POTHOLE_CATEGORIES.map((cat) => (
                   <TouchableOpacity
@@ -398,8 +465,6 @@ export default function AddReportScreen() {
                 </HelperText>
               )}
             </View>
-
-            {/* Section: Severity Level */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons
@@ -409,7 +474,6 @@ export default function AddReportScreen() {
                 />
                 <Text style={styles.sectionTitle}>Severity Level</Text>
               </View>
-
               <View style={styles.severityContainer}>
                 {SEVERITY_LEVELS.map((level) => (
                   <MotiView
@@ -427,7 +491,7 @@ export default function AddReportScreen() {
                           backgroundColor: level.color,
                         },
                       ]}
-                      onPress={() => setSeverity(level.label)}
+                      onPress={() => setSeverity(level.label as SeverityLevel)}
                     >
                       <MaterialCommunityIcons
                         name={level.icon as any}
@@ -452,14 +516,11 @@ export default function AddReportScreen() {
                 ))}
               </View>
             </View>
-
-            {/* Section: Road Condition */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons name="road" size={20} color="#0284c7" />
                 <Text style={styles.sectionTitle}>Road Condition</Text>
               </View>
-
               <View style={styles.conditionContainer}>
                 {ROAD_CONDITIONS.map((condition) => (
                   <TouchableOpacity
@@ -484,8 +545,6 @@ export default function AddReportScreen() {
                 ))}
               </View>
             </View>
-
-            {/* Section: Location */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <MaterialCommunityIcons
@@ -495,7 +554,6 @@ export default function AddReportScreen() {
                 />
                 <Text style={styles.sectionTitle}>Location</Text>
               </View>
-
               <View style={styles.mapContainer}>
                 <MapView
                   ref={mapRef}
@@ -527,32 +585,35 @@ export default function AddReportScreen() {
                   />
                 </TouchableOpacity>
               </View>
-            </View>
 
-            {/* Submit Button */}
-            <Pressable
-              onPressIn={() => setPressed(true)}
-              onPressOut={() => setPressed(false)}
-              onPress={submitReport}
-              disabled={loading}
-            >
-              <MotiView
-                animate={{ scale: pressed ? 0.97 : 1 }}
-                transition={{ type: "spring" }}
+              <Text style={styles.address}>{address}</Text>
+            </View>
+            <View style={styles.actionButtons}>
+              <Pressable
+                onPressIn={() => setPressed(true)}
+                onPressOut={() => setPressed(false)}
+                onPress={submitReport}
+                disabled={loading}
+                style={styles.submitButtonContainer}
               >
-                <Button
-                  mode="contained"
-                  style={styles.submitButton}
-                  labelStyle={styles.submitButtonLabel}
-                  loading={loading}
-                  disabled={loading}
-                  onPress={submitReport}
-                  icon={loading ? undefined : "send"}
+                <MotiView
+                  animate={{ scale: pressed ? 0.97 : 1 }}
+                  transition={{ type: "spring" }}
                 >
-                  {loading ? "Submitting..." : "Submit Report"}
-                </Button>
-              </MotiView>
-            </Pressable>
+                  <Button
+                    mode="contained"
+                    style={styles.submitButton}
+                    labelStyle={styles.submitButtonLabel}
+                    loading={loading}
+                    disabled={loading}
+                    onPress={submitReport}
+                    icon="send"
+                  >
+                    {loading ? "Submitting..." : "Submit Report"}
+                  </Button>
+                </MotiView>
+              </Pressable>
+            </View>
           </MotiView>
         </ScrollView>
       </TouchableWithoutFeedback>
@@ -789,12 +850,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
+  address: {
+    fontSize: 14,
+    color: "#334155",
+    marginTop: 8,
+    marginBottom: 4,
+    fontStyle: "italic",
+  },
+  actionButtons: {
+    marginBottom: 24,
+  },
+  submitButtonContainer: {
+    width: "100%",
+  },
   submitButton: {
     paddingVertical: 8,
     borderRadius: 12,
     backgroundColor: "#0284c7",
-    marginTop: 8,
-    marginBottom: 24,
+    width: "100%",
   },
   submitButtonLabel: {
     fontSize: 16,

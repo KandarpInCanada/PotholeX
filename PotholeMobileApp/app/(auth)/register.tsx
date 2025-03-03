@@ -11,7 +11,7 @@ import { AuthContainer } from "../components/auth-container";
 import { AuthHeader } from "../components/auth-header";
 import { AuthForm } from "../components/auth-form";
 import { AuthInput } from "../components/auth-input";
-import { AuthButton } from "../components/auth-button";
+import AuthButton from "../components/auth-button";
 import { AuthDivider } from "../components/auth-divider";
 import { GoogleButton } from "../components/google-button";
 import { AuthFooter } from "../components/auth-footer";
