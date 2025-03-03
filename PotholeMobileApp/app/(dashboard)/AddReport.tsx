@@ -61,7 +61,6 @@ export default function AddReportScreen() {
     }
   }, [reportId]);
 
-  // This function is now only used for initial location fetching
   const fetchLocation = useCallback(async () => {
     try {
       setLoading(true);
@@ -97,7 +96,6 @@ export default function AddReportScreen() {
   }, []);
 
   useEffect(() => {
-    // This function is now only used for initial location fetching
     const fetchInitialLocation = async () => {
       try {
         setLoading(true);
@@ -242,7 +240,6 @@ export default function AddReportScreen() {
     try {
       setLoading(true);
 
-      // Check user session first
       const {
         data: { user },
         error: sessionError,
@@ -252,7 +249,6 @@ export default function AddReportScreen() {
           {
             text: "OK",
             onPress: () => {
-              // Navigate to login or handle re-authentication
               router.replace("/auth/login");
             },
           },
@@ -260,7 +256,6 @@ export default function AddReportScreen() {
         return;
       }
 
-      // Rest of your existing submit logic...
       const safeReportId = reportId || uuidv4();
       const imageUrls = await uploadReportImages(images, safeReportId);
 
@@ -288,7 +283,6 @@ export default function AddReportScreen() {
                 text: "Create New",
                 onPress: () => {
                   setReportId(null);
-                  // Reset other necessary state...
                 },
               },
               { text: "Cancel", style: "cancel" },
@@ -328,117 +322,127 @@ export default function AddReportScreen() {
   ]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-        >
+      {/* Fixed Header */}
+      <View style={styles.stickyHeader}>
+        <IconButton
+          icon="arrow-left"
+          size={24}
+          onPress={() => router.back()}
+          style={styles.backButton}
+        />
+        <Text style={styles.title}>Report a Pothole</Text>
+        {loading && (
+          <ActivityIndicator
+            color="#0284c7"
+            size={24}
+            style={styles.loadingIndicator}
+          />
+        )}
+      </View>
+
+      {/* Content ScrollView without sticky header indices */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <MotiView
             from={{ opacity: 0, translateY: 50 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ type: "spring", damping: 10 }}
             style={styles.container}
           >
-            <View style={styles.header}>
-              <IconButton
-                icon="arrow-left"
-                size={24}
-                onPress={() => router.back()}
-                style={styles.backButton}
-              />
-              <Text style={styles.title}>Report a Pothole</Text>
-              {loading && <ActivityIndicator color="#0284c7" size={24} />}
-            </View>
+            <View style={styles.content}>
+              <View style={styles.section}>
+                <SectionHeader icon="camera" title="Photos" required />
+                <ImageGallery
+                  images={images}
+                  onAddImage={handleImagePicker}
+                  onRemoveImage={removeImage}
+                  error={errors.images}
+                />
+              </View>
 
-            <View style={styles.section}>
-              <SectionHeader icon="camera" title="Photos" required />
-              <ImageGallery
-                images={images}
-                onAddImage={handleImagePicker}
-                onRemoveImage={removeImage}
-                error={errors.images}
-              />
-            </View>
+              <View style={styles.section}>
+                <SectionHeader icon="text" title="Description" required />
+                <DescriptionInput
+                  value={description}
+                  onChangeText={setDescription}
+                  error={errors.description}
+                />
+              </View>
 
-            <View style={styles.section}>
-              <SectionHeader icon="text" title="Description" required />
-              <DescriptionInput
-                value={description}
-                onChangeText={setDescription}
-                error={errors.description}
-              />
-            </View>
+              <View style={styles.section}>
+                <SectionHeader icon="shape" title="Pothole Type" required />
+                <CategorySelector
+                  selectedCategory={category}
+                  onSelectCategory={setCategory}
+                  error={errors.category}
+                />
+              </View>
 
-            <View style={styles.section}>
-              <SectionHeader icon="shape" title="Pothole Type" required />
-              <CategorySelector
-                selectedCategory={category}
-                onSelectCategory={setCategory}
-                error={errors.category}
-              />
-            </View>
+              <View style={styles.section}>
+                <SectionHeader icon="alert" title="Severity Level" />
+                <SeveritySelector
+                  selectedSeverity={severity}
+                  onSelectSeverity={setSeverity}
+                />
+              </View>
 
-            <View style={styles.section}>
-              <SectionHeader icon="alert" title="Severity Level" />
-              <SeveritySelector
-                selectedSeverity={severity}
-                onSelectSeverity={setSeverity}
-              />
-            </View>
+              <View style={styles.section}>
+                <SectionHeader icon="road" title="Road Condition" />
+                <RoadConditionSelector
+                  selectedCondition={roadCondition}
+                  onSelectCondition={setRoadCondition}
+                />
+              </View>
 
-            <View style={styles.section}>
-              <SectionHeader icon="road" title="Road Condition" />
-              <RoadConditionSelector
-                selectedCondition={roadCondition}
-                onSelectCondition={setRoadCondition}
-              />
-            </View>
+              <View style={styles.section}>
+                <SectionHeader icon="map-marker" title="Location" />
+                <LocationPicker
+                  initialLocation={location}
+                  address={address}
+                  onLocationChange={(newLocation) => {
+                    setLocation(newLocation);
+                  }}
+                  onAddressChange={(newAddress) => {
+                    setAddress(newAddress);
+                  }}
+                />
+              </View>
 
-            <View style={styles.section}>
-              <SectionHeader icon="map-marker" title="Location" />
-              <LocationPicker
-                initialLocation={location}
-                address={address}
-                onLocationChange={(newLocation) => {
-                  setLocation(newLocation);
-                }}
-                onAddressChange={(newAddress) => {
-                  setAddress(newAddress);
-                }}
-              />
-            </View>
-
-            <View style={styles.actionButtons}>
-              <Pressable
-                onPressIn={() => setPressed(true)}
-                onPressOut={() => setPressed(false)}
-                onPress={submitReport}
-                disabled={loading}
-                style={styles.submitButtonContainer}
-              >
-                <MotiView
-                  animate={{ scale: pressed ? 0.97 : 1 }}
-                  transition={{ type: "spring" }}
+              <View style={styles.actionButtons}>
+                <Pressable
+                  onPressIn={() => setPressed(true)}
+                  onPressOut={() => setPressed(false)}
+                  onPress={submitReport}
+                  disabled={loading}
+                  style={styles.submitButtonContainer}
                 >
-                  <Button
-                    mode="contained"
-                    style={styles.submitButton}
-                    labelStyle={styles.submitButtonLabel}
-                    loading={loading}
-                    disabled={loading}
-                    onPress={submitReport}
-                    icon="send"
+                  <MotiView
+                    animate={{ scale: pressed ? 0.97 : 1 }}
+                    transition={{ type: "spring" }}
                   >
-                    {loading ? "Submitting..." : "Submit Report"}
-                  </Button>
-                </MotiView>
-              </Pressable>
+                    <Button
+                      mode="contained"
+                      style={styles.submitButton}
+                      labelStyle={styles.submitButtonLabel}
+                      loading={loading}
+                      disabled={loading}
+                      onPress={submitReport}
+                      icon="send"
+                    >
+                      {loading ? "Submitting..." : "Submit Report"}
+                    </Button>
+                  </MotiView>
+                </Pressable>
+              </View>
             </View>
           </MotiView>
-        </ScrollView>
-      </TouchableWithoutFeedback>
+        </TouchableWithoutFeedback>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -448,31 +452,50 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8FAFC",
   },
+  stickyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 100, // Ensure header is above scroll content
+  },
+  backButton: {
+    margin: 0,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#0F172A",
+    flex: 1,
+    marginLeft: 8,
+  },
+  loadingIndicator: {
+    marginLeft: 8,
+  },
   scrollContainer: {
     flexGrow: 1,
     padding: 16,
+    paddingTop: 16, // Add some padding at the top
   },
   container: {
     flex: 1,
     gap: 20,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  backButton: {
-    margin: 0,
-    marginRight: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#0F172A",
-    flex: 1,
+  content: {
+    paddingBottom: 16,
+    paddingHorizontal: 5, // Additional padding at the bottom
   },
   section: {
-    marginBottom: 5,
+    marginBottom: 16,
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,

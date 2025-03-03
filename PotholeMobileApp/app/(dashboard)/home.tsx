@@ -82,14 +82,12 @@ const HomeScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
-
       <View style={styles.header}>
         <Header title="Pothole Reports" />
         <SearchBar value={searchQuery} onChangeText={handleSearch} />
       </View>
-
       {loading && !refreshing ? (
         <LoadingState />
       ) : filteredReports.length === 0 ? (
@@ -117,7 +115,6 @@ const HomeScreen: React.FC = () => {
           windowSize={10}
         />
       )}
-
       <FAB
         icon="plus"
         style={styles.fab}
@@ -132,6 +129,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#F8FAFC",
+    paddingBottom: 0,
   },
   header: {
     paddingTop: 12,

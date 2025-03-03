@@ -262,7 +262,7 @@ export default function ReportListScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
 
       <View style={styles.header}>
@@ -353,6 +353,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#F8FAFC",
+    paddingBottom: 0,
   },
   header: {
     paddingTop: 8,

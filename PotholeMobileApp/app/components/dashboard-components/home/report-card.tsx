@@ -30,7 +30,6 @@ const STATUS_COLORS = {
   [ReportStatus.IN_PROGRESS]: "#2563EB",
   [ReportStatus.FIXED]: "#059669",
   [ReportStatus.REJECTED]: "#6B7280",
-  [ReportStatus.DRAFT]: "#9CA3AF",
 };
 
 const ReportCard: React.FC<ReportCardProps> = ({ item, index, onLike }) => {

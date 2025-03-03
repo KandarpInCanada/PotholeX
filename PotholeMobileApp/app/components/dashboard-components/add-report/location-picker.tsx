@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 12,
     overflow: "hidden",
-    height: 400,
+    height: 200,
     margin: 16,
   },
   map: {

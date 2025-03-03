@@ -47,10 +47,19 @@ export default function DashboardLayout() {
       })}
     >
       {/* Your tab screens */}
-      <Tabs.Screen name="home" options={{ title: "Home" }} />
-      <Tabs.Screen name="AddReport" options={{ title: "Add Report" }} />
-      <Tabs.Screen name="ReportList" options={{ title: "Reports" }} />
-      <Tabs.Screen name="map" options={{ title: "Map" }} />
+      <Tabs.Screen
+        name="home"
+        options={{ title: "Home", headerShown: false }}
+      />
+      <Tabs.Screen
+        name="AddReport"
+        options={{ title: "Add Report", headerShown: false }}
+      />
+      <Tabs.Screen
+        name="ReportList"
+        options={{ title: "Reports", headerShown: false }}
+      />
+      <Tabs.Screen name="map" options={{ title: "Map", headerShown: false }} />
     </Tabs>
   );
 }
