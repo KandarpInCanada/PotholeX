@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useState, useEffect } from "react";
+import type React from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -8,10 +9,14 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
+  Dimensions,
 } from "react-native";
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
 import type { MapPressEvent } from "react-native-maps";
 import * as Location from "expo-location";
+import { MaterialIcons } from "@expo/vector-icons";
+
+const { width, height } = Dimensions.get("window");
 
 interface LocationPickerProps {
   initialLocation?: { latitude: number; longitude: number };
@@ -23,7 +28,7 @@ interface LocationPickerProps {
 const DEFAULT_LOCATION = {
   latitude: 37.7749,
   longitude: -122.4194,
-}; // San Francisco as fallback
+};
 
 const LocationPicker: React.FC<LocationPickerProps> = ({
   initialLocation,
@@ -31,6 +36,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   onLocationChange,
   onAddressChange,
 }) => {
+  const mapRef = useRef<MapView>(null);
   const [selectedLocation, setSelectedLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -46,122 +52,122 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   const [locationPermission, setLocationPermission] = useState(false);
   const [displayAddress, setDisplayAddress] = useState(address);
 
-  // Request location permission and get current location on mount
+  const fetchAddress = useCallback(
+    async (location: { latitude: number; longitude: number }) => {
+      try {
+        const geocode = await Location.reverseGeocodeAsync({
+          latitude: location.latitude,
+          longitude: location.longitude,
+        });
+
+        if (geocode?.[0]) {
+          const { street, city, region, postalCode, country } = geocode[0];
+          const formattedAddress = [street, city, region, postalCode, country]
+            .filter(Boolean)
+            .join(", ");
+
+          setDisplayAddress(formattedAddress);
+          onAddressChange?.(formattedAddress);
+        }
+      } catch (error) {
+        console.error("Error fetching address:", error);
+      }
+    },
+    [onAddressChange]
+  );
+
   useEffect(() => {
-    const getLocationPermission = async () => {
+    const initializeLocation = async () => {
       try {
         setLoading(true);
         const { status } = await Location.requestForegroundPermissionsAsync();
 
         if (status === "granted") {
           setLocationPermission(true);
-          const location = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.High,
-          });
 
-          const newLocation = {
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-          };
+          if (initialLocation) {
+            // Use provided initial location
+            setCurrentLocation(initialLocation);
+            setSelectedLocation(initialLocation);
+            if (!address) fetchAddress(initialLocation);
+          } else {
+            // Fetch current location
+            const location = await Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.High,
+            });
+            const newLocation = {
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+            };
 
-          setCurrentLocation(newLocation);
-
-          // If no initial location was provided, also set as selected
-          if (!initialLocation) {
+            setCurrentLocation(newLocation);
             setSelectedLocation(newLocation);
             onLocationChange(newLocation);
-
-            // Get address for the current location
-            if (onAddressChange) {
-              fetchAddress(newLocation);
-            }
+            fetchAddress(newLocation);
           }
         }
       } catch (error) {
-        console.error("Error getting location:", error);
+        console.error("Error initializing location:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    getLocationPermission();
-  }, [initialLocation, onLocationChange, onAddressChange]);
-
-  // Fetch address from coordinates
-  const fetchAddress = async (location: {
-    latitude: number;
-    longitude: number;
-  }) => {
-    try {
-      const geocode = await Location.reverseGeocodeAsync({
-        latitude: location.latitude,
-        longitude: location.longitude,
-      });
-
-      if (geocode && geocode.length > 0) {
-        const { street, city, region, postalCode, country } = geocode[0];
-        const formattedAddress = [street, city, region, postalCode, country]
-          .filter(Boolean)
-          .join(", ");
-
-        setDisplayAddress(formattedAddress);
-        if (onAddressChange) {
-          onAddressChange(formattedAddress);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching address:", error);
-    }
-  };
+    initializeLocation();
+  }, [initialLocation, address]);
 
   const handleMapPress = useCallback(
     (e: MapPressEvent) => {
-      const { latitude, longitude } = e.nativeEvent.coordinate;
-      const newLocation = { latitude, longitude };
+      const newLocation = e.nativeEvent.coordinate;
       setSelectedLocation(newLocation);
-
-      // Immediately update parent component with new coordinates
       onLocationChange(newLocation);
+      fetchAddress(newLocation);
 
-      // Get address for the selected location
-      if (onAddressChange) {
-        fetchAddress(newLocation);
-      }
+      // Center map on selected location
+      mapRef.current?.animateToRegion(
+        {
+          ...newLocation,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        500
+      );
     },
-    [onLocationChange, onAddressChange]
+    [onLocationChange, fetchAddress]
   );
 
   const handleRecenter = useCallback(async () => {
-    if (locationPermission) {
-      setLoading(true);
-      try {
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        });
+    if (!locationPermission) return;
 
-        const newLocation = {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        };
+    setLoading(true);
+    try {
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      const newLocation = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      };
 
-        setCurrentLocation(newLocation);
-        setSelectedLocation(newLocation);
-        onLocationChange(newLocation);
+      setCurrentLocation(newLocation);
+      setSelectedLocation(newLocation);
+      onLocationChange(newLocation);
+      fetchAddress(newLocation);
 
-        if (onAddressChange) {
-          fetchAddress(newLocation);
-        }
-      } catch (error) {
-        console.error("Error getting current location:", error);
-      } finally {
-        setLoading(false);
-      }
+      mapRef.current?.animateToRegion(
+        {
+          ...newLocation,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        1000
+      );
+    } catch (error) {
+      console.error("Error recentering:", error);
+    } finally {
+      setLoading(false);
     }
-  }, [locationPermission, onLocationChange, onAddressChange]);
-
-  const onMapReady = useCallback(() => {
-    setMapReady(true);
-  }, []);
+  }, [locationPermission, onLocationChange, fetchAddress]);
 
   return (
     <View style={styles.container}>
@@ -171,34 +177,24 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         </View>
       )}
 
-      <Text style={styles.address}>
-        {displayAddress || "Select a location on the map"}
+      <Text style={styles.address} numberOfLines={2}>
+        {displayAddress || "Tap on map to select location"}
       </Text>
 
       <View style={styles.mapContainer}>
         <MapView
+          ref={mapRef}
           style={styles.map}
           provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
           onPress={handleMapPress}
-          onMapReady={onMapReady}
+          onMapReady={() => setMapReady(true)}
           showsUserLocation={locationPermission}
           showsMyLocationButton={false}
           initialRegion={{
-            latitude: currentLocation.latitude,
-            longitude: currentLocation.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
+            ...currentLocation,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
           }}
-          region={
-            !mapReady
-              ? {
-                  latitude: currentLocation.latitude,
-                  longitude: currentLocation.longitude,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
-                }
-              : undefined
-          }
         >
           {selectedLocation && (
             <Marker
@@ -208,49 +204,30 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
                 const newLocation = e.nativeEvent.coordinate;
                 setSelectedLocation(newLocation);
                 onLocationChange(newLocation);
-                if (onAddressChange) fetchAddress(newLocation);
+                fetchAddress(newLocation);
               }}
             >
               <Callout>
-                <Text>Selected Location</Text>
-                {displayAddress ? (
+                <View style={styles.callout}>
                   <Text style={styles.calloutText}>{displayAddress}</Text>
-                ) : null}
+                </View>
               </Callout>
             </Marker>
           )}
         </MapView>
-      </View>
 
-      <View style={styles.buttonsContainer}>
         <TouchableOpacity
-          style={styles.button}
+          style={styles.recenterButton}
           onPress={handleRecenter}
-          disabled={loading || !locationPermission}
+          disabled={!locationPermission}
         >
-          <Text style={styles.buttonText}>Use Current Location</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.button,
-            (!selectedLocation || loading) && styles.disabledButton,
-          ]}
-          onPress={() => {
-            if (selectedLocation) {
-              onLocationChange(selectedLocation);
-            }
-          }}
-          disabled={!selectedLocation || loading}
-        >
-          <Text style={styles.buttonText}>Confirm Selection</Text>
+          <MaterialIcons name="my-location" size={24} color="#007BFF" />
         </TouchableOpacity>
       </View>
 
       {!locationPermission && (
         <Text style={styles.permissionText}>
-          Location permission denied. Please enable location services to use
-          your current location.
+          Location permission required to access your current position
         </Text>
       )}
     </View>
@@ -260,76 +237,68 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: "#f9f9f9",
   },
   mapContainer: {
     flex: 1,
     borderRadius: 12,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    marginBottom: 16,
+    height: 400,
+    margin: 16,
   },
   map: {
     ...StyleSheet.absoluteFillObject,
   },
   address: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-    textAlign: "center",
-    color: "#333",
-  },
-  buttonsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 8,
-  },
-  button: {
-    backgroundColor: "#007BFF",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    fontSize: 14,
+    margin: 16,
+    marginBottom: 8,
+    padding: 12,
+    backgroundColor: "white",
     borderRadius: 8,
-    alignItems: "center",
-    flex: 0.48,
+    textAlign: "center",
+    color: "#666",
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  recenterButton: {
+    position: "absolute",
+    bottom: 16,
+    right: 16,
+    backgroundColor: "white",
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  disabledButton: {
-    backgroundColor: "#ccc",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "bold",
+    shadowRadius: 4,
   },
   loadingOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
   },
+  callout: {
+    maxWidth: 200,
+    padding: 8,
+  },
   calloutText: {
-    fontSize: 12,
-    maxWidth: 150,
+    fontSize: 14,
+    color: "#444",
   },
   permissionText: {
-    color: "#ff3b30",
     textAlign: "center",
+    color: "#ff4444",
+    margin: 16,
     marginTop: 8,
     fontSize: 12,
   },

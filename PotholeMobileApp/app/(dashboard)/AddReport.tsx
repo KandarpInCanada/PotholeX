@@ -97,10 +97,44 @@ export default function AddReportScreen() {
   }, []);
 
   useEffect(() => {
-    // Only fetch location initially to set default values
-    // The LocationPicker component will handle updates
-    fetchLocation();
-  }, [fetchLocation]);
+    // This function is now only used for initial location fetching
+    const fetchInitialLocation = async () => {
+      try {
+        setLoading(true);
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert(
+            "Location Permission Required",
+            "Please enable location services to accurately report pothole locations."
+          );
+          return;
+        }
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
+        const newLocation = {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        };
+        setLocation(newLocation);
+        const geocode = await Location.reverseGeocodeAsync(newLocation);
+        if (geocode && geocode.length > 0) {
+          const { street, city, region, postalCode, country } = geocode[0];
+          const formattedAddress = `${street || ""}, ${city || ""}, ${
+            region || ""
+          } ${postalCode || ""}, ${country || ""}`;
+          setAddress(formattedAddress);
+        }
+      } catch (error) {
+        console.error("Error fetching location:", error);
+        Alert.alert("Error", "Failed to fetch location. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialLocation();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
