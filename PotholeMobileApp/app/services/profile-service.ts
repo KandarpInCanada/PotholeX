@@ -1,0 +1,122 @@
+import { supabase, type Profile } from "../../lib/supabase"
+import { EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY } from "@env"
+// Get user profile
+export const getUserProfile = async (): Promise<(Profile & { email: string }) | null> => {
+  try {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      console.error("Auth error:", authError)
+      return null
+    }
+
+    // First check if profile exists
+    const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        // Profile doesn't exist, create a new one
+        const newProfile = {
+          id: user.id,
+          username: user.email?.split("@")[0] || "",
+          full_name: user.user_metadata?.name || "",
+          avatar_url: user.user_metadata?.avatar_url || "",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+
+        const { error: insertError } = await supabase.from("profiles").insert(newProfile)
+
+        if (insertError) {
+          console.error("Error creating profile:", insertError)
+          return null
+        }
+
+        return { ...newProfile, email: user.email || "" }
+      }
+      console.error("Error fetching profile:", error)
+      return null
+    }
+
+    return { ...data, email: user.email || "" }
+  } catch (error) {
+    console.error("Unexpected error in getUserProfile:", error)
+    return null
+  }
+}
+
+// Update user profile
+export const updateUserProfile = async (profileData: Partial<Profile>): Promise<boolean> => {
+  try {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      console.error("Auth error:", authError)
+      return false
+    }
+
+    const updates = {
+      ...profileData,
+      id: user.id,
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error } = await supabase.from("profiles").update(updates).eq("id", user.id)
+
+    if (error) {
+      console.error("Error updating profile:", error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error("Unexpected error in updateUserProfile:", error)
+    return false
+  }
+}
+
+// Upload profile avatar
+export const uploadProfileAvatar = async (uri: string, userId: string): Promise<string | null> => {
+  try {
+    const fileExt = uri.split(".").pop()?.toLowerCase() || "jpg"
+    const filePath = `avatars/${userId}.${fileExt}`
+
+    const formData = new FormData()
+    formData.append("file", {
+      uri,
+      name: `avatar.${fileExt}`,
+      type: `image/${fileExt}`,
+    } as any)
+
+    const supabaseUrl = EXPO_PUBLIC_SUPABASE_URL
+    const supabaseKey = EXPO_PUBLIC_SUPABASE_ANON_KEY
+    const bucketName = "avatars"
+
+    const uploadResponse = await fetch(`${supabaseUrl}/storage/v1/object/${bucketName}/${filePath}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${supabaseKey}`,
+        "x-upsert": "true",
+      },
+      body: formData,
+    })
+
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text()
+      throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`)
+    }
+
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${filePath}`
+    return publicUrl
+  } catch (error) {
+    console.error("Error uploading avatar:", error)
+    return null
+  }
+}
+
