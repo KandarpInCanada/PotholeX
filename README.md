@@ -60,8 +60,8 @@ The **Pothole Mobile App** is a smart, AI-driven pothole detection and reporting
 ### 1️⃣ Clone the Repository
 
 ```sh
-git clone https://github.com/your-repo-url/potholemobileapp.git
-cd potholemobileapp
+git clone https://github.com/your-repo-url/PotholeMobileApp.git
+cd PotholeMobileApp
 ```
 
 ### 2️⃣ Install Dependencies
@@ -141,23 +141,23 @@ PotholeMobileApp/
 
 ### Onboarding
 
-<img src="potholemobileapp/images/3.png" width="200">
+<img src="PotholeMobileApp/images/3.png" width="200">
 
 ### Authentication
 
-<img src="potholemobileapp/images/2.png" width="200"> <img src="potholemobileapp/images/1.png" width="200">
+<img src="PotholeMobileApp/images/2.png" width="200"> <img src="PotholeMobileApp/images/1.png" width="200">
 
 ### Pothole Detection & Reporting
 
-<img src="potholemobileapp/images/4.png" width="200"> <img src="potholemobileapp/images/5.png" width="200"> <img src="potholemobileapp/images/6.png" width="200">
+<img src="PotholeMobileApp/images/4.png" width="200"> <img src="PotholeMobileApp/images/5.png" width="200"> <img src="PotholeMobileApp/images/6.png" width="200">
 
 ### Profile Management
 
-<img src="potholemobileapp/images/7.png" width="200">
+<img src="PotholeMobileApp/images/7.png" width="200">
 
 ### Map & Tracking
 
-<img src="potholemobileapp/images/8.png" width="200"> <img src="potholemobileapp/images/9.png" width="200">
+<img src="PotholeMobileApp/images/8.png" width="200"> <img src="PotholeMobileApp/images/9.png" width="200">
 
 </details>
 
