@@ -8,6 +8,7 @@ type ProfileHeaderProps = {
     full_name: string;
     email: string;
     avatar_url: string;
+    username: string;
   };
   editMode: boolean;
   updating: boolean;
@@ -26,6 +27,28 @@ export default function ProfileHeader({
   handleUpdateProfile,
   fetchUserProfile,
 }: ProfileHeaderProps) {
+  // Add console log to debug the profile data
+  console.log("ProfileHeader received profile:", profile);
+
+  // Get initials for avatar
+  const getInitials = () => {
+    if (profile.full_name && profile.full_name.trim() !== "") {
+      return profile.full_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase();
+    }
+    if (profile.username && profile.username.trim() !== "") {
+      return profile.username.substring(0, 2).toUpperCase();
+    }
+    return "U";
+  };
+
+  // Display name with fallbacks
+  const displayName =
+    profile.full_name || profile.username || "Update your profile";
+
   return (
     <View style={styles.header}>
       <TouchableOpacity
@@ -38,14 +61,7 @@ export default function ProfileHeader({
         ) : (
           <Avatar.Text
             size={100}
-            label={
-              profile.full_name
-                ? profile.full_name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                : "U"
-            }
+            label={getInitials()}
             style={styles.avatarFallback}
           />
         )}
@@ -56,10 +72,8 @@ export default function ProfileHeader({
         )}
       </TouchableOpacity>
 
-      <Text style={styles.name}>
-        {profile.full_name || "Update your profile"}
-      </Text>
-      <Text style={styles.email}>{profile.email}</Text>
+      <Text style={styles.name}>{displayName}</Text>
+      <Text style={styles.email}>{profile.email || ""}</Text>
 
       <View style={styles.editButtonContainer}>
         {!editMode ? (

@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Text, StyleSheet, ScrollView, Alert } from "react-native";
+import { Text, StyleSheet, ScrollView, Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Button, Divider } from "react-native-paper";
+import { Button, Divider, ActivityIndicator } from "react-native-paper";
 import { MotiView } from "moti";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
@@ -27,6 +27,7 @@ export default function ProfileScreen() {
   // State management for loading, updating, profile data, and edit mode
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [profile, setProfile] = useState({
     username: "",
     full_name: "",
@@ -44,7 +45,11 @@ export default function ProfileScreen() {
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
+      console.log("Fetching user profile...");
+
       const userProfile = await getUserProfile();
+      console.log("User profile fetched:", userProfile);
+
       if (userProfile) {
         // Update profile state with retrieved data
         setProfile({
@@ -53,6 +58,15 @@ export default function ProfileScreen() {
           avatar_url: userProfile.avatar_url || "",
           email: userProfile.email || "",
         });
+
+        console.log("Profile state updated:", {
+          username: userProfile.username || "",
+          full_name: userProfile.full_name || "",
+          avatar_url: userProfile.avatar_url || "",
+          email: userProfile.email || "",
+        });
+      } else {
+        console.warn("No user profile returned from getUserProfile");
       }
     } catch (error) {
       // Handle errors in fetching profile
@@ -67,6 +81,8 @@ export default function ProfileScreen() {
   const handleUpdateProfile = async () => {
     try {
       setUpdating(true);
+      console.log("Updating profile with:", profile);
+
       // Call service to update user profile
       const success = await updateUserProfile({
         username: profile.username,
@@ -104,23 +120,43 @@ export default function ProfileScreen() {
         },
         {
           text: "Logout",
-          onPress: async () => {
-            try {
-              // Sign out user and clear onboarding state
-              await signOut();
-              await AsyncStorage.removeItem("hasSeenOnboarding");
-              // Redirect to login screen
-              router.replace("(screens)/(auth)/login");
-            } catch (error) {
-              // Handle logout errors
-              console.error("Error during logout:", error);
-              Alert.alert("Error", "Failed to logout. Please try again.");
-            }
-          },
+          onPress: performLogout,
         },
       ],
       { cancelable: true }
     );
+  };
+
+  // Perform the actual logout
+  const performLogout = async () => {
+    try {
+      setLoggingOut(true);
+      console.log("Logging out...");
+
+      // Clear all app data
+      await Promise.all([
+        signOut(),
+        AsyncStorage.removeItem("hasSeenOnboarding"),
+        // Add any other app data that should be cleared on logout
+        AsyncStorage.removeItem("userSettings"),
+        AsyncStorage.removeItem("recentReports"),
+      ]);
+
+      console.log("Logout successful, redirecting to login screen");
+
+      // Short delay to show the loading state before redirecting
+      setTimeout(() => {
+        router.replace("(screens)/(auth)/login");
+      }, 500);
+    } catch (error) {
+      setLoggingOut(false);
+      console.error("Error during logout:", error);
+      Alert.alert(
+        "Logout Failed",
+        "There was a problem logging out. Please try again.",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   // Handle image selection for avatar
@@ -154,6 +190,16 @@ export default function ProfileScreen() {
   // Show loading screen while fetching profile
   if (loading) {
     return <LoadingScreen />;
+  }
+
+  // Show logout overlay when logging out
+  if (loggingOut) {
+    return (
+      <View style={styles.loggingOutContainer}>
+        <ActivityIndicator size="large" color={lightTheme.colors.primary} />
+        <Text style={styles.loggingOutText}>Logging out...</Text>
+      </View>
+    );
   }
 
   // Main profile screen rendering
@@ -246,5 +292,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: lightTheme.colors.textSecondary,
     marginBottom: 16,
+  },
+  // Logging out container
+  loggingOutContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+  },
+  // Logging out text
+  loggingOutText: {
+    marginTop: 16,
+    fontSize: 18,
+    color: lightTheme.colors.text,
+    fontWeight: "500",
   },
 });

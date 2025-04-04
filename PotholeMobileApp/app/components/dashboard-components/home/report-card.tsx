@@ -1,12 +1,19 @@
 "use client";
 
 import type React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Pressable,
+} from "react-native";
 import { Chip } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { formatDistanceToNow } from "date-fns";
 import { MotiView } from "moti";
+import { formatDistanceToNow } from "date-fns";
 import {
   type PotholeReport,
   ReportStatus,
@@ -17,6 +24,7 @@ interface ReportCardProps {
   item: PotholeReport;
   index: number;
   onLike: (reportId: string) => void;
+  onPress: () => void;
 }
 
 const SEVERITY_COLORS = {
@@ -32,8 +40,14 @@ const STATUS_COLORS = {
   [ReportStatus.REJECTED]: "#6B7280",
 };
 
-const ReportCard: React.FC<ReportCardProps> = ({ item, index, onLike }) => {
-  const router = useRouter();
+const ReportCard: React.FC<ReportCardProps> = ({
+  item,
+  index,
+  onLike,
+  onPress,
+}) => {
+  const [pressed, setPressed] = useState(false);
+  const [liked, setLiked] = useState(false);
   const profile = item.profiles;
 
   const formatDate = (dateString?: string) => {
@@ -53,8 +67,23 @@ const ReportCard: React.FC<ReportCardProps> = ({ item, index, onLike }) => {
         return "circle-slice-8";
       case "crack":
         return "alert-octagon";
+      case "surface break":
+        return "road-variant";
+      case "deep hole":
+        return "arrow-collapse-down";
+      case "edge damage":
+        return "road-variant";
+      case "sinkhole":
+        return "arrow-collapse-down";
       default:
         return "alert-circle";
+    }
+  };
+
+  const handleLike = () => {
+    if (!liked && item.id) {
+      setLiked(true);
+      onLike(item.id);
     }
   };
 
@@ -67,144 +96,159 @@ const ReportCard: React.FC<ReportCardProps> = ({ item, index, onLike }) => {
         duration: 500,
         delay: index * 100,
       }}
-      style={styles.card}
     >
-      <TouchableOpacity
-        onPress={() => router.push(`/dashboard/report-details/${item.id}`)}
-        activeOpacity={0.7}
+      <Pressable
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        onPress={onPress}
+        style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
       >
-        {item.images && item.images.length > 0 && (
-          <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: item.images[0] }}
-              style={styles.image}
-              defaultSource={require("../../../assets/placeholder-image.svg")}
-            />
-            <View style={styles.gradientOverlay} />
-
-            <View style={styles.floatingCategory}>
-              <MaterialCommunityIcons
-                name={getCategoryIcon(item.category)}
-                size={14}
-                color="#475569"
-              />
-              <Text style={styles.categoryText}>{item.category}</Text>
-            </View>
-
-            {item.images.length > 1 && (
-              <View style={styles.imageCountBadge}>
-                <MaterialCommunityIcons
-                  name="image-multiple"
-                  size={14}
-                  color="white"
-                />
-                <Text style={styles.imageCountText}>
-                  +{item.images.length - 1}
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
-
-        <View style={styles.contentContainer}>
-          <View style={styles.cardHeader}>
-            <View style={styles.userInfo}>
+        <MotiView
+          animate={{ scale: pressed ? 0.98 : 1 }}
+          transition={{ type: "timing", duration: 100 }}
+        >
+          {item.images && item.images.length > 0 && (
+            <View style={styles.imageContainer}>
               <Image
-                style={styles.avatar}
-                source={
-                  profile?.avatar_url
-                    ? { uri: profile.avatar_url }
-                    : require("../../../assets/default-avatar.png")
-                }
+                source={{ uri: item.images[0] }}
+                style={styles.image}
+                defaultSource={require("../../../assets/placeholder-image.svg")}
               />
-              <View style={styles.userDetails}>
-                <Text style={styles.userName}>
-                  {profile?.username || "Anonymous"}
-                </Text>
-                <Text style={styles.date}>{formatDate(item.created_at)}</Text>
+              <View style={styles.gradientOverlay} />
+
+              <View style={styles.floatingCategory}>
+                <MaterialCommunityIcons
+                  name={getCategoryIcon(item.category)}
+                  size={14}
+                  color="#475569"
+                />
+                <Text style={styles.categoryText}>{item.category}</Text>
+              </View>
+
+              {item.images.length > 1 && (
+                <View style={styles.imageCountBadge}>
+                  <MaterialCommunityIcons
+                    name="image-multiple"
+                    size={14}
+                    color="white"
+                  />
+                  <Text style={styles.imageCountText}>
+                    +{item.images.length - 1}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          <View style={styles.contentContainer}>
+            <View style={styles.cardHeader}>
+              <View style={styles.userInfo}>
+                <Image
+                  style={styles.avatar}
+                  source={
+                    profile?.avatar_url
+                      ? { uri: profile.avatar_url }
+                      : require("../../../assets/default-avatar.png")
+                  }
+                />
+                <View style={styles.userDetails}>
+                  <Text style={styles.userName}>
+                    {profile?.username || "Anonymous"}
+                  </Text>
+                  <Text style={styles.date}>{formatDate(item.created_at)}</Text>
+                </View>
               </View>
             </View>
-          </View>
 
-          <View style={styles.locationContainer}>
-            <MaterialCommunityIcons
-              name="map-marker"
-              size={16}
-              color="#0284c7"
-            />
-            <Text style={styles.location} numberOfLines={1}>
-              {item.location}
-            </Text>
-          </View>
-
-          <Text style={styles.description} numberOfLines={2}>
-            {item.description}
-          </Text>
-
-          <View style={styles.tagsContainer}>
-            <Chip
-              style={[
-                styles.severityChip,
-                {
-                  backgroundColor:
-                    SEVERITY_COLORS[item.severity as SeverityLevel] ||
-                    "#6B7280",
-                },
-              ]}
-              textStyle={styles.chipText}
-            >
-              {item.severity}
-            </Chip>
-            <Chip
-              style={[
-                styles.statusChip,
-                {
-                  backgroundColor:
-                    STATUS_COLORS[item.status as ReportStatus] || "#6B7280",
-                },
-              ]}
-              textStyle={styles.chipText}
-            >
-              {item.status}
-            </Chip>
-          </View>
-
-          <View style={styles.footer}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <TouchableOpacity
-                style={styles.interactionButton}
-                onPress={() => item.id && onLike(item.id)}
-              >
-                <MaterialCommunityIcons
-                  name="thumb-up-outline"
-                  size={18}
-                  color="#64748B"
-                />
-                <Text style={styles.interactionText}>{item.likes || 0}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.interactionButton, { marginLeft: 8 }]}
-              >
-                <MaterialCommunityIcons
-                  name="comment-outline"
-                  size={18}
-                  color="#64748B"
-                />
-                <Text style={styles.interactionText}>{item.comments || 0}</Text>
-              </TouchableOpacity>
+            <View style={styles.locationContainer}>
+              <MaterialCommunityIcons
+                name="map-marker"
+                size={16}
+                color="#0284c7"
+              />
+              <Text style={styles.location} numberOfLines={1}>
+                {item.location}
+              </Text>
             </View>
 
-            <TouchableOpacity style={styles.interactionButton}>
-              <MaterialCommunityIcons
-                name="share-outline"
-                size={18}
-                color="#64748B"
-              />
-            </TouchableOpacity>
+            <Text style={styles.description} numberOfLines={2}>
+              {item.description}
+            </Text>
+
+            <View style={styles.tagsContainer}>
+              <Chip
+                style={[
+                  styles.severityChip,
+                  {
+                    backgroundColor:
+                      SEVERITY_COLORS[item.severity as SeverityLevel] ||
+                      "#6B7280",
+                  },
+                ]}
+                textStyle={styles.chipText}
+              >
+                {item.severity}
+              </Chip>
+              <Chip
+                style={[
+                  styles.statusChip,
+                  {
+                    backgroundColor:
+                      STATUS_COLORS[item.status as ReportStatus] || "#6B7280",
+                  },
+                ]}
+                textStyle={styles.chipText}
+              >
+                {item.status}
+              </Chip>
+            </View>
+
+            <View style={styles.footer}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <TouchableOpacity
+                  style={[
+                    styles.interactionButton,
+                    liked && styles.likedButton,
+                  ]}
+                  onPress={handleLike}
+                >
+                  <MaterialCommunityIcons
+                    name={liked ? "thumb-up" : "thumb-up-outline"}
+                    size={18}
+                    color={liked ? "#0284c7" : "#64748B"}
+                  />
+                  <Text
+                    style={[styles.interactionText, liked && styles.likedText]}
+                  >
+                    {(item.likes || 0) + (liked ? 1 : 0)}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.interactionButton, { marginLeft: 8 }]}
+                >
+                  <MaterialCommunityIcons
+                    name="comment-outline"
+                    size={18}
+                    color="#64748B"
+                  />
+                  <Text style={styles.interactionText}>
+                    {item.comments || 0}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity style={styles.interactionButton}>
+                <MaterialCommunityIcons
+                  name="share-outline"
+                  size={18}
+                  color="#64748B"
+                />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </TouchableOpacity>
+        </MotiView>
+      </Pressable>
     </MotiView>
   );
 };
@@ -223,6 +267,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 3,
+  },
+  cardPressed: {
+    backgroundColor: "#F8FAFC",
   },
   imageContainer: {
     position: "relative",
@@ -360,6 +407,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     includeFontPadding: false,
     textTransform: "capitalize",
+    color: "#FFFFFF",
   },
   footer: {
     flexDirection: "row",
@@ -377,11 +425,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "transparent",
   },
+  likedButton: {
+    backgroundColor: "#EFF6FF",
+  },
   interactionText: {
     marginLeft: 6,
     fontSize: 13.5,
     color: "#475569",
     fontWeight: "600",
+  },
+  likedText: {
+    color: "#0284c7",
   },
 });
 

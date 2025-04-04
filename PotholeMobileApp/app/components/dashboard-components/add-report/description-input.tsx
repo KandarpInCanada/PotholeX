@@ -27,10 +27,17 @@ const DescriptionInput: React.FC<DescriptionInputProps> = ({
         outlineColor={error ? "#DC2626" : "#E2E8F0"}
         activeOutlineColor="#0284c7"
         error={!!error}
+        left={<TextInput.Icon icon="text-box-outline" color="#64748B" />}
+        maxLength={500}
+        autoCapitalize="sentences"
       />
-      {error && (
+      {error ? (
         <HelperText type="error" visible={true} style={styles.errorText}>
           {error}
+        </HelperText>
+      ) : (
+        <HelperText type="info" visible={true} style={styles.helperText}>
+          Minimum 10 characters. {value.length}/500 characters used.
         </HelperText>
       )}
     </View>
@@ -41,12 +48,18 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: "#FFFFFF",
     fontSize: 15,
+    minHeight: 120,
   },
   inputOutline: {
     borderRadius: 12,
   },
   errorText: {
     color: "#DC2626",
+    fontSize: 12,
+    marginTop: 4,
+  },
+  helperText: {
+    color: "#64748B",
     fontSize: 12,
     marginTop: 4,
   },

@@ -1,6 +1,7 @@
-import React from "react";
+import type React from "react";
 import { View, StyleSheet, TextInput, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MotiView } from "moti";
 
 interface SearchBarProps {
   value: string;
@@ -20,7 +21,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <MotiView
+      from={{ opacity: 0, translateY: -10 }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{ type: "timing", duration: 500, delay: 200 }}
+      style={styles.container}
+    >
       <View style={styles.searchBarWrapper}>
         <View style={styles.searchBar}>
           <MaterialCommunityIcons
@@ -49,7 +55,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           )}
         </View>
       </View>
-    </View>
+    </MotiView>
   );
 };
 
@@ -60,11 +66,16 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   searchBarWrapper: {
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    backgroundColor: "transparent",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#64748B",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   searchBar: {
     flexDirection: "row",

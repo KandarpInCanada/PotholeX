@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -12,15 +12,16 @@ import {
   Alert,
   ScrollView,
   Text,
-  StatusBar,
+  KeyboardAvoidingView,
 } from "react-native";
-import { Button, ActivityIndicator, IconButton } from "react-native-paper";
+import { Button, IconButton } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter, useFocusEffect } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MotiView } from "moti";
 import * as Location from "expo-location";
 import { saveReport, uploadReportImages } from "../../services/report-service";
+import { checkApiHealth } from "../../services/pothole-detection-service";
 import {
   type PotholeReport,
   ReportStatus,
@@ -29,6 +30,12 @@ import {
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "../../../lib/supabase";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 
 import ImageGallery from "../../components/dashboard-components/add-report/image-gallery";
 import DescriptionInput from "../../components/dashboard-components/add-report/description-input";
@@ -40,6 +47,9 @@ import SectionHeader from "../../components/dashboard-components/add-report/sect
 
 export default function AddReportScreen() {
   const router = useRouter();
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Form state
   const [images, setImages] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState<SeverityLevel>(SeverityLevel.MEDIUM);
@@ -50,17 +60,47 @@ export default function AddReportScreen() {
     longitude: -63.5752,
   });
   const [address, setAddress] = useState("");
+
+  // UI state
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [pressed, setPressed] = useState(false);
   const [reportId, setReportId] = useState<string | null>(null);
+  const [apiAvailable, setApiAvailable] = useState<boolean | null>(null);
+  const [hasPotholeValidation, setHasPotholeValidation] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
+  // Animation values
+  const submitScale = useSharedValue(1);
+  const submitAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: submitScale.value }],
+    };
+  });
+
+  // Initialize report ID
   useEffect(() => {
     if (!reportId) {
       setReportId(uuidv4());
     }
   }, [reportId]);
 
+  // Check if the pothole detection API is available
+  useEffect(() => {
+    const checkApi = async () => {
+      try {
+        const isAvailable = await checkApiHealth();
+        setApiAvailable(isAvailable);
+      } catch (error) {
+        console.error("Error checking API health:", error);
+        setApiAvailable(false);
+      }
+    };
+
+    checkApi();
+  }, []);
+
+  // Fetch location when component mounts
   const fetchLocation = useCallback(async () => {
     try {
       setLoading(true);
@@ -96,43 +136,8 @@ export default function AddReportScreen() {
   }, []);
 
   useEffect(() => {
-    const fetchInitialLocation = async () => {
-      try {
-        setLoading(true);
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") {
-          Alert.alert(
-            "Location Permission Required",
-            "Please enable location services to accurately report pothole locations."
-          );
-          return;
-        }
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        });
-        const newLocation = {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        };
-        setLocation(newLocation);
-        const geocode = await Location.reverseGeocodeAsync(newLocation);
-        if (geocode && geocode.length > 0) {
-          const { street, city, region, postalCode, country } = geocode[0];
-          const formattedAddress = `${street || ""}, ${city || ""}, ${
-            region || ""
-          } ${postalCode || ""}, ${country || ""}`;
-          setAddress(formattedAddress);
-        }
-      } catch (error) {
-        console.error("Error fetching location:", error);
-        Alert.alert("Error", "Failed to fetch location. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInitialLocation();
-  }, []);
+    fetchLocation();
+  }, [fetchLocation]);
 
   useFocusEffect(
     useCallback(() => {
@@ -224,12 +229,40 @@ export default function AddReportScreen() {
     if (!category) {
       newErrors.category = "Please select a pothole category";
     }
+
+    // Add pothole validation error if API is available but no pothole detected
+    if (apiAvailable && images.length > 0 && !hasPotholeValidation) {
+      newErrors.images =
+        "Please analyze your images to verify pothole detection";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [images.length, description, category]);
+  }, [
+    images.length,
+    description,
+    category,
+    apiAvailable,
+    hasPotholeValidation,
+  ]);
 
   const submitReport = useCallback(async () => {
     if (!validateForm()) {
+      // Animate button shake
+      submitScale.value = withSpring(0.95, { damping: 2, stiffness: 200 });
+      setTimeout(() => {
+        submitScale.value = withSpring(1);
+      }, 300);
+
+      // Scroll to first error
+      if (errors.images) {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      } else if (errors.description) {
+        scrollViewRef.current?.scrollTo({ y: 200, animated: true });
+      } else if (errors.category) {
+        scrollViewRef.current?.scrollTo({ y: 350, animated: true });
+      }
+
       Alert.alert(
         "Validation Error",
         "Please fill in all required fields correctly."
@@ -294,25 +327,23 @@ export default function AddReportScreen() {
         return;
       }
 
-      // Clear inputs after successful submission
-      setImages([]);
-      setDescription("");
-      setSeverity(SeverityLevel.MEDIUM);
-      setCategory("");
-      setRoadCondition("Dry");
-      setReportId(null);
-      setErrors({});
+      // Show success animation
+      setShowSuccessAnimation(true);
 
-      Alert.alert(
-        "Success",
-        "Thank you for reporting this pothole. Your report has been submitted successfully.",
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("(screens)/(dashboard)/home"),
-          },
-        ]
-      );
+      // Clear inputs after successful submission
+      setTimeout(() => {
+        setImages([]);
+        setDescription("");
+        setSeverity(SeverityLevel.MEDIUM);
+        setCategory("");
+        setRoadCondition("Dry");
+        setReportId(null);
+        setErrors({});
+        setHasPotholeValidation(false);
+        setShowSuccessAnimation(false);
+
+        router.replace("(screens)/(dashboard)/home");
+      }, 2000);
     } catch (error: any) {
       console.error("Submit report error:", error);
       Alert.alert(
@@ -333,33 +364,108 @@ export default function AddReportScreen() {
     severity,
     roadCondition,
     router,
+    hasPotholeValidation,
+    errors,
+    submitScale,
   ]);
+
+  const handlePotholeValidationChange = useCallback((isValid: boolean) => {
+    setHasPotholeValidation(isValid);
+  }, []);
+
+  // Success animation overlay
+  const renderSuccessOverlay = () => {
+    if (!showSuccessAnimation) return null;
+
+    return (
+      <View style={styles.successOverlay}>
+        <MotiView
+          from={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", damping: 15 }}
+          style={styles.successContent}
+        >
+          <View style={styles.successIconContainer}>
+            <MaterialCommunityIcons
+              name="check-circle"
+              size={80}
+              color="#10B981"
+            />
+          </View>
+          <Text style={styles.successTitle}>Report Submitted!</Text>
+          <Text style={styles.successMessage}>
+            Thank you for reporting this pothole. Your contribution helps make
+            roads safer.
+          </Text>
+        </MotiView>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <MotiView
-            from={{ opacity: 0, translateY: 50 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "spring", damping: 10 }}
-            style={styles.container}
-          >
-            <View style={styles.content}>
-              <View style={styles.section}>
+        {/* Header */}
+        <View style={styles.header}>
+          <IconButton
+            icon="arrow-left"
+            size={24}
+            onPress={() => router.back()}
+            style={styles.backButton}
+          />
+          <Text style={styles.headerTitle}>Report a Pothole</Text>
+          <View style={{ width: 40 }} />
+        </View>
+
+        {/* Section tabs */}
+
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <MotiView
+              from={{ opacity: 0, translateY: 20 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ type: "spring", damping: 15 }}
+              style={styles.content}
+            >
+              {apiAvailable === false && (
+                <MotiView
+                  from={{ opacity: 0, translateY: -10 }}
+                  animate={{ opacity: 1, translateY: 0 }}
+                  transition={{ type: "spring", damping: 15 }}
+                  style={styles.apiWarning}
+                >
+                  <MaterialCommunityIcons
+                    name="alert-outline"
+                    size={20}
+                    color="#92400E"
+                  />
+                  <Text style={styles.apiWarningText}>
+                    Pothole detection service is unavailable. You can still
+                    submit reports manually.
+                  </Text>
+                </MotiView>
+              )}
+
+              <View style={styles.section} id="photos">
                 <SectionHeader icon="camera" title="Photos" required />
                 <ImageGallery
                   images={images}
                   onAddImage={handleImagePicker}
                   onRemoveImage={removeImage}
                   error={errors.images}
+                  onValidationChange={handlePotholeValidationChange}
                 />
               </View>
 
-              <View style={styles.section}>
+              <View style={styles.section} id="description">
                 <SectionHeader icon="text" title="Description" required />
                 <DescriptionInput
                   value={description}
@@ -368,7 +474,7 @@ export default function AddReportScreen() {
                 />
               </View>
 
-              <View style={styles.section}>
+              <View style={styles.section} id="category">
                 <SectionHeader icon="shape" title="Pothole Type" required />
                 <CategorySelector
                   selectedCategory={category}
@@ -377,7 +483,7 @@ export default function AddReportScreen() {
                 />
               </View>
 
-              <View style={styles.section}>
+              <View style={styles.section} id="severity">
                 <SectionHeader icon="alert" title="Severity Level" />
                 <SeveritySelector
                   selectedSeverity={severity}
@@ -385,7 +491,7 @@ export default function AddReportScreen() {
                 />
               </View>
 
-              <View style={styles.section}>
+              <View style={styles.section} id="road">
                 <SectionHeader icon="road" title="Road Condition" />
                 <RoadConditionSelector
                   selectedCondition={roadCondition}
@@ -393,7 +499,7 @@ export default function AddReportScreen() {
                 />
               </View>
 
-              <View style={styles.section}>
+              <View style={styles.section} id="location">
                 <SectionHeader icon="map-marker" title="Location" />
                 <LocationPicker
                   initialLocation={location}
@@ -415,10 +521,7 @@ export default function AddReportScreen() {
                   disabled={loading}
                   style={styles.submitButtonContainer}
                 >
-                  <MotiView
-                    animate={{ scale: pressed ? 0.97 : 1 }}
-                    transition={{ type: "spring" }}
-                  >
+                  <Animated.View style={[submitAnimatedStyle]}>
                     <Button
                       mode="contained"
                       style={styles.submitButton}
@@ -430,13 +533,16 @@ export default function AddReportScreen() {
                     >
                       {loading ? "Submitting..." : "Submit Report"}
                     </Button>
-                  </MotiView>
+                  </Animated.View>
                 </Pressable>
               </View>
-            </View>
-          </MotiView>
-        </TouchableWithoutFeedback>
-      </ScrollView>
+            </MotiView>
+          </TouchableWithoutFeedback>
+        </ScrollView>
+
+        {/* Success overlay */}
+        {renderSuccessOverlay()}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -446,50 +552,41 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8FAFC",
   },
-  stickyHeader: {
+  container: {
+    flex: 1,
+  },
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 3,
-    zIndex: 100, // Ensure header is above scroll content
   },
   backButton: {
     margin: 0,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: "800",
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
     color: "#0F172A",
-    flex: 1,
-    marginLeft: 8,
-  },
-  loadingIndicator: {
-    marginLeft: 8,
   },
   scrollContainer: {
     flexGrow: 1,
     padding: 16,
-    paddingTop: 16, // Add some padding at the top
-  },
-  container: {
-    flex: 1,
-    gap: 20,
   },
   content: {
     paddingBottom: 16,
-    paddingHorizontal: 5, // Additional padding at the bottom
   },
   section: {
-    marginBottom: 16,
+    marginBottom: 24,
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
@@ -516,5 +613,57 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#FFFFFF",
     paddingVertical: 4,
+  },
+  apiWarning: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEF3C7",
+    borderRadius: 12,
+    padding: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#F59E0B",
+  },
+  apiWarningText: {
+    color: "#92400E",
+    marginLeft: 8,
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  successOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  successContent: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 24,
+    alignItems: "center",
+    width: "80%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  successIconContainer: {
+    marginBottom: 16,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 8,
+  },
+  successMessage: {
+    fontSize: 16,
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 24,
   },
 });

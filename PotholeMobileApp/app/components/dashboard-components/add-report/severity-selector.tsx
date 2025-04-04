@@ -5,9 +5,24 @@ import { MotiView } from "moti";
 import { SeverityLevel } from "../../../../lib/supabase";
 
 const SEVERITY_LEVELS = [
-  { label: SeverityLevel.LOW, color: "#10B981", icon: "alert-circle-outline" },
-  { label: SeverityLevel.MEDIUM, color: "#F59E0B", icon: "alert-circle" },
-  { label: SeverityLevel.DANGER, color: "#DC2626", icon: "alert-octagon" },
+  {
+    label: SeverityLevel.LOW,
+    color: "#10B981",
+    icon: "alert-circle-outline",
+    description: "Minor issue, not urgent",
+  },
+  {
+    label: SeverityLevel.MEDIUM,
+    color: "#F59E0B",
+    icon: "alert-circle",
+    description: "Moderate damage, attention needed",
+  },
+  {
+    label: SeverityLevel.DANGER,
+    color: "#DC2626",
+    icon: "alert-octagon",
+    description: "Severe hazard, immediate action required",
+  },
 ];
 
 interface SeveritySelectorProps {
@@ -26,7 +41,7 @@ const SeveritySelector: React.FC<SeveritySelectorProps> = ({
           key={level.label}
           from={{ scale: 1 }}
           animate={{ scale: selectedSeverity === level.label ? 1.05 : 1 }}
-          transition={{ type: "spring" }}
+          transition={{ type: "spring", damping: 15 }}
           style={styles.severityItem}
         >
           <TouchableOpacity
@@ -41,7 +56,7 @@ const SeveritySelector: React.FC<SeveritySelectorProps> = ({
           >
             <MaterialCommunityIcons
               name={level.icon as any}
-              size={24}
+              size={28}
               color={selectedSeverity === level.label ? "#FFFFFF" : level.color}
             />
             <Text
@@ -55,6 +70,20 @@ const SeveritySelector: React.FC<SeveritySelectorProps> = ({
             >
               {level.label}
             </Text>
+            <Text
+              style={[
+                styles.severityDescription,
+                {
+                  color:
+                    selectedSeverity === level.label
+                      ? "rgba(255,255,255,0.8)"
+                      : "#64748B",
+                },
+              ]}
+              numberOfLines={2}
+            >
+              {level.description}
+            </Text>
           </TouchableOpacity>
         </MotiView>
       ))}
@@ -64,25 +93,31 @@ const SeveritySelector: React.FC<SeveritySelectorProps> = ({
 
 const styles = StyleSheet.create({
   severityContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: "column",
+    gap: 12,
   },
   severityItem: {
-    flex: 1,
-    maxWidth: "32%",
+    width: "100%",
   },
   severityButton: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 2,
     backgroundColor: "transparent",
   },
   severityText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
-    marginTop: 6,
+    marginTop: 8,
+  },
+  severityDescription: {
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 4,
+    paddingHorizontal: 8,
   },
 });
 

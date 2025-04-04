@@ -1,16 +1,19 @@
 // components/reports/ReportItem.tsx
-import React from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
-import { Chip } from "react-native-paper";
+import type React from "react";
+import { View, Text, StyleSheet, Image, Pressable } from "react-native";
+import { Chip, Badge } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { MotiView } from "moti";
 import { formatDistanceToNow } from "date-fns";
 import {
-  PotholeReport,
+  type PotholeReport,
   ReportStatus,
   SeverityLevel,
 } from "../../../../lib/supabase";
-import { deleteReport } from "../../../services/report-service";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 
 interface ReportItemProps {
   report: PotholeReport;
@@ -49,6 +52,16 @@ const ReportItem: React.FC<ReportItemProps> = ({
   onReportsChange,
   reports,
 }) => {
+  // Animation values
+  const scale = useSharedValue(1);
+
+  // Animated styles
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return "";
     try {
@@ -58,21 +71,21 @@ const ReportItem: React.FC<ReportItemProps> = ({
     }
   };
 
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98, { damping: 10 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 10 });
+  };
+
   return (
-    <MotiView
-      from={{ opacity: 0, translateX: -20 }}
-      animate={{ opacity: 1, translateX: 0 }}
-      transition={{
-        type: "timing",
-        duration: 300,
-        delay: index * 50,
-      }}
+    <Pressable
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
     >
-      <TouchableOpacity
-        style={styles.reportItem}
-        onPress={onPress}
-        activeOpacity={0.7}
-      >
+      <Animated.View style={[styles.reportItem, animatedStyle]}>
         <View style={styles.reportHeader}>
           <View style={styles.reportInfo}>
             <Text style={styles.reportCategory}>{report.category}</Text>
@@ -94,11 +107,34 @@ const ReportItem: React.FC<ReportItemProps> = ({
 
             <View style={styles.reportFooter}>
               <SeverityChip severity={report.severity as SeverityLevel} />
+
+              <View style={styles.reportStats}>
+                {report.likes && report.likes > 0 && (
+                  <View style={styles.statItem}>
+                    <MaterialCommunityIcons
+                      name="thumb-up"
+                      size={14}
+                      color="#64748B"
+                    />
+                    <Text style={styles.statText}>{report.likes}</Text>
+                  </View>
+                )}
+                {report.comments && report.comments > 0 && (
+                  <View style={styles.statItem}>
+                    <MaterialCommunityIcons
+                      name="comment"
+                      size={14}
+                      color="#64748B"
+                    />
+                    <Text style={styles.statText}>{report.comments}</Text>
+                  </View>
+                )}
+              </View>
             </View>
           </View>
         </View>
-      </TouchableOpacity>
-    </MotiView>
+      </Animated.View>
+    </Pressable>
   );
 };
 
@@ -120,7 +156,7 @@ const StatusChip: React.FC<{ status: ReportStatus }> = ({ status }) => (
       />
     )}
   >
-    {status}
+    {status.toString().replace("_", " ")}
   </Chip>
 );
 
@@ -141,11 +177,18 @@ const SeverityChip: React.FC<{ severity: SeverityLevel }> = ({ severity }) => (
 const ReportImage: React.FC<{ images?: string[] }> = ({ images }) => {
   if (images && images.length > 0) {
     return (
-      <Image
-        source={{ uri: images[0] }}
-        style={styles.reportImage}
-        defaultSource={require("../../../assets/placeholder-image.svg")}
-      />
+      <View style={styles.imageContainer}>
+        <Image
+          source={{ uri: images[0] }}
+          style={styles.reportImage}
+          defaultSource={require("../../../assets/placeholder-image.svg")}
+        />
+        {images.length > 1 && (
+          <Badge style={styles.imageBadge} size={20}>
+            {`+${images.length - 1}`}
+          </Badge>
+        )}
+      </View>
     );
   }
 
@@ -168,9 +211,9 @@ const LocationInfo: React.FC<{ location: string }> = ({ location }) => (
 const styles = StyleSheet.create({
   reportItem: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 8,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     shadowColor: "#64748B",
@@ -200,26 +243,40 @@ const styles = StyleSheet.create({
   },
   statusChip: {
     height: 28,
+    borderRadius: 14,
   },
   chipText: {
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "600",
     marginVertical: 0,
+    textTransform: "capitalize",
   },
   reportContent: {
     flexDirection: "row",
     gap: 12,
   },
-  reportImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+  imageContainer: {
+    position: "relative",
   },
+  reportImage: {
+    width: 90,
+    height: 90,
+    borderRadius: 12,
+  },
+  imageBadge: {
+    position: "absolute",
+    bottom: -5,
+    right: -5,
+    backgroundColor: "#0284c7",
+    color: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  } as const,
   noImageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+    width: 90,
+    height: 90,
+    borderRadius: 12,
     backgroundColor: "#F1F5F9",
     justifyContent: "center",
     alignItems: "center",
@@ -252,6 +309,22 @@ const styles = StyleSheet.create({
   },
   severityChip: {
     height: 24,
+    borderRadius: 12,
+  },
+  reportStats: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  statItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  statText: {
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "500",
   },
 });
 

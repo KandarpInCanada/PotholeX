@@ -18,15 +18,20 @@ export const getUserProfile = async (): Promise<(Profile & { email: string }) | 
 
     if (error) {
       if (error.code === "PGRST116") {
-        // Profile doesn't exist, create a new one
+        // Profile doesn't exist, create a new one with default values
+        const username = user.email?.split("@")[0] || "user"
+        const fullName = user.user_metadata?.name || username
+
         const newProfile = {
           id: user.id,
-          username: user.email?.split("@")[0] || "",
-          full_name: user.user_metadata?.name || "",
+          username: username,
+          full_name: fullName,
           avatar_url: user.user_metadata?.avatar_url || "",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         }
+
+        console.log("Creating new profile:", newProfile)
 
         const { error: insertError } = await supabase.from("profiles").insert(newProfile)
 
@@ -41,7 +46,17 @@ export const getUserProfile = async (): Promise<(Profile & { email: string }) | 
       return null
     }
 
-    return { ...data, email: user.email || "" }
+    // Ensure we have default values for username and full_name if they're null or empty
+    const profile = {
+      ...data,
+      username: data.username || user.email?.split("@")[0] || "user",
+      full_name: data.full_name || user.user_metadata?.name || data.username || "User",
+      email: user.email || "",
+    }
+
+    console.log("Fetched profile:", profile)
+
+    return profile
   } catch (error) {
     console.error("Unexpected error in getUserProfile:", error)
     return null

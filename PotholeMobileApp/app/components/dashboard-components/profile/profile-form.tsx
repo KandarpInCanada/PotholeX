@@ -25,6 +25,9 @@ export default function ProfileForm({
   editMode,
   setProfile,
 }: ProfileFormProps) {
+  // Add console log to debug the profile data
+  console.log("ProfileForm received profile:", profile);
+
   return (
     <View style={styles.formContainer}>
       <Text style={styles.sectionTitle}>Profile Information</Text>
@@ -32,7 +35,7 @@ export default function ProfileForm({
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Username</Text>
         <TextInput
-          value={profile.username}
+          value={profile.username || ""}
           onChangeText={(text) =>
             setProfile((prev) => ({ ...prev, username: text }))
           }
@@ -42,13 +45,14 @@ export default function ProfileForm({
           outlineColor={lightTheme.colors.outline}
           activeOutlineColor={lightTheme.colors.primary}
           left={<TextInput.Icon icon="account" />}
+          placeholder="Enter username"
         />
       </View>
 
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Full Name</Text>
         <TextInput
-          value={profile.full_name}
+          value={profile.full_name || ""}
           onChangeText={(text) =>
             setProfile((prev) => ({ ...prev, full_name: text }))
           }
@@ -58,13 +62,14 @@ export default function ProfileForm({
           outlineColor={lightTheme.colors.outline}
           activeOutlineColor={lightTheme.colors.primary}
           left={<TextInput.Icon icon="badge-account" />}
+          placeholder="Enter full name"
         />
       </View>
 
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Email</Text>
         <TextInput
-          value={profile.email}
+          value={profile.email || ""}
           style={styles.input}
           disabled={true}
           mode="outlined"

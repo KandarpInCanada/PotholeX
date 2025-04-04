@@ -7,6 +7,7 @@ import { supabase } from "../lib/supabase";
 import { AppState } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type AuthContextType = {
   user: User | null;
@@ -203,7 +204,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    console.log("Signing out user...");
+    try {
+      // Clear any app-specific data from AsyncStorage
+      const keysToRemove = [
+        "hasSeenOnboarding",
+        "userSettings",
+        "recentReports",
+        // Add any other keys that should be cleared on logout
+      ];
+
+      await Promise.all([
+        // Sign out from Supabase
+        supabase.auth.signOut(),
+        // Clear AsyncStorage items
+        ...keysToRemove.map((key) => AsyncStorage.removeItem(key)),
+      ]);
+
+      console.log("User signed out successfully");
+    } catch (error) {
+      console.error("Error during sign out:", error);
+      throw error; // Re-throw to handle in the UI
+    }
   };
 
   const resetPassword = async (email: string) => {

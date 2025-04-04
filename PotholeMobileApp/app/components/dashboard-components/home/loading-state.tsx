@@ -1,6 +1,7 @@
 import type React from "react";
-import { Text, StyleSheet, ActivityIndicator } from "react-native";
+import { Text, StyleSheet } from "react-native";
 import { MotiView } from "moti";
+import { ActivityIndicator } from "react-native-paper";
 
 const LoadingState: React.FC = () => {
   return (
@@ -21,11 +22,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    padding: 24,
   },
   loadingText: {
-    marginTop: 12,
+    marginTop: 16,
     fontSize: 16,
     color: "#64748B",
+    fontWeight: "500",
   },
 });
 
