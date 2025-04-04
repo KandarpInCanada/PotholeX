@@ -1,6 +1,11 @@
 flask
-boto3
-opencv-python
-numpy
-ultralytics
 werkzeug
+ultralytics
+opencv-python
+pillow
+numpy
+flask-cors
+flask-socketio
+python-engineio>=4.5.1
+python-socketio>=5.9.0
+eventlet
