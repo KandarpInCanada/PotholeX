@@ -22,7 +22,6 @@ import {
   ActivityIndicator,
   Divider,
   Card,
-  Avatar,
 } from "react-native-paper";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import { MotiView } from "moti";
@@ -819,7 +818,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
-    paddingBottom: 24,
+    paddingBottom: 100, // Increase this value to ensure content isn't hidden behind the tab bar
     paddingTop: 0,
   },
   reportCard: {

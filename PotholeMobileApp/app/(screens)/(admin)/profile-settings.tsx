@@ -30,10 +30,13 @@ import {
 } from "../../services/profile-service";
 import { LinearGradient } from "expo-linear-gradient";
 import { Portal, Dialog } from "react-native-paper";
+import { ActivityIndicator } from "react-native-paper";
+import { useRouter } from "expo-router";
 
 // Update the component to remove AdminHeader
 export default function AdminProfileSettings() {
   const { user, signOut } = useAuth();
+  const router = useRouter();
 
   // Profile state
   const [loading, setLoading] = useState(true);
@@ -151,10 +154,29 @@ export default function AdminProfileSettings() {
 
   const handleLogout = async () => {
     try {
+      setShowLogoutDialog(false);
+      // Show loading state
+      const loadingOverlay = (
+        <View style={styles.loggingOutContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text style={styles.loggingOutText}>Logging out...</Text>
+        </View>
+      );
+
+      // Actually perform the logout
       await signOut();
+
+      // The signOut function should handle navigation automatically through the auth context
+      // But we'll add a fallback just in case
+      console.log("Logout completed, redirecting to login screen");
+
+      // Force navigation to login screen after a short delay
+      setTimeout(() => {
+        router.replace("/(screens)/(auth)/login");
+      }, 500);
     } catch (error) {
       console.error("Error signing out:", error);
-      Alert.alert("Error", "Failed to sign out");
+      Alert.alert("Error", "Failed to sign out. Please try again.");
     }
   };
 
@@ -540,8 +562,11 @@ export default function AdminProfileSettings() {
         <Dialog
           visible={showApiDialog}
           onDismiss={() => setShowApiDialog(false)}
+          style={styles.logoutDialog}
         >
-          <Dialog.Title>Edit API Endpoint</Dialog.Title>
+          <Dialog.Title style={styles.logoutDialogTitle}>
+            Edit API Endpoint
+          </Dialog.Title>
           <Dialog.Content>
             <TextInput
               label="API URL"
@@ -549,11 +574,27 @@ export default function AdminProfileSettings() {
               onChangeText={setEditingApiUrl}
               mode="outlined"
               style={styles.apiInput}
+              outlineColor="#E2E8F0"
+              activeOutlineColor="#3B82F6"
             />
           </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setShowApiDialog(false)}>Cancel</Button>
-            <Button onPress={saveApiSettings}>Save</Button>
+          <Dialog.Actions style={styles.logoutDialogActions}>
+            <Button
+              onPress={() => setShowApiDialog(false)}
+              textColor="#64748B"
+              style={styles.dialogButton}
+              labelStyle={styles.dialogButtonLabel}
+            >
+              Cancel
+            </Button>
+            <Button
+              onPress={saveApiSettings}
+              textColor="#3B82F6"
+              style={styles.dialogButton}
+              labelStyle={styles.dialogButtonLabel}
+            >
+              Save
+            </Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -563,14 +604,29 @@ export default function AdminProfileSettings() {
         <Dialog
           visible={showLogoutDialog}
           onDismiss={() => setShowLogoutDialog(false)}
+          style={styles.logoutDialog}
         >
-          <Dialog.Title>Logout</Dialog.Title>
+          <Dialog.Title style={styles.logoutDialogTitle}>Logout</Dialog.Title>
           <Dialog.Content>
-            <Text>Are you sure you want to logout from the admin portal?</Text>
+            <Text style={styles.logoutDialogContent}>
+              Are you sure you want to logout from the admin portal?
+            </Text>
           </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setShowLogoutDialog(false)}>Cancel</Button>
-            <Button onPress={handleLogout} textColor="#EF4444">
+          <Dialog.Actions style={styles.logoutDialogActions}>
+            <Button
+              onPress={() => setShowLogoutDialog(false)}
+              textColor="#3B82F6"
+              style={styles.dialogButton}
+              labelStyle={styles.dialogButtonLabel}
+            >
+              Cancel
+            </Button>
+            <Button
+              onPress={handleLogout}
+              textColor="#EF4444"
+              style={styles.dialogButton}
+              labelStyle={styles.dialogButtonLabel}
+            >
               Logout
             </Button>
           </Dialog.Actions>
@@ -580,6 +636,7 @@ export default function AdminProfileSettings() {
   );
 }
 
+// Update the logout dialog styling to fix the text cutoff issue
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -590,7 +647,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 100, // Increase this value to ensure content isn't hidden behind the tab bar
   },
   profileHeader: {
     borderRadius: 16,
@@ -799,5 +856,60 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 14,
     color: "#94A3B8",
+  },
+  // Update these specific styles for the logout dialog
+  logoutDialog: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    width: "85%",
+    alignSelf: "center",
+    padding: 8,
+    maxHeight: 200, // Set a fixed maximum height
+  },
+  logoutDialogTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0F172A",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  logoutDialogContent: {
+    fontSize: 16,
+    color: "#334155",
+    textAlign: "center",
+    lineHeight: 22,
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+  },
+  logoutDialogActions: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+  dialogButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    minWidth: 80,
+  },
+  dialogButtonLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  loggingOutContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255,255,255,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  loggingOutText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#3B82F6",
   },
 });

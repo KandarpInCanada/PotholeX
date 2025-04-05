@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
-    paddingBottom: 80, // Extra padding for FAB
+    paddingBottom: 100, // Increase this value to ensure content isn't hidden behind the tab bar
   },
   listHeader: {
     marginBottom: 16,

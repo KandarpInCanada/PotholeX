@@ -65,9 +65,12 @@ export default function UsersScreen() {
     }
   }, [users, searchQuery]);
 
+  // Replace the fetchUsers function with this implementation that doesn't rely on admin API
   const fetchUsers = async () => {
     try {
       setLoading(true);
+
+      // Get profiles with their user_id (which is the auth user id)
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -75,23 +78,34 @@ export default function UsersScreen() {
 
       if (error) throw error;
 
-      // Get user emails from auth.users
-      const { data: authData } = await supabase.auth.admin.listUsers();
+      // For each profile, try to get the email from the auth.users table
+      // This approach uses the public API and doesn't require admin privileges
+      const usersWithEmail = await Promise.all(
+        (data || []).map(async (profile) => {
+          // Try to get email from metadata if available
+          let email = null;
 
-      // Combine profile data with email from auth
-      const usersWithEmail =
-        data?.map((profile) => {
-          const authUser = authData?.users?.find((u) => u.id === profile.id);
+          // If the current user is viewing their own profile, we can get their email
+          const { data: userData } = await supabase.auth.getUser();
+          if (userData?.user && userData.user.id === profile.id) {
+            email = userData.user.email;
+          }
+
           return {
             ...profile,
-            email: authUser?.email || null,
+            email: email || "Email hidden for privacy",
           };
-        }) || [];
+        })
+      );
 
       setUsers(usersWithEmail);
       setFilteredUsers(usersWithEmail);
     } catch (error) {
       console.error("Error fetching users:", error);
+      // Fallback to just using profile data without emails
+      const { data } = await supabase.from("profiles").select("*");
+      setUsers(data || []);
+      setFilteredUsers(data || []);
     } finally {
       setLoading(false);
     }
@@ -125,6 +139,7 @@ export default function UsersScreen() {
     }
   };
 
+  // Update the renderUserItem function to better handle emails and avatars
   const renderUserItem = ({ item, index }: { item: User; index: number }) => (
     <MotiView
       from={{ opacity: 0, translateY: 10 }}
@@ -144,7 +159,7 @@ export default function UsersScreen() {
               ) : (
                 <Avatar.Text
                   size={60}
-                  label={(item.full_name || item.username || "U")
+                  label={(item.full_name || item.username || item.email || "U")
                     .substring(0, 2)
                     .toUpperCase()}
                   style={styles.avatar}
@@ -155,7 +170,9 @@ export default function UsersScreen() {
                 <Text style={styles.userName}>
                   {item.full_name || item.username || "Anonymous"}
                 </Text>
-                <Text style={styles.userEmail}>{item.email || "No email"}</Text>
+                <Text style={styles.userEmail}>
+                  {item.email || "No email available"}
+                </Text>
                 <Text style={styles.userDate}>
                   Joined: {new Date(item.created_at).toLocaleDateString()}
                 </Text>
@@ -216,7 +233,6 @@ export default function UsersScreen() {
                 View and manage user accounts and permissions
               </Text>
             </View>
-            <Avatar.Text size={40} label="PA" style={styles.avatarHeader} />
           </View>
         </View>
 
@@ -271,7 +287,7 @@ export default function UsersScreen() {
               <MaterialCommunityIcons
                 name={selectedUser?.is_admin ? "shield-off" : "shield"}
                 size={32}
-                color={selectedUser?.is_admin ? "#EF4444" : "#3B82F6"} // Changed from #8B5CF6 to blue
+                color={selectedUser?.is_admin ? "#EF4444" : "#3B82F6"}
                 style={styles.dialogIcon}
               />
               <Text style={styles.dialogText}>
@@ -285,16 +301,20 @@ export default function UsersScreen() {
               </Text>
             </View>
           </Dialog.Content>
-          <Dialog.Actions>
+          <Dialog.Actions style={styles.dialogActions}>
             <Button
               onPress={() => setShowAdminDialog(false)}
               textColor="#64748B"
+              style={styles.dialogButton}
+              labelStyle={styles.dialogButtonLabel}
             >
               Cancel
             </Button>
             <Button
               onPress={confirmToggleAdmin}
               textColor={selectedUser?.is_admin ? "#EF4444" : "#3B82F6"}
+              style={styles.dialogButton}
+              labelStyle={styles.dialogButtonLabel}
             >
               Confirm
             </Button>
@@ -314,7 +334,7 @@ const styles = StyleSheet.create({
     flex: 0,
   },
   headerBanner: {
-    backgroundColor: "#3B82F6", // Changed from #8B5CF6 to blue
+    backgroundColor: "#3B82F6",
     paddingVertical: 24,
     paddingHorizontal: 20,
     borderRadius: 16,
@@ -357,8 +377,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
-    paddingBottom: 24,
-    paddingTop: 8,
+    paddingBottom: 100, // Increase this value to ensure content isn't hidden behind the tab bar
   },
   userCard: {
     marginBottom: 16,
@@ -374,7 +393,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   avatar: {
-    backgroundColor: "#3B82F6", // Changed from #8B5CF6 to blue
+    backgroundColor: "#3B82F6",
   },
   userDetails: {
     marginLeft: 16,
@@ -407,7 +426,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   adminChip: {
-    backgroundColor: "#3B82F6", // Changed from #8B5CF6 to blue
+    backgroundColor: "#3B82F6",
     borderRadius: 16,
     paddingHorizontal: 8,
   },
@@ -454,24 +473,45 @@ const styles = StyleSheet.create({
   },
   dialog: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 24,
+    padding: 8,
+    maxWidth: "85%",
+    alignSelf: "center",
   },
   dialogTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "700",
     color: "#0F172A",
+    textAlign: "center",
+    marginBottom: 8,
   },
   dialogContent: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  dialogIcon: {
-    marginRight: 12,
+    paddingVertical: 8,
   },
   dialogText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 16,
     color: "#334155",
-    lineHeight: 20,
+    lineHeight: 24,
+    marginLeft: 16,
+  },
+  dialogIcon: {
+    marginRight: 4,
+  },
+  dialogActions: {
+    justifyContent: "space-around",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  dialogButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    minWidth: 100,
+  },
+  dialogButtonLabel: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

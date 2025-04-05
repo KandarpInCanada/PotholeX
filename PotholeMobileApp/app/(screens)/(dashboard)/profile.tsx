@@ -566,6 +566,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
+    paddingBottom: 100, // Increase this value to ensure content isn't hidden behind the tab bar
   },
   // Header styles
   header: {

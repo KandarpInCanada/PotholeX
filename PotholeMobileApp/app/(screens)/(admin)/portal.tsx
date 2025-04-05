@@ -7,12 +7,11 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
   ActivityIndicator,
   Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Card, Button, Divider, useTheme, Avatar } from "react-native-paper";
+import { Card, Button, Divider, useTheme } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { MotiView } from "moti";
@@ -449,7 +448,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 100, // Increase this value to ensure content isn't hidden behind the tab bar
   },
   welcomeSection: {
     borderRadius: 16,

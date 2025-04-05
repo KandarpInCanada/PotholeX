@@ -1,17 +1,24 @@
 "use client";
 
-import { StyleSheet } from "react-native";
+import { StyleSheet, View, Dimensions } from "react-native";
 import { Tabs } from "expo-router";
 import { useAuth } from "../../../context/auth-context";
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Platform, StatusBar } from "react-native";
+import Animated from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const { width } = Dimensions.get("window");
 
 export default function AdminLayout() {
   // Get the isAdmin state from auth context
   const { isAdmin } = useAuth();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeIndexRef = useRef(activeIndex);
 
   // Redirect non-admin users away from admin screens
   useEffect(() => {
@@ -29,57 +36,116 @@ export default function AdminLayout() {
   // Admin-specific tab navigation
   return (
     <Tabs
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
-          if (route.name === "portal") {
-            iconName = focused ? "shield" : "shield-outline";
-          } else if (route.name === "report-list") {
-            iconName = focused ? "document-text" : "document-text-outline";
-          } else if (route.name === "users") {
-            iconName = focused ? "people" : "people-outline";
-          } else if (route.name === "profile-settings") {
-            iconName = focused ? "settings" : "settings-outline";
-          }
-          return <Ionicons name={iconName as any} size={size} color={color} />;
-        },
-        tabBarStyle: [
-          styles.tabBar,
-          Platform.OS === "ios" ? styles.iosTabBar : styles.androidTabBar,
-        ],
-        tabBarItemStyle: styles.tabBarItem,
-        tabBarActiveTintColor: "#3B82F6",
-        tabBarInactiveTintColor: "#64748B",
-        tabBarLabelStyle: { display: "none" }, // Hide the labels
-        headerShown: false,
-      })}
+      screenOptions={({ route }) => {
+        return {
+          tabBarIcon: ({ focused, color, size }) => {
+            // Define the icon name based on the route and focused state
+            let iconName: any; // Use 'any' type to bypass TypeScript checking for dynamic icon names
+            if (route.name === "portal") {
+              iconName = focused ? "shield" : "shield-outline";
+            } else if (route.name === "report-list") {
+              iconName = focused ? "document-text" : "document-text-outline";
+            } else if (route.name === "users") {
+              iconName = focused ? "people" : "people-outline";
+            } else if (route.name === "profile-settings") {
+              iconName = focused ? "settings" : "settings-outline";
+            } else {
+              iconName = focused ? "alert-circle" : "alert-circle-outline"; // Default icon
+            }
+
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarStyle: [
+            styles.tabBar,
+            { paddingBottom: insets.bottom > 0 ? insets.bottom : 10 },
+            Platform.OS === "ios" ? styles.iosTabBar : styles.androidTabBar,
+          ],
+          tabBarItemStyle: styles.tabBarItem,
+          tabBarActiveTintColor: "#3B82F6",
+          tabBarInactiveTintColor: "#64748B",
+          tabBarLabelStyle: styles.tabBarLabel,
+          headerShown: false,
+          tabBarBackground: () => (
+            <View style={styles.tabBarBackground}>
+              <View style={styles.tabBarBackgroundInner} />
+            </View>
+          ),
+          tabBarButton: (props) => {
+            const { onPress, children, accessibilityState } = props;
+            const isActive = accessibilityState?.selected;
+            const routeName = route.name;
+
+            // Update active index for animation
+            useEffect(() => {
+              const index = [
+                "portal",
+                "report-list",
+                "users",
+                "profile-settings",
+              ].indexOf(routeName);
+              if (index !== -1) {
+                setActiveIndex(index);
+                activeIndexRef.current = index;
+              }
+            }, [routeName]);
+
+            return (
+              <Animated.View
+                style={[styles.tabButton, isActive && styles.activeTabButton]}
+              >
+                <Animated.View
+                  style={[
+                    styles.tabButtonInner,
+                    isActive && styles.activeTabButtonInner,
+                  ]}
+                >
+                  <Animated.View
+                    style={[
+                      styles.tabButtonContent,
+                      isActive && {
+                        backgroundColor: "rgba(59, 130, 246, 0.1)",
+                      },
+                    ]}
+                  >
+                    <Animated.View
+                      style={[
+                        styles.tabButtonWrapper,
+                        { opacity: isActive ? 1 : 0.8 },
+                      ]}
+                      onTouchEnd={onPress}
+                    >
+                      {children}
+                    </Animated.View>
+                  </Animated.View>
+                </Animated.View>
+              </Animated.View>
+            );
+          },
+        };
+      }}
     >
       <Tabs.Screen
         name="portal"
         options={{
           title: "Dashboard",
-          tabBarLabel: "", // Empty label
         }}
       />
       <Tabs.Screen
         name="report-list"
         options={{
           title: "Reports",
-          tabBarLabel: "", // Empty label
         }}
       />
       <Tabs.Screen
         name="users"
         options={{
           title: "Users",
-          tabBarLabel: "", // Empty label
         }}
       />
       <Tabs.Screen
         name="profile-settings"
         options={{
           title: "Settings",
-          tabBarLabel: "", // Empty label
         }}
       />
       {/* Add notifications screen but hide it from tab bar */}
@@ -87,7 +153,6 @@ export default function AdminLayout() {
         name="notifications"
         options={{
           title: "Notifications",
-          tabBarLabel: "", // Empty label
           href: null, // This prevents the tab from being accessible via the tab bar
         }}
       />
@@ -115,40 +180,79 @@ export default function AdminLayout() {
   );
 }
 
-// Update the tabBar style to make it more compact and properly sized
+// Enhanced styles for a more modern tab bar
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "transparent",
     borderTopWidth: 0,
-    paddingBottom: Platform.OS === "ios" ? 10 : 5,
-    height: Platform.OS === "ios" ? 70 : 50,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000000",
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 10,
-        borderTopColor: "transparent",
-      },
-    }),
+    position: "absolute",
+    elevation: 0,
+    height: Platform.OS === "ios" ? 85 : 70,
+    paddingTop: 5,
   },
   iosTabBar: {
-    paddingBottom: 10,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   androidTabBar: {
-    paddingBottom: 5,
+    elevation: 8,
+  },
+  tabBarBackground: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: "100%",
+  },
+  tabBarBackgroundInner: {
+    backgroundColor: "#FFFFFF",
+    height: "100%",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
   },
   tabBarItem: {
-    padding: 4,
-    margin: 4,
-    borderRadius: 12,
+    padding: 0,
+    margin: 0,
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
   tabBarLabel: {
     fontSize: 12,
-    fontWeight: "500",
-    paddingBottom: 2,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  tabButton: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  activeTabButton: {
+    transform: [{ scale: 1.05 }],
+  },
+  tabButtonInner: {
+    width: "90%",
+    alignItems: "center",
+  },
+  activeTabButtonInner: {
+    transform: [{ translateY: -2 }],
+  },
+  tabButtonContent: {
+    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    minWidth: 80,
+  },
+  tabButtonWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

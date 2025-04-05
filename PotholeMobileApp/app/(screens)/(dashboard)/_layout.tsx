@@ -84,7 +84,8 @@ export default function DashboardLayout() {
   );
 }
 
-// Styles with platform-specific considerations
+// Let's also fix the dashboard layout to ensure content isn't hidden behind the tab bar
+// Update the tabBar style to make it more visible and add a background
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: "#ffffff",

@@ -247,6 +247,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // Update the signOut function in the AuthProvider component to ensure proper navigation
   const signOut = async () => {
     console.log("Signing out user...");
     try {
@@ -264,6 +265,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         // Clear AsyncStorage items
         ...keysToRemove.map((key) => AsyncStorage.removeItem(key)),
       ]);
+
+      // Reset auth state
+      setUser(null);
+      setSession(null);
+      setIsAdmin(false);
 
       console.log("User signed out successfully");
     } catch (error) {

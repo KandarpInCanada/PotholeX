@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
-    paddingTop: 0,
+    paddingBottom: 100, // Increase this value to ensure content isn't hidden behind the tab bar
   },
   fab: {
     position: "absolute",
