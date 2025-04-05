@@ -156,7 +156,7 @@ const StatusChip: React.FC<{ status: ReportStatus }> = ({ status }) => (
       />
     )}
   >
-    {status.toString().replace("_", " ")}
+    <Text style={styles.chipText}>{status.toString().replace("_", " ")}</Text>
   </Chip>
 );
 
@@ -170,7 +170,7 @@ const SeverityChip: React.FC<{ severity: SeverityLevel }> = ({ severity }) => (
     ]}
     textStyle={styles.chipText}
   >
-    {severity}
+    <Text style={styles.chipText}>{severity}</Text>
   </Chip>
 );
 

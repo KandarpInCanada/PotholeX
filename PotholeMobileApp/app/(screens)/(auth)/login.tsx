@@ -22,8 +22,15 @@ const LoginScreen = () => {
   const router = useRouter();
 
   // Destructure authentication-related functions and states from custom auth context
-  const { signIn, user, signInWithGoogle, googleAuthLoading, googleError } =
-    useAuth();
+  const {
+    signIn,
+    user,
+    signInWithGoogle,
+    googleAuthLoading,
+    googleError,
+    isAdmin,
+    refreshAdminStatus,
+  } = useAuth();
 
   // Use custom form state hook to manage input values and secure text entries
   const {
@@ -50,9 +57,14 @@ const LoginScreen = () => {
   // Redirect to dashboard if user is already authenticated
   useEffect(() => {
     if (user) {
-      router.replace("(screens)/(dashboard)/home");
+      // Check if user is admin and redirect accordingly
+      if (isAdmin) {
+        router.replace("(screens)/(admin)/portal");
+      } else {
+        router.replace("(screens)/(dashboard)/home");
+      }
     }
-  }, [user, router]);
+  }, [user, isAdmin, router]);
 
   // Handle Google authentication errors
   useEffect(() => {
@@ -83,6 +95,9 @@ const LoginScreen = () => {
       if (signInError) {
         setError(signInError.message || "Authentication failed");
         setShowError(true);
+      } else {
+        // Successfully signed in, refresh admin status before navigation
+        await refreshAdminStatus();
       }
     } catch (err) {
       // Catch any unexpected errors during sign-in

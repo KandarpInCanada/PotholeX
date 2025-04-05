@@ -19,7 +19,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
         <IconButton
           icon="map"
           size={24}
-          iconColor="#0284c7"
+          iconColor="#6366F1"
           onPress={() => router.push("(screens)/(dashboard)/map")}
         />
       </View>

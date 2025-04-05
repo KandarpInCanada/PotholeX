@@ -96,6 +96,18 @@ const HomeScreen: React.FC = () => {
 
     // Apply category filter
     if (activeCategory === "recent") {
+      // Get timestamp for 24 hours ago
+      const oneDayAgo = new Date();
+      oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+
+      // Filter reports created in the last 24 hours
+      filtered = filtered.filter((report) => {
+        if (!report.created_at) return false;
+        const reportDate = new Date(report.created_at);
+        return reportDate >= oneDayAgo;
+      });
+
+      // Sort by newest first
       filtered = [...filtered].sort(
         (a, b) =>
           new Date(b.created_at || "").getTime() -
@@ -299,8 +311,12 @@ const HomeScreen: React.FC = () => {
       ) : filteredReports.length === 0 ? (
         <EmptyState
           message={
-            searchQuery || activeCategory !== "all"
+            searchQuery
               ? "No matching reports found"
+              : activeCategory === "recent"
+              ? "No reports in the last 24 hours"
+              : activeCategory !== "all"
+              ? `No ${activeCategory} reports found`
               : "No reports yet"
           }
           subMessage={
@@ -446,7 +462,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#0284c7",
   },
   welcomeBanner: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#EEF2FF", // Updated to match theme
     borderRadius: 12,
     marginHorizontal: 16,
     marginBottom: 16,
@@ -454,7 +470,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderLeftWidth: 4,
-    borderLeftColor: "#0284c7",
+    borderLeftColor: "#6366F1", // Updated to new primary color
   },
   welcomeContent: {
     flex: 1,
@@ -483,9 +499,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    borderRadius: 16, // Reduced from 20
+    paddingHorizontal: 12, // Reduced from 16
+    paddingVertical: 6, // Reduced from 8
     marginRight: 8,
     borderWidth: 1,
     borderColor: "#E2E8F0",
@@ -496,14 +512,14 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   activeCategoryChip: {
-    backgroundColor: "#0284c7",
-    borderColor: "#0284c7",
+    backgroundColor: "#3B82F6", // Updated to blue
+    borderColor: "#3B82F6",
   },
   categoryIcon: {
-    marginRight: 6,
+    marginRight: 4, // Reduced from 6
   },
   categoryLabel: {
-    fontSize: 14,
+    fontSize: 12, // Reduced from 14
     fontWeight: "500",
     color: "#64748B",
   },
@@ -534,7 +550,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#0284c7",
+    color: "#3B82F6", // Updated to blue
   },
   statLabel: {
     fontSize: 12,
@@ -556,13 +572,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 20,
     bottom: 24,
-    backgroundColor: "#0284c7",
+    backgroundColor: "#3B82F6", // Updated to blue
     borderRadius: 16,
     height: 56,
     width: 56,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#0284c7",
+    shadowColor: "#3B82F6",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 16,

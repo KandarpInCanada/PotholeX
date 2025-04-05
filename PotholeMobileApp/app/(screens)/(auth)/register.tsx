@@ -21,8 +21,14 @@ const RegisterScreen = () => {
   const router = useRouter();
 
   // Destructure authentication-related functions and states from custom auth context
-  const { signUp, user, signInWithGoogle, googleAuthLoading, googleError } =
-    useAuth();
+  const {
+    signUp,
+    user,
+    signInWithGoogle,
+    googleAuthLoading,
+    googleError,
+    isAdmin,
+  } = useAuth();
 
   // Use custom form state hook to manage input values and secure text entries
   const {
@@ -51,9 +57,14 @@ const RegisterScreen = () => {
   // Redirect to dashboard if user is already authenticated
   useEffect(() => {
     if (user) {
-      router.replace("(screens)/(dashboard)/home");
+      // Check if user is admin and redirect accordingly
+      if (isAdmin) {
+        router.replace("(screens)/(admin)/portal");
+      } else {
+        router.replace("(screens)/(dashboard)/home");
+      }
     }
-  }, [user, router]);
+  }, [user, isAdmin, router]);
 
   // Handle Google authentication errors
   useEffect(() => {

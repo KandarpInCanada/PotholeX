@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingVertical: 12,
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
@@ -572,11 +572,17 @@ const styles = StyleSheet.create({
   },
   backButton: {
     margin: 0,
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#0F172A",
+    color: "#1E293B",
+    textAlign: "center",
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -605,7 +611,7 @@ const styles = StyleSheet.create({
   submitButton: {
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: "#0284c7",
+    backgroundColor: "#3B82F6",
     width: "100%",
   },
   submitButtonLabel: {

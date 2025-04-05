@@ -18,46 +18,48 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Report status types
 export enum ReportStatus {
-  SUBMITTED = 'submitted',
-  IN_PROGRESS = 'in_progress',
-  FIXED = 'fixed',
-  REJECTED = 'rejected',
+  SUBMITTED = "submitted",
+  IN_PROGRESS = "in_progress",
+  FIXED = "fixed",
+  REJECTED = "rejected",
 }
 
 // Add Profile interface
 export interface Profile {
-  id: string;
-  username: string;
-  full_name?: string;
-  avatar_url?: string;
-  created_at?: string;
-  updated_at?: string;
+  id: string
+  username: string
+  full_name?: string
+  avatar_url?: string
+  created_at?: string
+  updated_at?: string
+  is_admin?: boolean
 }
 
 // Severity types
 export enum SeverityLevel {
-  LOW = 'Low',
-  MEDIUM = 'Medium',
-  DANGER = 'Danger',
+  LOW = "Low",
+  MEDIUM = "Medium",
+  DANGER = "Danger",
 }
-
 
 // Update PotholeReport interface
 export interface PotholeReport {
-  id?: string;
-  user_id?: string;
-  images: string[];
-  location: string;
-  latitude: number;
-  longitude: number;
-  description: string;
-  category: string;
-  severity: SeverityLevel;
-  road_condition: string;
-  status: ReportStatus;
-  created_at?: string;
-  updated_at?: string;
-  likes?: number;
-  comments?: number;
-  profiles?: Profile; // Add profiles relationship
+  id?: string
+  user_id?: string
+  images: string[]
+  location: string
+  latitude: number
+  longitude: number
+  description: string
+  category: string
+  severity: SeverityLevel
+  road_condition: string
+  status: ReportStatus
+  created_at?: string
+  updated_at?: string
+  likes?: number
+  comments?: number
+  admin_notes?: string
+  profiles?: Profile // Add profiles relationship
 }
+

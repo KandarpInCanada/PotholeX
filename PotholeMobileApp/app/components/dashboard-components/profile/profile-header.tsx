@@ -1,7 +1,11 @@
+"use client";
+
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { Button, Avatar } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { lightTheme } from "../../../theme";
+import { useAuth } from "../../../../context/auth-context";
+import { useRouter } from "expo-router";
 
 type ProfileHeaderProps = {
   profile: {
@@ -27,8 +31,8 @@ export default function ProfileHeader({
   handleUpdateProfile,
   fetchUserProfile,
 }: ProfileHeaderProps) {
-  // Add console log to debug the profile data
-  console.log("ProfileHeader received profile:", profile);
+  const { isAdmin } = useAuth();
+  const router = useRouter();
 
   // Get initials for avatar
   const getInitials = () => {
@@ -75,16 +79,40 @@ export default function ProfileHeader({
       <Text style={styles.name}>{displayName}</Text>
       <Text style={styles.email}>{profile.email || ""}</Text>
 
+      {isAdmin && (
+        <View style={styles.adminBadge}>
+          <MaterialCommunityIcons
+            name="shield-check"
+            size={16}
+            color="#FFFFFF"
+          />
+          <Text style={styles.adminBadgeText}>Administrator</Text>
+        </View>
+      )}
+
       <View style={styles.editButtonContainer}>
         {!editMode ? (
-          <Button
-            mode="contained"
-            onPress={() => setEditMode(true)}
-            style={styles.editButton}
-            icon="account-edit"
-          >
-            Edit Profile
-          </Button>
+          <View style={styles.buttonRow}>
+            <Button
+              mode="contained"
+              onPress={() => setEditMode(true)}
+              style={styles.editButton}
+              icon="account-edit"
+            >
+              Edit Profile
+            </Button>
+
+            {isAdmin && (
+              <Button
+                mode="contained"
+                onPress={() => router.push("/(screens)/(admin)/portal")}
+                style={styles.adminButton}
+                icon="shield-account"
+              >
+                Admin Portal
+              </Button>
+            )}
+          </View>
         ) : (
           <View style={styles.editModeButtons}>
             <Button
@@ -127,10 +155,10 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 3,
-    borderColor: lightTheme.colors.primary,
+    borderColor: "#3B82F6", // Updated to blue
   },
   avatarFallback: {
-    backgroundColor: lightTheme.colors.primary,
+    backgroundColor: "#3B82F6", // Updated to blue
   },
   editAvatarOverlay: {
     position: "absolute",
@@ -154,14 +182,37 @@ const styles = StyleSheet.create({
     color: lightTheme.colors.textSecondary,
     marginBottom: 16,
   },
+  adminBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#3B82F6",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginBottom: 16,
+  },
+  adminBadgeText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    marginLeft: 4,
+  },
   editButtonContainer: {
     width: "100%",
     alignItems: "center",
   },
+  buttonRow: {
+    width: "100%",
+    flexDirection: "column",
+    gap: 12,
+  },
   editButton: {
     borderRadius: 8,
     paddingHorizontal: 16,
-    backgroundColor: lightTheme.colors.primary,
+    backgroundColor: "#3B82F6", // Updated to blue
+    width: "100%",
+  },
+  adminButton: {
+    backgroundColor: "#8B5CF6", // Purple for admin button
   },
   editModeButtons: {
     flexDirection: "row",

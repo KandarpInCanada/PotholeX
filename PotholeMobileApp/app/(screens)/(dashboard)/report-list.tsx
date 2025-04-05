@@ -477,6 +477,7 @@ export default function ReportListScreen() {
           placeholderTextColor="#94A3B8"
         />
 
+        {/* Update the ScrollView for filter chips to ensure proper spacing and alignment */}
         <Animated.View
           style={[styles.filterBarContainer, filterBarAnimatedStyle]}
         >
@@ -528,7 +529,7 @@ export default function ReportListScreen() {
                 activeFilter === ReportStatus.IN_PROGRESS &&
                   styles.activeFilterChip,
                 activeFilter === ReportStatus.IN_PROGRESS && {
-                  backgroundColor: "#2563EB",
+                  backgroundColor: "#3B82F6",
                 },
               ]}
               onPress={() => handleFilter(ReportStatus.IN_PROGRESS)}
@@ -548,7 +549,7 @@ export default function ReportListScreen() {
                 styles.filterChip,
                 activeFilter === ReportStatus.FIXED && styles.activeFilterChip,
                 activeFilter === ReportStatus.FIXED && {
-                  backgroundColor: "#059669",
+                  backgroundColor: "#10B981",
                 },
               ]}
               onPress={() => handleFilter(ReportStatus.FIXED)}
@@ -670,25 +671,29 @@ const styles = StyleSheet.create({
   },
   filterBar: {
     paddingRight: 16,
-    gap: 8,
+    gap: 12, // Increased gap between filter chips
+    paddingVertical: 8, // Added vertical padding
   },
   filterChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
+    paddingHorizontal: 12, // Reduced from 16
+    paddingVertical: 8, // Reduced from 12
+    borderRadius: 16, // Reduced from 24
     backgroundColor: "#F1F5F9",
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    marginRight: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 80, // Reduced from 100
   },
   activeFilterChip: {
-    backgroundColor: "#0284c7",
-    borderColor: "#0284c7",
+    backgroundColor: "#3B82F6", // Updated to blue
+    borderColor: "#3B82F6",
   },
   filterChipText: {
     fontSize: 14,
     fontWeight: "500",
     color: "#334155",
+    textAlign: "center", // Added to center text
   },
   activeFilterChipText: {
     color: "#FFFFFF",
@@ -717,7 +722,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 16,
     bottom: 16,
-    backgroundColor: "#0284c7",
+    backgroundColor: "#3B82F6", // Updated to blue
     borderRadius: 28,
   },
   menuContent: {

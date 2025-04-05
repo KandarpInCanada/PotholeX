@@ -8,13 +8,17 @@ import { AppState } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+// Add isAdmin state and checkAdminStatus import
+import { checkAdminStatus } from "../app/services/admin-service";
 
+// Add isAdmin to the AuthContextType
 type AuthContextType = {
   user: User | null;
   session: Session | null;
   loading: boolean;
   googleAuthLoading: boolean;
   googleError: string | null;
+  isAdmin: boolean;
   signUp: (
     email: string,
     password: string,
@@ -24,6 +28,7 @@ type AuthContextType = {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
+  refreshAdminStatus: () => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,6 +41,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
   const [googleAuthLoading, setGoogleAuthLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  // In the AuthProvider component, add isAdmin state
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Handle deep links for auth redirects
   useEffect(() => {
@@ -117,6 +124,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
+  // Add a useEffect to check admin status when user changes
+  useEffect(() => {
+    const checkUserAdminStatus = async () => {
+      if (user) {
+        try {
+          const adminStatus = await checkAdminStatus(user.id);
+          console.log("Admin status check result:", adminStatus);
+          setIsAdmin(adminStatus);
+        } catch (error) {
+          console.error("Error checking admin status:", error);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
+    checkUserAdminStatus();
+  }, [user]);
+
+  // Improve the signIn function to check admin status after successful login
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      // If login was successful, immediately check admin status
+      if (!error) {
+        // Get the current user
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          // Check and update admin status
+          const adminStatus = await checkAdminStatus(user.id);
+          setIsAdmin(adminStatus);
+          console.log("User logged in, admin status:", adminStatus);
+        }
+      }
+
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  };
+
   const signUp = async (
     email: string,
     password: string,
@@ -129,18 +185,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         options: {
           data: metadata,
         },
-      });
-      return { error };
-    } catch (error) {
-      return { error };
-    }
-  };
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
       });
       return { error };
     } catch (error) {
@@ -239,6 +283,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // Add a function to refresh admin status
+  const refreshAdminStatus = async () => {
+    if (!user) {
+      setIsAdmin(false);
+      return false;
+    }
+
+    try {
+      const adminStatus = await checkAdminStatus(user.id);
+      setIsAdmin(adminStatus);
+      return adminStatus;
+    } catch (error) {
+      console.error("Error refreshing admin status:", error);
+      return false;
+    }
+  };
+
+  // Add isAdmin to the context value
   return (
     <AuthContext.Provider
       value={{
@@ -247,11 +309,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         loading,
         googleAuthLoading,
         googleError,
+        isAdmin,
         signUp,
         signIn,
         signInWithGoogle,
         signOut,
         resetPassword,
+        refreshAdminStatus, // Add this new function
       }}
     >
       {children}

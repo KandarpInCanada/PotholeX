@@ -1,12 +1,21 @@
+"use client";
+
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Platform, StyleSheet } from "react-native";
+import { Platform, StyleSheet, StatusBar } from "react-native";
+import { useEffect } from "react";
 
+// Regular user tabs only - admin screens are now completely separate
 export default function DashboardLayout() {
+  // Set status bar to match dashboard header
+  useEffect(() => {
+    StatusBar.setBarStyle("dark-content");
+    StatusBar.setBackgroundColor("#F8FAFC");
+  }, []);
+
   return (
     <Tabs
       screenOptions={({ route }) => ({
-        // Icon configuration
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
           if (route.name === "home") {
@@ -22,19 +31,17 @@ export default function DashboardLayout() {
           }
           return <Ionicons name={iconName as any} size={size} color={color} />;
         },
-        // Platform-specific tab bar styling
         tabBarStyle: [
           styles.tabBar,
           Platform.OS === "ios" ? styles.iosTabBar : styles.androidTabBar,
         ],
         tabBarItemStyle: styles.tabBarItem,
-        tabBarActiveTintColor: "#007AFF", // Active icon/text color
-        tabBarInactiveTintColor: "#64748b", // Inactive icon/text color
+        tabBarActiveTintColor: "#3B82F6",
+        tabBarInactiveTintColor: "#64748B",
         tabBarLabelStyle: styles.tabBarLabel,
         headerShown: false,
       })}
     >
-      {/* Tab Screens */}
       <Tabs.Screen
         name="home"
         options={{
@@ -44,18 +51,18 @@ export default function DashboardLayout() {
         }}
       />
       <Tabs.Screen
+        name="report-list"
+        options={{
+          title: "Reports",
+          tabBarLabel: "Reports",
+        }}
+      />
+      <Tabs.Screen
         name="add-report"
         options={{
           title: "Add Report",
           headerShown: false,
           tabBarLabel: "Add Report",
-        }}
-      />
-      <Tabs.Screen
-        name="report-list"
-        options={{
-          title: "Reports",
-          tabBarLabel: "Reports",
         }}
       />
       <Tabs.Screen
@@ -82,7 +89,7 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: "#ffffff",
     borderTopWidth: 0,
-    paddingBottom: Platform.OS === "ios" ? 20 : 10, // Extra bottom padding for iPhone
+    paddingBottom: Platform.OS === "ios" ? 20 : 10,
     height: Platform.OS === "ios" ? 90 : 60,
     ...Platform.select({
       ios: {
@@ -98,7 +105,7 @@ const styles = StyleSheet.create({
     }),
   },
   iosTabBar: {
-    paddingBottom: 20, // Additional bottom padding for iPhone home indicator
+    paddingBottom: 20,
   },
   androidTabBar: {
     paddingBottom: 10,

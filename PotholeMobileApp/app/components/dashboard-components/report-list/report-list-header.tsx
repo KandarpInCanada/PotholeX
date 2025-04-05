@@ -141,6 +141,7 @@ const ReportListHeader: React.FC<ReportListHeaderProps> = ({
   );
 };
 
+// Update the filterButton style to ensure proper text alignment and consistent padding
 const styles = StyleSheet.create({
   header: {
     paddingBottom: 5,
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   addButton: {
-    backgroundColor: "#0284c7",
+    backgroundColor: "#6366F1", // Updated to match new theme
     borderRadius: 12,
     margin: 0,
     width: 48,
@@ -197,23 +198,26 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 12,
     borderRadius: 24,
     backgroundColor: "#F1F5F9",
     borderWidth: 1,
     borderColor: "#E2E8F0",
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 6,
+    minWidth: 100,
   },
   activeFilterButton: {
-    backgroundColor: "#0284c7",
-    borderColor: "#0284c7",
+    backgroundColor: "#3B82F6", // Updated to blue
+    borderColor: "#3B82F6",
   },
   filterButtonText: {
     fontSize: 14,
     fontWeight: "500",
     color: "#334155",
+    textAlign: "center",
   },
   activeFilterButtonText: {
     color: "#FFFFFF",
@@ -226,7 +230,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   activeCountBadge: {
-    backgroundColor: "#0369a1",
+    backgroundColor: "#2563EB", // Slightly darker blue
   },
   countText: {
     fontSize: 12,

@@ -1,11 +1,14 @@
-import React, { useState, useRef } from "react";
+"use client";
+
+import { useState, useRef, useEffect } from "react";
 import {
   View,
   StyleSheet,
   Dimensions,
-  FlatList,
+  type FlatList,
   TouchableOpacity,
   useWindowDimensions,
+  StatusBar,
 } from "react-native";
 import { Text } from "react-native-paper";
 import { MotiView } from "moti";
@@ -64,6 +67,12 @@ const GetStartedScreen = () => {
   const flatListRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // Set status bar to match onboarding screen
+  useEffect(() => {
+    StatusBar.setBarStyle("dark-content");
+    StatusBar.setBackgroundColor("#F8FAFC");
+  }, []);
+
   const onScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollX.value = event.contentOffset.x;
@@ -116,6 +125,25 @@ const GetStartedScreen = () => {
     </View>
   );
 
+  const dotStyles = onboardingData.map((_, index) => {
+    return useAnimatedStyle(() => {
+      const input = scrollX.value / windowWidth;
+      const opacity = interpolate(
+        input,
+        [index - 1, index, index + 1],
+        [0.3, 1, 0.3],
+        "clamp"
+      );
+      const width = interpolate(
+        input,
+        [index - 1, index, index + 1],
+        [8, 24, 8],
+        "clamp"
+      );
+      return { opacity, width };
+    });
+  });
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -140,27 +168,10 @@ const GetStartedScreen = () => {
 
       <View style={styles.dotsContainer}>
         {onboardingData.map((_, index) => {
-          const dotStyle = useAnimatedStyle(() => {
-            const input = scrollX.value / windowWidth;
-            const opacity = interpolate(
-              input,
-              [index - 1, index, index + 1],
-              [0.3, 1, 0.3],
-              "clamp"
-            );
-            const width = interpolate(
-              input,
-              [index - 1, index, index + 1],
-              [8, 24, 8],
-              "clamp"
-            );
-            return { opacity, width };
-          });
-
           return (
             <Animated.View
               key={index.toString()}
-              style={[styles.dot, dotStyle]}
+              style={[styles.dot, dotStyles[index]]}
             />
           );
         })}

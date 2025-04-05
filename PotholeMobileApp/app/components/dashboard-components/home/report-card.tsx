@@ -20,13 +20,6 @@ import {
   SeverityLevel,
 } from "../../../../lib/supabase";
 
-interface ReportCardProps {
-  item: PotholeReport;
-  index: number;
-  onLike: (reportId: string) => void;
-  onPress: () => void;
-}
-
 const SEVERITY_COLORS = {
   [SeverityLevel.DANGER]: "#DC2626",
   [SeverityLevel.MEDIUM]: "#F59E0B",
@@ -39,6 +32,13 @@ const STATUS_COLORS = {
   [ReportStatus.FIXED]: "#059669",
   [ReportStatus.REJECTED]: "#6B7280",
 };
+
+interface ReportCardProps {
+  item: PotholeReport;
+  index: number;
+  onLike: (reportId: string) => void;
+  onPress: () => void;
+}
 
 const ReportCard: React.FC<ReportCardProps> = ({
   item,
@@ -186,6 +186,7 @@ const ReportCard: React.FC<ReportCardProps> = ({
                   },
                 ]}
                 textStyle={styles.chipText}
+                compact
               >
                 {item.severity}
               </Chip>
@@ -198,8 +199,9 @@ const ReportCard: React.FC<ReportCardProps> = ({
                   },
                 ]}
                 textStyle={styles.chipText}
+                compact
               >
-                {item.status}
+                {item.status.replace("_", " ")}
               </Chip>
             </View>
 
@@ -261,10 +263,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#F1F5F9",
+    borderColor: "rgba(226, 232, 240, 0.7)",
     shadowColor: "#64748B",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 3,
   },
@@ -290,13 +292,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 60,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.35)",
   },
   floatingCategory: {
     position: "absolute",
     top: 12,
     left: 12,
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(255,255,255,0.95)",
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -364,7 +366,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F1F5F9",
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 10,
@@ -383,31 +385,33 @@ const styles = StyleSheet.create({
     color: "#334155",
     marginBottom: 14,
     fontWeight: "400",
-    letterSpacing: -0.2,
   },
   tagsContainer: {
     flexDirection: "row",
     marginBottom: 16,
     flexWrap: "wrap",
-    gap: 6,
+    gap: 8,
   },
   severityChip: {
-    height: 30,
-    borderRadius: 14,
-    justifyContent: "center",
-    paddingHorizontal: 14,
+    height: 26,
+    borderRadius: 6,
+    paddingHorizontal: 10,
   },
   statusChip: {
-    height: 30,
-    borderRadius: 14,
-    paddingHorizontal: 14,
+    height: 26,
+    borderRadius: 6,
+    paddingHorizontal: 10,
   },
   chipText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
     includeFontPadding: false,
     textTransform: "capitalize",
     color: "#FFFFFF",
+    margin: 0,
+    padding: 0,
+    textAlign: "center",
+    lineHeight: 16,
   },
   footer: {
     flexDirection: "row",
@@ -426,7 +430,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   likedButton: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#EFF6FF", // Light blue background
   },
   interactionText: {
     marginLeft: 6,
@@ -435,7 +439,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   likedText: {
-    color: "#0284c7",
+    color: "#3B82F6", // Blue color
   },
 });
 

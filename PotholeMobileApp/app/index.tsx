@@ -1,10 +1,12 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { Redirect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const isAuthenticated = false; // Replace with real authentication logic
+import { useAuth } from "../context/auth-context";
 
 export default function Index() {
+  const { user, isAdmin } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
 
@@ -24,13 +26,15 @@ export default function Index() {
     return <Redirect href="(screens)/(onboarding)/get-started" />;
   }
 
-  return (
-    <Redirect
-      href={
-        isAuthenticated
-          ? "(screens)/(dashboard)/home"
-          : "(screens)/(auth)/login"
-      }
-    />
-  );
+  // If user is authenticated, redirect based on admin status
+  if (user) {
+    if (isAdmin) {
+      return <Redirect href="(screens)/(admin)/portal" />;
+    } else {
+      return <Redirect href="(screens)/(dashboard)/home" />;
+    }
+  }
+
+  // If not authenticated, redirect to login
+  return <Redirect href="(screens)/(auth)/login" />;
 }
