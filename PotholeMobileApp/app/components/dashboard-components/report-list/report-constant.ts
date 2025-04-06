@@ -1,25 +1,26 @@
 // constants/reportConstants.ts
-import { ReportStatus, SeverityLevel } from "../../../../lib/supabase";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { ReportStatus, SeverityLevel } from "../../../../lib/supabase"
+import type { MaterialCommunityIcons } from "@expo/vector-icons"
 
-type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
+type IconName = keyof typeof MaterialCommunityIcons.glyphMap
 
 export const SEVERITY_COLORS = {
-  [SeverityLevel.DANGER]: "#DC2626",
-  [SeverityLevel.MEDIUM]: "#F59E0B",
-  [SeverityLevel.LOW]: "#10B981",
-};
+  [SeverityLevel.DANGER]: "#DC2626", // Red for danger
+  [SeverityLevel.MEDIUM]: "#F59E0B", // Amber for medium
+  [SeverityLevel.LOW]: "#4ADE80", // Brighter green for low
+}
 
 export const STATUS_COLORS = {
-  [ReportStatus.SUBMITTED]: "#64748B",
-  [ReportStatus.IN_PROGRESS]: "#2563EB",
-  [ReportStatus.FIXED]: "#059669",
-  [ReportStatus.REJECTED]: "#6B7280",
-};
+  [ReportStatus.SUBMITTED]: "#64748B", // Gray for submitted
+  [ReportStatus.IN_PROGRESS]: "#3B82F6", // Blue for in progress
+  [ReportStatus.FIXED]: "#4ADE80", // Brighter green for fixed
+  [ReportStatus.REJECTED]: "#6B7280", // Gray for rejected
+}
 
 export const STATUS_ICONS: Record<ReportStatus, IconName> = {
   [ReportStatus.SUBMITTED]: "check-circle-outline",
   [ReportStatus.IN_PROGRESS]: "progress-clock",
   [ReportStatus.FIXED]: "check-circle",
   [ReportStatus.REJECTED]: "close-circle",
-};
+}
+

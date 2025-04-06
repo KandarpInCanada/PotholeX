@@ -16,6 +16,29 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 })
 
+/**
+ * Creates a Supabase client with admin privileges.
+ * IMPORTANT: This should ONLY be used server-side or in secure environments.
+ * DO NOT expose the service role key in client-side code.
+ *
+ * @param serviceKey The Supabase service role key
+ * @returns A Supabase client with admin privileges
+ */
+export const createAdminClient = (serviceKey: string) => {
+  if (!serviceKey) {
+    console.error("No service key provided for admin client")
+    // Return regular client as fallback
+    return supabase
+  }
+
+  return createClient(supabaseUrl, serviceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
+}
+
 // Report status types
 export enum ReportStatus {
   SUBMITTED = "submitted",

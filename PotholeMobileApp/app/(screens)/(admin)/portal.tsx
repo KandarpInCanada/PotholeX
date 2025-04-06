@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 4,
   },
   actionButtonContent: {
     paddingVertical: 8,
@@ -550,5 +550,9 @@ const styles = StyleSheet.create({
   profileButton: {
     borderRadius: 50,
     overflow: "hidden",
+  },
+  adminBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 4, // Changed from rounded to square
   },
 });

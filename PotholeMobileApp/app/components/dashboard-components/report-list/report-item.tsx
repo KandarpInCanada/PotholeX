@@ -242,12 +242,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   statusChip: {
-    height: 28,
-    borderRadius: 14,
+    height: 36, // Keep the height
+    paddingHorizontal: 12, // Less horizontal padding for a more square look
+    justifyContent: "center", // Keep vertical centering
+    minWidth: 80, // Keep minimum width
   },
   chipText: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
     marginVertical: 0,
     textTransform: "capitalize",
@@ -308,8 +310,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   severityChip: {
-    height: 24,
-    borderRadius: 12,
+    height: 36, // Keep the height
+    borderRadius: 4, // Very small radius for slightly rounded corners
+    paddingHorizontal: 12, // Less horizontal padding for a more square look
+    justifyContent: "center", // Keep vertical centering
+    minWidth: 80, // Keep minimum width
   },
   reportStats: {
     flexDirection: "row",

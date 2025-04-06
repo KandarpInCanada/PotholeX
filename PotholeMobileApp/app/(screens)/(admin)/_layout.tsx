@@ -19,6 +19,9 @@ export default function AdminLayout() {
   const insets = useSafeAreaInsets();
   const [activeIndex, setActiveIndex] = useState(0);
   const activeIndexRef = useRef(activeIndex);
+  const [currentRouteName, setCurrentRouteName] = useState<string | undefined>(
+    undefined
+  );
 
   // Redirect non-admin users away from admin screens
   useEffect(() => {
@@ -32,6 +35,21 @@ export default function AdminLayout() {
     StatusBar.setBarStyle("dark-content");
     StatusBar.setBackgroundColor("#FFFFFF");
   }, []);
+
+  useEffect(() => {
+    if (currentRouteName) {
+      const index = [
+        "portal",
+        "report-list",
+        "users",
+        "profile-settings",
+      ].indexOf(currentRouteName);
+      if (index !== -1) {
+        setActiveIndex(index);
+        activeIndexRef.current = index;
+      }
+    }
+  }, [currentRouteName]);
 
   // Admin-specific tab navigation
   return (
@@ -77,16 +95,7 @@ export default function AdminLayout() {
 
             // Update active index for animation
             useEffect(() => {
-              const index = [
-                "portal",
-                "report-list",
-                "users",
-                "profile-settings",
-              ].indexOf(routeName);
-              if (index !== -1) {
-                setActiveIndex(index);
-                activeIndexRef.current = index;
-              }
+              setCurrentRouteName(routeName);
             }, [routeName]);
 
             return (
@@ -157,12 +166,7 @@ export default function AdminLayout() {
         }}
       />
       {/* Hide any other screens from the tab bar */}
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          href: null, // This prevents the tab from being accessible via the tab bar
-        }}
-      />
+
       {/* Hide the original separate screens */}
       <Tabs.Screen
         name="profile"

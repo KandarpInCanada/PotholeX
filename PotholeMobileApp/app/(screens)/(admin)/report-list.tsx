@@ -18,7 +18,6 @@ import {
   Chip,
   Dialog,
   Portal,
-  TextInput,
   ActivityIndicator,
   Divider,
   Card,
@@ -26,15 +25,19 @@ import {
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import { MotiView } from "moti";
 import { useRouter } from "expo-router";
-import { supabase } from "../../../lib/supabase";
 import {
+  supabase,
+  createAdminClient,
   ReportStatus,
   SeverityLevel,
   type PotholeReport,
 } from "../../../lib/supabase";
+import { useAuth } from "../../../context/auth-context";
+import { EXPO_PUBLIC_SUPABASE_SECRET_KEY } from "@env";
 
 export default function AdminReportList() {
   const router = useRouter();
+  const { user, isAdmin } = useAuth(); // Add useAuth hook
   const [reports, setReports] = useState<PotholeReport[]>([]);
   const [filteredReports, setFilteredReports] = useState<PotholeReport[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,7 +62,6 @@ export default function AdminReportList() {
   const [editedStatus, setEditedStatus] = useState<ReportStatus>(
     ReportStatus.SUBMITTED
   );
-  const [adminNotes, setAdminNotes] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
@@ -178,7 +180,6 @@ export default function AdminReportList() {
   const handleEditReport = (report: PotholeReport) => {
     setSelectedReport(report);
     setEditedStatus(report.status as ReportStatus);
-    setAdminNotes(report.admin_notes || "");
     setShowEditDialog(true);
   };
 
@@ -188,34 +189,68 @@ export default function AdminReportList() {
   };
 
   const saveReportChanges = async () => {
-    if (!selectedReport) return;
+    if (!selectedReport || !selectedReport.id) {
+      console.error("No report selected or report ID is missing");
+      Alert.alert("Error", "Cannot update report: No valid report selected");
+      return;
+    }
+
+    if (!isAdmin) {
+      Alert.alert(
+        "Permission Error",
+        "Only administrators can update report status"
+      );
+      return;
+    }
 
     try {
-      const { error } = await supabase
+      // Get the exact string value from the enum
+      const statusValue = editedStatus.toString();
+      console.log(
+        `Updating report ${selectedReport.id} with status: ${statusValue}`
+      );
+      const adminClient = createAdminClient(EXPO_PUBLIC_SUPABASE_SECRET_KEY);
+      const { data, error } = await adminClient
         .from("pothole_reports")
         .update({
-          status: editedStatus,
-          admin_notes: adminNotes,
+          status: statusValue,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", selectedReport.id);
+        .eq("id", selectedReport.id)
+        .select();
+      if (error) {
+        console.error("Update error:", error);
+        Alert.alert(
+          "Permission Error",
+          "You may not have permission to update this report. Please check your database permissions.",
+          [{ text: "OK", onPress: () => setShowEditDialog(false) }]
+        );
+        return;
+      }
 
-      if (error) throw error;
+      console.log("Update response:", data);
 
       // Update local state
       setReports((prevReports) =>
         prevReports.map((report) =>
           report.id === selectedReport.id
-            ? { ...report, status: editedStatus, admin_notes: adminNotes }
+            ? { ...report, status: editedStatus }
             : report
         )
       );
 
       setShowEditDialog(false);
-      Alert.alert("Success", "Report updated successfully");
-    } catch (error) {
-      console.error("Error updating report:", error);
-      Alert.alert("Error", "Failed to update report");
+      Alert.alert("Success", "Report status updated successfully");
+
+      // Refresh the reports list to ensure we have the latest data
+      fetchReports();
+    } catch (error: any) {
+      console.error("Unexpected error updating report:", error);
+      Alert.alert(
+        "Error",
+        `An unexpected error occurred: ${error.message || "Unknown error"}`,
+        [{ text: "OK", onPress: () => setShowEditDialog(false) }]
+      );
     }
   };
 
@@ -345,6 +380,65 @@ export default function AdminReportList() {
         </View>
       </Card>
     </MotiView>
+  );
+
+  const renderEditDialog = () => (
+    <Portal>
+      <Dialog
+        visible={showEditDialog}
+        onDismiss={() => setShowEditDialog(false)}
+        style={styles.dialog}
+      >
+        <Dialog.Title style={styles.dialogTitle}>
+          Update Report Status
+        </Dialog.Title>
+        <Dialog.Content>
+          <Text style={styles.dialogLabel}>Status:</Text>
+          <View style={styles.statusOptions}>
+            {Object.values(ReportStatus).map((status) => (
+              <TouchableOpacity
+                key={status}
+                style={[
+                  styles.statusOption,
+                  editedStatus === status && styles.selectedStatusOption,
+                  { borderColor: getStatusColor(status) },
+                  editedStatus === status && {
+                    backgroundColor: `${getStatusColor(status)}20`,
+                  },
+                ]}
+                onPress={() => setEditedStatus(status)}
+              >
+                <MaterialCommunityIcons
+                  name={getStatusIcon(status)}
+                  size={18}
+                  color={getStatusColor(status)}
+                  style={styles.statusOptionIcon}
+                />
+                <Text
+                  style={[
+                    styles.statusOptionText,
+                    editedStatus === status && {
+                      color: getStatusColor(status),
+                      fontWeight: "600",
+                    },
+                  ]}
+                >
+                  {formatStatus(status)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button onPress={() => setShowEditDialog(false)} textColor="#64748B">
+            Cancel
+          </Button>
+          <Button onPress={saveReportChanges} textColor="#3B82F6">
+            Save Changes
+          </Button>
+        </Dialog.Actions>
+      </Dialog>
+    </Portal>
   );
 
   return (
@@ -581,80 +675,7 @@ export default function AdminReportList() {
       </Portal>
 
       {/* Edit Report Dialog */}
-      <Portal>
-        <Dialog
-          visible={showEditDialog}
-          onDismiss={() => setShowEditDialog(false)}
-          style={styles.dialog}
-        >
-          <Dialog.Title style={styles.dialogTitle}>
-            Update Report Status
-          </Dialog.Title>
-          <Dialog.Content>
-            <Text style={styles.dialogLabel}>Status:</Text>
-            <View style={styles.statusOptions}>
-              {Object.values(ReportStatus).map((status) => (
-                <TouchableOpacity
-                  key={status}
-                  style={[
-                    styles.statusOption,
-                    editedStatus === status && styles.selectedStatusOption,
-                    { borderColor: getStatusColor(status) },
-                    editedStatus === status && {
-                      backgroundColor: `${getStatusColor(status)}20`,
-                    },
-                  ]}
-                  onPress={() => setEditedStatus(status)}
-                >
-                  <MaterialCommunityIcons
-                    name={getStatusIcon(status)}
-                    size={18}
-                    color={getStatusColor(status)}
-                    style={styles.statusOptionIcon}
-                  />
-                  <Text
-                    style={[
-                      styles.statusOptionText,
-                      editedStatus === status && {
-                        color: getStatusColor(status),
-                        fontWeight: "600",
-                      },
-                    ]}
-                  >
-                    {formatStatus(status)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={[styles.dialogLabel, { marginTop: 16 }]}>
-              Admin Notes:
-            </Text>
-            <TextInput
-              mode="outlined"
-              value={adminNotes}
-              onChangeText={setAdminNotes}
-              multiline
-              numberOfLines={4}
-              style={styles.notesInput}
-              placeholder="Add notes about this report (only visible to admins)"
-              outlineColor="#E2E8F0"
-              activeOutlineColor="#3B82F6"
-            />
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button
-              onPress={() => setShowEditDialog(false)}
-              textColor="#64748B"
-            >
-              Cancel
-            </Button>
-            <Button onPress={saveReportChanges} textColor="#3B82F6">
-              Save Changes
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+      {renderEditDialog()}
 
       {/* Delete Confirmation Dialog */}
       <Portal>
@@ -884,11 +905,9 @@ const styles = StyleSheet.create({
   },
   severityChip: {
     height: 28,
-    borderRadius: 14,
   },
   statusChip: {
     height: 28,
-    borderRadius: 14,
   },
   chipText: {
     color: "#FFFFFF",

@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#3B82F6",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 4, // Changed from rounded to square
     marginBottom: 16,
   },
   adminBadgeText: {

@@ -4,10 +4,11 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotiView } from "moti";
 import { SeverityLevel } from "../../../../lib/supabase";
 
+// Update the SEVERITY_LEVELS colors to match the UI design
 const SEVERITY_LEVELS = [
   {
     label: SeverityLevel.LOW,
-    color: "#10B981",
+    color: "#4ADE80", // Brighter green for low
     icon: "alert-circle-outline",
     description: "Minor issue, not urgent",
   },
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 16,
     paddingHorizontal: 12,
-    borderRadius: 12,
+    borderRadius: 4, // Change from 12 to 4 for a more square appearance
     borderWidth: 2,
     backgroundColor: "transparent",
   },

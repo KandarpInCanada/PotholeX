@@ -1,4 +1,4 @@
-import { supabase } from "../../lib/supabase"
+import { supabase, createAdminClient } from "../../lib/supabase"
 
 /**
  * Checks if a user has admin privileges
@@ -26,11 +26,15 @@ export const checkAdminStatus = async (userId: string): Promise<boolean> => {
 /**
  * Grants admin privileges to a user (should only be callable by existing admins)
  * @param userId The user ID to grant admin privileges to
+ * @param serviceKey Optional service key for admin operations
  * @returns Success status
  */
-export const grantAdminPrivileges = async (userId: string): Promise<boolean> => {
+export const grantAdminPrivileges = async (userId: string, serviceKey?: string): Promise<boolean> => {
   try {
-    const { error } = await supabase.from("profiles").update({ is_admin: true }).eq("id", userId)
+    // Use admin client if service key is provided
+    const client = serviceKey ? createAdminClient(serviceKey) : supabase
+
+    const { error } = await client.from("profiles").update({ is_admin: true }).eq("id", userId)
 
     if (error) throw error
 
@@ -44,11 +48,15 @@ export const grantAdminPrivileges = async (userId: string): Promise<boolean> => 
 /**
  * Revokes admin privileges from a user (should only be callable by existing admins)
  * @param userId The user ID to revoke admin privileges from
+ * @param serviceKey Optional service key for admin operations
  * @returns Success status
  */
-export const revokeAdminPrivileges = async (userId: string): Promise<boolean> => {
+export const revokeAdminPrivileges = async (userId: string, serviceKey?: string): Promise<boolean> => {
   try {
-    const { error } = await supabase.from("profiles").update({ is_admin: false }).eq("id", userId)
+    // Use admin client if service key is provided
+    const client = serviceKey ? createAdminClient(serviceKey) : supabase
+
+    const { error } = await client.from("profiles").update({ is_admin: false }).eq("id", userId)
 
     if (error) throw error
 

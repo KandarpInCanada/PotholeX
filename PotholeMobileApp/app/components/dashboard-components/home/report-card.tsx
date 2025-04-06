@@ -20,17 +20,18 @@ import {
   SeverityLevel,
 } from "../../../../lib/supabase";
 
+// Update the SEVERITY_COLORS and STATUS_COLORS constants to match the UI design
 const SEVERITY_COLORS = {
-  [SeverityLevel.DANGER]: "#DC2626",
-  [SeverityLevel.MEDIUM]: "#F59E0B",
-  [SeverityLevel.LOW]: "#10B981",
+  [SeverityLevel.DANGER]: "#DC2626", // Red for danger
+  [SeverityLevel.MEDIUM]: "#F59E0B", // Amber for medium
+  [SeverityLevel.LOW]: "#4ADE80", // Brighter green for low
 };
 
 const STATUS_COLORS = {
-  [ReportStatus.SUBMITTED]: "#64748B",
-  [ReportStatus.IN_PROGRESS]: "#2563EB",
-  [ReportStatus.FIXED]: "#059669",
-  [ReportStatus.REJECTED]: "#6B7280",
+  [ReportStatus.SUBMITTED]: "#64748B", // Gray for submitted
+  [ReportStatus.IN_PROGRESS]: "#3B82F6", // Blue for in progress
+  [ReportStatus.FIXED]: "#4ADE80", // Brighter green for fixed
+  [ReportStatus.REJECTED]: "#6B7280", // Gray for rejected
 };
 
 interface ReportCardProps {
@@ -393,17 +394,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   severityChip: {
-    height: 26,
-    borderRadius: 6,
-    paddingHorizontal: 10,
+    height: 36, // Keep the height
+    borderRadius: 4, // Very small radius for slightly rounded corners
+    paddingHorizontal: 12, // Less horizontal padding for a more square look
+    justifyContent: "center", // Keep vertical centering
+    minWidth: 80, // Keep minimum width
   },
   statusChip: {
-    height: 26,
-    borderRadius: 6,
-    paddingHorizontal: 10,
+    height: 36, // Keep the height
+    paddingHorizontal: 12, // Less horizontal padding for a more square look
+    justifyContent: "center", // Keep vertical centering
+    minWidth: 80, // Keep minimum width
   },
   chipText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
     includeFontPadding: false,
     textTransform: "capitalize",

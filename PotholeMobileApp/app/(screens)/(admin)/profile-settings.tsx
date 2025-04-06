@@ -698,10 +698,11 @@ const styles = StyleSheet.create({
   adminBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "#3B82F6",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 4, // Changed from rounded to square
+    marginBottom: 16,
   },
   adminBadgeText: {
     color: "#FFFFFF",

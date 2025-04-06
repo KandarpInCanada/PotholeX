@@ -7,6 +7,7 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -20,11 +21,14 @@ import {
   Divider,
 } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { supabase } from "../../../lib/supabase";
+import { EXPO_PUBLIC_SUPABASE_SECRET_KEY } from "@env";
+
+import { supabase, createAdminClient } from "../../../lib/supabase";
 import {
   grantAdminPrivileges,
   revokeAdminPrivileges,
 } from "../../services/admin-service";
+import { useAuth } from "../../../context/auth-context";
 import { MotiView } from "moti";
 
 interface User {
@@ -38,6 +42,7 @@ interface User {
 }
 
 export default function UsersScreen() {
+  const { isAdmin } = useAuth(); // Add useAuth hook
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,33 +69,36 @@ export default function UsersScreen() {
       );
     }
   }, [users, searchQuery]);
-
-  // Replace the fetchUsers function with this implementation that doesn't rely on admin API
   const fetchUsers = async () => {
     try {
       setLoading(true);
-
-      // Get profiles with their user_id (which is the auth user id)
-      const { data, error } = await supabase
+      if (!isAdmin) {
+        console.error("Permission denied: User is not an admin");
+        Alert.alert(
+          "Permission Error",
+          "Only administrators can view user data"
+        );
+        return;
+      }
+      const adminClient = createAdminClient(EXPO_PUBLIC_SUPABASE_SECRET_KEY);
+      const { data, error } = await adminClient
         .from("profiles")
         .select("*")
         .order("created_at", { ascending: false });
-
       if (error) throw error;
-
-      // For each profile, try to get the email from the auth.users table
-      // This approach uses the public API and doesn't require admin privileges
       const usersWithEmail = await Promise.all(
         (data || []).map(async (profile) => {
-          // Try to get email from metadata if available
+          // Try to get email using the admin client
           let email = null;
-
-          // If the current user is viewing their own profile, we can get their email
-          const { data: userData } = await supabase.auth.getUser();
-          if (userData?.user && userData.user.id === profile.id) {
-            email = userData.user.email;
+          try {
+            const { data: userData, error: userError } =
+              await adminClient.auth.admin.getUserById(profile.id);
+            if (!userError && userData && userData.user) {
+              email = userData.user.email;
+            }
+          } catch (emailError) {
+            console.error("Error fetching user email:", emailError);
           }
-
           return {
             ...profile,
             email: email || "Email hidden for privacy",
@@ -102,7 +110,6 @@ export default function UsersScreen() {
       setFilteredUsers(usersWithEmail);
     } catch (error) {
       console.error("Error fetching users:", error);
-      // Fallback to just using profile data without emails
       const { data } = await supabase.from("profiles").select("*");
       setUsers(data || []);
       setFilteredUsers(data || []);
@@ -427,8 +434,10 @@ const styles = StyleSheet.create({
   },
   adminChip: {
     backgroundColor: "#3B82F6",
-    borderRadius: 16,
-    paddingHorizontal: 8,
+    borderRadius: 4, // Changed from rounded to square
+    paddingHorizontal: 12,
+    height: 36, // Explicit height for consistency
+    justifyContent: "center",
   },
   adminChipText: {
     color: "#FFFFFF",
@@ -440,7 +449,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EFF6FF",
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 4, // Changed from rounded to square
   },
   adminButtonText: {
     color: "#3B82F6",
