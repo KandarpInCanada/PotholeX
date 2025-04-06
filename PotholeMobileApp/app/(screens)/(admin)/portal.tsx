@@ -290,8 +290,6 @@ export default function AdminPortal() {
           </LinearGradient>
         </MotiView>
 
-        {/* Remove Stats Overview section */}
-
         {/* Reports by Status Pie Chart */}
         <Card style={styles.chartCard} mode="elevated">
           <View style={{ overflow: "hidden", borderRadius: 16 }}>
@@ -431,7 +429,7 @@ export default function AdminPortal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F0F4FF", // Updated to light blue background
   },
   loadingContainer: {
     flex: 1,
@@ -472,11 +470,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     color: "#FFFFFF",
+    marginBottom: 4,
   },
   welcomeSubtitle: {
     fontSize: 14,
     color: "rgba(255, 255, 255, 0.8)",
-    marginTop: 4,
   },
   avatar: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
@@ -539,7 +537,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    borderRadius: 4,
+    borderRadius: 4, // Changed to square
   },
   actionButtonContent: {
     paddingVertical: 8,
@@ -550,9 +548,5 @@ const styles = StyleSheet.create({
   profileButton: {
     borderRadius: 50,
     overflow: "hidden",
-  },
-  adminBadge: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 4, // Changed from rounded to square
   },
 });

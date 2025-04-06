@@ -22,6 +22,9 @@ export default function AdminLayout() {
   const [currentRouteName, setCurrentRouteName] = useState<string | undefined>(
     undefined
   );
+  const [isTabActive, setIsTabActive] = useState<boolean[]>(
+    Array(4).fill(false)
+  );
 
   // Redirect non-admin users away from admin screens
   useEffect(() => {
@@ -33,7 +36,7 @@ export default function AdminLayout() {
   // Set status bar to match admin header
   useEffect(() => {
     StatusBar.setBarStyle("dark-content");
-    StatusBar.setBackgroundColor("#FFFFFF");
+    StatusBar.setBackgroundColor("#F0F4FF"); // Updated to match new background color
   }, []);
 
   useEffect(() => {
@@ -47,6 +50,9 @@ export default function AdminLayout() {
       if (index !== -1) {
         setActiveIndex(index);
         activeIndexRef.current = index;
+        const newIsTabActive = [...Array(4).fill(false)];
+        newIsTabActive[index] = true;
+        setIsTabActive(newIsTabActive);
       }
     }
   }, [currentRouteName]);
@@ -92,11 +98,12 @@ export default function AdminLayout() {
             const { onPress, children, accessibilityState } = props;
             const isActive = accessibilityState?.selected;
             const routeName = route.name;
-
-            // Update active index for animation
-            useEffect(() => {
-              setCurrentRouteName(routeName);
-            }, [routeName]);
+            const index = [
+              "portal",
+              "report-list",
+              "users",
+              "profile-settings",
+            ].indexOf(routeName);
 
             return (
               <Animated.View

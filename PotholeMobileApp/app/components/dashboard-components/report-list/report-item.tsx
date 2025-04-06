@@ -1,7 +1,7 @@
 // components/reports/ReportItem.tsx
 import type React from "react";
 import { View, Text, StyleSheet, Image, Pressable } from "react-native";
-import { Chip, Badge } from "react-native-paper";
+import { Badge } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -140,38 +140,36 @@ const ReportItem: React.FC<ReportItemProps> = ({
 
 // Sub-components
 const StatusChip: React.FC<{ status: ReportStatus }> = ({ status }) => (
-  <Chip
+  <View
     style={[
       styles.statusChip,
       {
         backgroundColor: STATUS_COLORS[status] || "#6B7280",
       },
     ]}
-    textStyle={styles.chipText}
-    icon={() => (
-      <MaterialCommunityIcons
-        name={STATUS_ICONS[status]}
-        size={16}
-        color="#FFFFFF"
-      />
-    )}
   >
+    <MaterialCommunityIcons
+      name={STATUS_ICONS[status]}
+      size={16}
+      color="#FFFFFF"
+      style={{ marginRight: 4 }}
+    />
     <Text style={styles.chipText}>{status.toString().replace("_", " ")}</Text>
-  </Chip>
+  </View>
 );
 
+// Replace the SeverityChip component with this implementation
 const SeverityChip: React.FC<{ severity: SeverityLevel }> = ({ severity }) => (
-  <Chip
+  <View
     style={[
       styles.severityChip,
       {
         backgroundColor: SEVERITY_COLORS[severity] || "#6B7280",
       },
     ]}
-    textStyle={styles.chipText}
   >
     <Text style={styles.chipText}>{severity}</Text>
-  </Chip>
+  </View>
 );
 
 const ReportImage: React.FC<{ images?: string[] }> = ({ images }) => {
@@ -242,17 +240,24 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   statusChip: {
-    height: 36, // Keep the height
-    paddingHorizontal: 12, // Less horizontal padding for a more square look
-    justifyContent: "center", // Keep vertical centering
-    minWidth: 80, // Keep minimum width
+    height: 36,
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 80,
+    elevation: 0, // Remove any elevation that might affect alignment
   },
   chipText: {
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "600",
-    marginVertical: 0,
-    textTransform: "capitalize",
+    textAlign: "center",
+    padding: 0,
+    margin: 0,
+    lineHeight: 14, // Match the font size
+    height: 14, // Set explicit height
+    alignSelf: "center", // Ensure self-alignment
   },
   reportContent: {
     flexDirection: "row",
@@ -310,11 +315,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   severityChip: {
-    height: 36, // Keep the height
-    borderRadius: 4, // Very small radius for slightly rounded corners
-    paddingHorizontal: 12, // Less horizontal padding for a more square look
-    justifyContent: "center", // Keep vertical centering
-    minWidth: 80, // Keep minimum width
+    height: 36,
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 80,
+    elevation: 0, // Remove any elevation that might affect alignment
   },
   reportStats: {
     flexDirection: "row",

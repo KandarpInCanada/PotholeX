@@ -195,7 +195,7 @@ export default function AdminProfileSettings() {
         .join("")
         .toUpperCase();
     }
-    return profile.username.substring(0, 2).toUpperCase() || "A";
+    return profile.username.substring(0, 2).toUpperCase() || "";
   };
 
   return (
@@ -360,41 +360,6 @@ export default function AdminProfileSettings() {
                   thumbColor={notificationsEnabled ? "#3B82F6" : "#F1F5F9"}
                 />
               </View>
-
-              <View style={styles.settingItem}>
-                <View style={styles.settingInfo}>
-                  <MaterialCommunityIcons
-                    name="check-circle-outline"
-                    size={24}
-                    color="#3B82F6"
-                  />
-                  <Text style={styles.settingLabel}>Auto-approve Reports</Text>
-                </View>
-                <Switch
-                  value={autoApproveReports}
-                  onValueChange={setAutoApproveReports}
-                  trackColor={{ false: "#CBD5E1", true: "#93C5FD" }}
-                  thumbColor={autoApproveReports ? "#3B82F6" : "#F1F5F9"}
-                />
-              </View>
-
-              <View style={styles.settingItem}>
-                <View style={styles.settingInfo}>
-                  <MaterialCommunityIcons
-                    name="brain"
-                    size={24}
-                    color="#3B82F6"
-                  />
-                  <Text style={styles.settingLabel}>AI Pothole Detection</Text>
-                </View>
-                <Switch
-                  value={aiDetectionEnabled}
-                  onValueChange={setAiDetectionEnabled}
-                  trackColor={{ false: "#CBD5E1", true: "#93C5FD" }}
-                  thumbColor={aiDetectionEnabled ? "#3B82F6" : "#F1F5F9"}
-                />
-              </View>
-
               <View style={styles.settingItem}>
                 <View style={styles.settingInfo}>
                   <MaterialCommunityIcons
@@ -411,134 +376,6 @@ export default function AdminProfileSettings() {
                   thumbColor={darkModeEnabled ? "#3B82F6" : "#F1F5F9"}
                 />
               </View>
-
-              <View style={styles.settingItem}>
-                <View style={styles.settingInfo}>
-                  <MaterialCommunityIcons
-                    name="database"
-                    size={24}
-                    color="#3B82F6"
-                  />
-                  <Text style={styles.settingLabel}>Reduce Data Usage</Text>
-                </View>
-                <Switch
-                  value={dataUsageEnabled}
-                  onValueChange={setDataUsageEnabled}
-                  trackColor={{ false: "#CBD5E1", true: "#93C5FD" }}
-                  thumbColor={dataUsageEnabled ? "#3B82F6" : "#F1F5F9"}
-                />
-              </View>
-            </Card.Content>
-          </Card>
-
-          <Divider style={styles.divider} />
-
-          {/* API Configuration */}
-          <Card style={styles.sectionCard}>
-            <Card.Title
-              title="API Configuration"
-              titleStyle={styles.sectionTitle}
-              left={(props) => (
-                <MaterialCommunityIcons name="api" size={24} color="#3B82F6" />
-              )}
-            />
-            <Card.Content>
-              <TouchableOpacity
-                style={styles.apiSettingItem}
-                onPress={() => {
-                  setEditingApiUrl(apiUrl);
-                  setShowApiDialog(true);
-                }}
-              >
-                <View style={styles.settingInfo}>
-                  <MaterialCommunityIcons
-                    name="api"
-                    size={24}
-                    color="#3B82F6"
-                  />
-                  <View>
-                    <Text style={styles.settingLabel}>API Endpoint</Text>
-                    <Text style={styles.apiUrl}>{apiUrl}</Text>
-                  </View>
-                </View>
-                <MaterialCommunityIcons
-                  name="pencil"
-                  size={20}
-                  color="#64748B"
-                />
-              </TouchableOpacity>
-
-              <View style={styles.apiNote}>
-                <MaterialCommunityIcons
-                  name="information-outline"
-                  size={16}
-                  color="#64748B"
-                />
-                <Text style={styles.apiNoteText}>
-                  Changes to API settings will affect all pothole detection
-                  functionality.
-                </Text>
-              </View>
-            </Card.Content>
-          </Card>
-
-          <Divider style={styles.divider} />
-
-          {/* Admin Actions */}
-          <Card style={styles.sectionCard}>
-            <Card.Title
-              title="Admin Actions"
-              titleStyle={styles.sectionTitle}
-              left={(props) => (
-                <MaterialCommunityIcons
-                  name="shield-account"
-                  size={24}
-                  color="#8B5CF6"
-                />
-              )}
-            />
-            <Card.Content>
-              <TouchableOpacity style={styles.actionButton}>
-                <MaterialCommunityIcons
-                  name="shield-account"
-                  size={24}
-                  color="#8B5CF6"
-                />
-                <Text style={styles.actionButtonText}>
-                  Manage User Permissions
-                </Text>
-                <MaterialCommunityIcons
-                  name="chevron-right"
-                  size={24}
-                  color="#64748B"
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.actionButton}>
-                <MaterialCommunityIcons
-                  name="database-settings"
-                  size={24}
-                  color="#8B5CF6"
-                />
-                <Text style={styles.actionButtonText}>Database Settings</Text>
-                <MaterialCommunityIcons
-                  name="chevron-right"
-                  size={24}
-                  color="#64748B"
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.actionButton}>
-                <MaterialCommunityIcons name="cog" size={24} color="#8B5CF6" />
-                <Text style={styles.actionButtonText}>
-                  System Configuration
-                </Text>
-                <MaterialCommunityIcons
-                  name="chevron-right"
-                  size={24}
-                  color="#64748B"
-                />
-              </TouchableOpacity>
             </Card.Content>
           </Card>
 

@@ -113,6 +113,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginTop: 8,
+    textAlign: "center",
+    textAlignVertical: "center",
+    includeFontPadding: false,
   },
   severityDescription: {
     fontSize: 12,

@@ -1,21 +1,22 @@
 "use client";
 
+import type React from "react";
+
 import { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   TouchableOpacity,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Searchbar,
   Menu,
   Button,
-  Chip,
   Dialog,
   Portal,
   ActivityIndicator,
@@ -34,6 +35,7 @@ import {
 } from "../../../lib/supabase";
 import { useAuth } from "../../../context/auth-context";
 import { EXPO_PUBLIC_SUPABASE_SECRET_KEY } from "@env";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function AdminReportList() {
   const router = useRouter();
@@ -278,6 +280,26 @@ export default function AdminReportList() {
     }
   };
 
+  // Replace the StatusChip component with this implementation
+  const StatusChip: React.FC<{ status: ReportStatus }> = ({ status }) => (
+    <View
+      style={[
+        styles.statusChip,
+        {
+          backgroundColor: STATUS_COLORS[status] || "#6B7280",
+        },
+      ]}
+    >
+      <MaterialCommunityIcons
+        name={STATUS_ICONS[status] as any}
+        size={16}
+        color="#FFFFFF"
+        style={{ marginRight: 4 }}
+      />
+      <Text style={styles.chipText}>{status.toString().replace("_", " ")}</Text>
+    </View>
+  );
+
   const renderReportItem = ({ item }: { item: PotholeReport }) => (
     <MotiView
       from={{ opacity: 0, translateY: 10 }}
@@ -336,24 +358,24 @@ export default function AdminReportList() {
             </Text>
 
             <View style={styles.tagsContainer}>
-              <Chip
+              <View
                 style={[
                   styles.severityChip,
                   { backgroundColor: getSeverityColor(item.severity) },
                 ]}
-                textStyle={styles.chipText}
               >
-                {item.severity || "Unknown"}
-              </Chip>
-              <Chip
+                <Text style={styles.chipText}>
+                  {item.severity || "Unknown"}
+                </Text>
+              </View>
+              <View
                 style={[
                   styles.statusChip,
                   { backgroundColor: getStatusColor(item.status) },
                 ]}
-                textStyle={styles.chipText}
               >
-                {formatStatus(item.status)}
-              </Chip>
+                <Text style={styles.chipText}>{formatStatus(item.status)}</Text>
+              </View>
             </View>
 
             {item.admin_notes && (
@@ -445,7 +467,12 @@ export default function AdminReportList() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.content}>
         {/* Blue Header Banner */}
-        <View style={styles.headerBanner}>
+        <LinearGradient
+          colors={["#3B82F6", "#2563EB"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.headerBanner}
+        >
           <View style={styles.headerContent}>
             <View style={styles.headerTextContainer}>
               <Text style={styles.headerTitle}>Manage Reports</Text>
@@ -454,20 +481,18 @@ export default function AdminReportList() {
               </Text>
             </View>
           </View>
-        </View>
-
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Searchbar
-            placeholder="Search reports..."
-            onChangeText={handleSearch}
-            value={searchQuery}
-            style={styles.searchBar}
-            iconColor="#3B82F6"
-            inputStyle={styles.searchInput}
-          />
-        </View>
-
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Searchbar
+              placeholder="Search reports..."
+              onChangeText={handleSearch}
+              value={searchQuery}
+              style={styles.searchBar}
+              iconColor="#3B82F6"
+              inputStyle={styles.searchInput}
+            />
+          </View>
+        </LinearGradient>
         {/* Filter Buttons */}
         <View style={styles.filterButtonsContainer}>
           <TouchableOpacity
@@ -763,10 +788,24 @@ const formatStatus = (status?: string) => {
   return status.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
 };
 
+const STATUS_COLORS: { [key in ReportStatus]: string } = {
+  [ReportStatus.SUBMITTED]: "#64748B",
+  [ReportStatus.IN_PROGRESS]: "#3B82F6",
+  [ReportStatus.FIXED]: "#10B981",
+  [ReportStatus.REJECTED]: "#EF4444",
+};
+
+const STATUS_ICONS: Record<ReportStatus, string> = {
+  [ReportStatus.SUBMITTED]: "clipboard-check-outline",
+  [ReportStatus.IN_PROGRESS]: "progress-clock",
+  [ReportStatus.FIXED]: "check-circle",
+  [ReportStatus.REJECTED]: "close-circle",
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F0F4FF", // Updated to light blue background
   },
   content: {
     flex: 0,
@@ -801,12 +840,11 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
   searchContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+    marginTop: 20,
   },
   searchBar: {
     elevation: 0,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     height: 48,
   },
@@ -827,7 +865,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: "#3B82F6",
-    borderRadius: 24,
+    borderRadius: 4, // Changed to square
     backgroundColor: "white",
     flex: 1,
     marginHorizontal: 4,
@@ -904,15 +942,32 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   severityChip: {
-    height: 28,
+    height: 36,
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 80,
+    elevation: 0,
   },
   statusChip: {
-    height: 28,
+    height: 36,
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 80,
+    elevation: 0,
   },
   chipText: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
+    textAlign: "center",
+    padding: 0,
+    margin: 0,
   },
   notesContainer: {
     backgroundColor: "#F1F5F9",
@@ -1001,7 +1056,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 4, // Changed to square
     borderWidth: 1,
     borderColor: "#E2E8F0",
     flex: 1,

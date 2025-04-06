@@ -10,7 +10,6 @@ import {
   Image,
   Pressable,
 } from "react-native";
-import { Chip } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotiView } from "moti";
 import { formatDistanceToNow } from "date-fns";
@@ -177,7 +176,7 @@ const ReportCard: React.FC<ReportCardProps> = ({
             </Text>
 
             <View style={styles.tagsContainer}>
-              <Chip
+              <View
                 style={[
                   styles.severityChip,
                   {
@@ -186,12 +185,10 @@ const ReportCard: React.FC<ReportCardProps> = ({
                       "#6B7280",
                   },
                 ]}
-                textStyle={styles.chipText}
-                compact
               >
-                {item.severity}
-              </Chip>
-              <Chip
+                <Text style={styles.chipText}>{item.severity}</Text>
+              </View>
+              <View
                 style={[
                   styles.statusChip,
                   {
@@ -199,11 +196,11 @@ const ReportCard: React.FC<ReportCardProps> = ({
                       STATUS_COLORS[item.status as ReportStatus] || "#6B7280",
                   },
                 ]}
-                textStyle={styles.chipText}
-                compact
               >
-                {item.status.replace("_", " ")}
-              </Chip>
+                <Text style={styles.chipText}>
+                  {item.status.replace("_", " ")}
+                </Text>
+              </View>
             </View>
 
             <View style={styles.footer}>
@@ -394,28 +391,33 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   severityChip: {
-    height: 36, // Keep the height
-    borderRadius: 4, // Very small radius for slightly rounded corners
-    paddingHorizontal: 12, // Less horizontal padding for a more square look
-    justifyContent: "center", // Keep vertical centering
-    minWidth: 80, // Keep minimum width
+    height: 36,
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 80,
+    elevation: 0, // Remove any elevation that might affect alignment
   },
   statusChip: {
-    height: 36, // Keep the height
-    paddingHorizontal: 12, // Less horizontal padding for a more square look
-    justifyContent: "center", // Keep vertical centering
-    minWidth: 80, // Keep minimum width
+    height: 36,
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 80,
+    elevation: 0, // Remove any elevation that might affect alignment
   },
   chipText: {
     fontSize: 14,
     fontWeight: "600",
-    includeFontPadding: false,
-    textTransform: "capitalize",
     color: "#FFFFFF",
-    margin: 0,
-    padding: 0,
     textAlign: "center",
-    lineHeight: 16,
+    padding: 0,
+    margin: 0,
+    lineHeight: 14, // Match the font size
+    height: 14, // Set explicit height
+    alignSelf: "center", // Ensure self-alignment
   },
   footer: {
     flexDirection: "row",

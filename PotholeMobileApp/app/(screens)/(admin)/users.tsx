@@ -13,7 +13,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Avatar,
   Searchbar,
-  Chip,
   Button,
   Dialog,
   Portal,
@@ -22,7 +21,7 @@ import {
 } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { EXPO_PUBLIC_SUPABASE_SECRET_KEY } from "@env";
-
+import { LinearGradient } from "expo-linear-gradient";
 import { supabase, createAdminClient } from "../../../lib/supabase";
 import {
   grantAdminPrivileges,
@@ -190,13 +189,15 @@ export default function UsersScreen() {
 
             <View style={styles.userActions}>
               {item.is_admin && (
-                <Chip
-                  style={styles.adminChip}
-                  textStyle={styles.adminChipText}
-                  icon="shield-check"
-                >
-                  Admin
-                </Chip>
+                <View style={styles.adminChip}>
+                  <MaterialCommunityIcons
+                    name="shield-check"
+                    size={16}
+                    color="#FFFFFF"
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text style={styles.adminChipText}>Admin</Text>
+                </View>
               )}
 
               <TouchableOpacity
@@ -232,7 +233,12 @@ export default function UsersScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.content}>
         {/* Purple Header Banner */}
-        <View style={styles.headerBanner}>
+        <LinearGradient
+          colors={["#3B82F6", "#2563EB"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.headerBanner}
+        >
           <View style={styles.headerContent}>
             <View style={styles.headerTextContainer}>
               <Text style={styles.headerTitle}>User Management</Text>
@@ -241,19 +247,18 @@ export default function UsersScreen() {
               </Text>
             </View>
           </View>
-        </View>
-
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Searchbar
-            placeholder="Search users..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={styles.searchBar}
-            iconColor="#3B82F6" // Changed from #8B5CF6 to blue
-            inputStyle={styles.searchInput}
-          />
-        </View>
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Searchbar
+              placeholder="Search users..."
+              onChangeText={setSearchQuery}
+              value={searchQuery}
+              style={styles.searchBar}
+              iconColor="#3B82F6" // Changed from #8B5CF6 to blue
+              inputStyle={styles.searchInput}
+            />
+          </View>
+        </LinearGradient>
       </View>
 
       <FlatList
@@ -335,7 +340,7 @@ export default function UsersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F0F4FF", // Updated to light blue background
   },
   content: {
     flex: 0,
@@ -370,12 +375,11 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
   searchContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+    marginTop: 20,
   },
   searchBar: {
     elevation: 0,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     height: 48,
   },
@@ -434,14 +438,22 @@ const styles = StyleSheet.create({
   },
   adminChip: {
     backgroundColor: "#3B82F6",
-    borderRadius: 4, // Changed from rounded to square
+    borderRadius: 4,
     paddingHorizontal: 12,
-    height: 36, // Explicit height for consistency
+    height: 36,
+    flexDirection: "row",
     justifyContent: "center",
+    alignItems: "center",
   },
   adminChipText: {
     color: "#FFFFFF",
     fontWeight: "600",
+    fontSize: 14,
+    textAlign: "center",
+    padding: 0,
+    margin: 0,
+    lineHeight: 14,
+    height: 14,
   },
   adminButton: {
     flexDirection: "row",
