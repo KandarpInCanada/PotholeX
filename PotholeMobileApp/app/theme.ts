@@ -13,11 +13,13 @@ const lightTheme = {
     surface: "#FFFFFF", // White surface for cards
     surfaceVariant: "#F1F5F9", // Light gray for variant surfaces
 
-    text: "#1E293B", // Slate 800 - primary text
-    textSecondary: "#64748B", // Slate 500 - secondary text
-    onSurface: "#1E293B", // Slate 800 - text on surfaces
+    text: "#0F172A", // Darker text for better visibility
+    textSecondary: "#334155", // Darker secondary text
+    onSurface: "#0F172A", // Darker text on surfaces
+    onSurfaceVariant: "#334155", // Darker text on variant surfaces
+    inputText: "#0F172A", // Very dark slate for input text
 
-    placeholder: "#94A3B8", // Slate 400 - placeholder text
+    placeholder: "#64748B", // Slate 500 - placeholder text (darker for better visibility)
     outline: "#CBD5E1", // Slate 300 - borders
 
     buttonBackground: "#3B82F6", // Blue - button background
@@ -43,7 +45,7 @@ const lightTheme = {
   },
 }
 
-// Dark Theme with matching blue colors
+// Also update the dark theme text colors for consistency
 const darkTheme = {
   ...MD3DarkTheme,
   colors: {
@@ -57,8 +59,9 @@ const darkTheme = {
     surfaceVariant: "#334155", // Slate 700 for variant surfaces
 
     text: "#F8FAFC", // Slate 50 - primary text
-    textSecondary: "#CBD5E1", // Slate 300 - secondary text
+    textSecondary: "#E2E8F0", // Slate 200 - secondary text (lighter for better visibility in dark mode)
     onSurface: "#F8FAFC", // Slate 50 - text on surfaces
+    onSurfaceVariant: "#E2E8F0", // For input labels and other variant surfaces
 
     placeholder: "#94A3B8", // Slate 400 - placeholder text
     outline: "#475569", // Slate 600 - borders

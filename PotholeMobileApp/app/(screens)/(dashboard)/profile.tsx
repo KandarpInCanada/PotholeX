@@ -32,10 +32,12 @@ import {
 } from "../../services/profile-service";
 import { LinearGradient } from "expo-linear-gradient";
 import LoadingScreen from "../../components/dashboard-components/profile/loading-screen";
+import { useRouter } from "expo-router";
 
 export default function UserProfileScreen() {
   // Authentication and routing hooks
   const { user, signOut, isAdmin } = useAuth();
+  const router = useRouter();
 
   // State management for loading, updating, profile data, and edit mode
   const [loading, setLoading] = useState(true);
@@ -171,7 +173,7 @@ export default function UserProfileScreen() {
     );
   };
 
-  // Perform the actual logout
+  // Update the performLogout function to ensure it properly completes and redirects
   const performLogout = async () => {
     try {
       setLoggingOut(true);
@@ -187,6 +189,12 @@ export default function UserProfileScreen() {
       ]);
 
       console.log("Logout successful");
+
+      // Force navigation to login screen after a short delay
+      setTimeout(() => {
+        setLoggingOut(false); // Make sure to reset the loading state
+        router.replace("/(screens)/(auth)/login");
+      }, 500);
     } catch (error) {
       setLoggingOut(false);
       console.error("Error during logout:", error);
@@ -374,8 +382,17 @@ export default function UserProfileScreen() {
                   disabled={!editMode}
                   mode="outlined"
                   outlineColor="#E2E8F0"
-                  activeOutlineColor="#4B5563"
-                  left={<TextInput.Icon icon="account" color="#4B5563" />}
+                  activeOutlineColor="#3B82F6"
+                  left={<TextInput.Icon icon="account" color="#3B82F6" />}
+                  theme={{
+                    colors: {
+                      text: "#0F172A",
+                      placeholder: "#64748B",
+                      disabled: "#334155",
+                      onSurfaceVariant: "#475569",
+                      background: "#FFFFFF",
+                    },
+                  }}
                 />
               </View>
 
@@ -390,8 +407,17 @@ export default function UserProfileScreen() {
                   disabled={!editMode}
                   mode="outlined"
                   outlineColor="#E2E8F0"
-                  activeOutlineColor="#4B5563"
-                  left={<TextInput.Icon icon="badge-account" color="#4B5563" />}
+                  activeOutlineColor="#3B82F6"
+                  left={<TextInput.Icon icon="badge-account" color="#3B82F6" />}
+                  theme={{
+                    colors: {
+                      text: "#0F172A",
+                      placeholder: "#64748B",
+                      disabled: "#334155",
+                      onSurfaceVariant: "#475569",
+                      background: "#FFFFFF",
+                    },
+                  }}
                 />
               </View>
 
@@ -403,7 +429,16 @@ export default function UserProfileScreen() {
                   disabled={true}
                   mode="outlined"
                   outlineColor="#E2E8F0"
-                  left={<TextInput.Icon icon="email" color="#4B5563" />}
+                  left={<TextInput.Icon icon="email" color="#3B82F6" />}
+                  theme={{
+                    colors: {
+                      text: "#0F172A",
+                      placeholder: "#64748B",
+                      disabled: "#334155",
+                      onSurfaceVariant: "#475569",
+                      background: "#FFFFFF",
+                    },
+                  }}
                 />
                 <Text style={styles.helperText}>Email cannot be changed</Text>
               </View>

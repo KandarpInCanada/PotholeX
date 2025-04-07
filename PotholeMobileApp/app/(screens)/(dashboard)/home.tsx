@@ -13,7 +13,7 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { FAB, Avatar, Card } from "react-native-paper";
+import { FAB, Card } from "react-native-paper";
 import { useRouter, useFocusEffect } from "expo-router";
 import { getAllReports, likeReport } from "../../services/report-service";
 import { getUserProfile } from "../../services/profile-service";
@@ -409,14 +409,20 @@ const styles = StyleSheet.create({
   welcomeBanner: {
     marginHorizontal: 16,
     marginTop: 16,
-    borderRadius: 4,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
     borderLeftWidth: 4,
-    borderLeftColor: "#4B5563",
+    borderLeftColor: "#3B82F6",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   welcomeContent: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 0,
+    padding: 16,
   },
   welcomeTextContainer: {
     flex: 1,
@@ -424,11 +430,12 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#0F172A",
+    color: "#1E293B",
+    marginBottom: 4,
   },
   welcomeSubtext: {
     fontSize: 14,
-    color: "#64748B",
+    color: "#475569",
     marginTop: 2,
   },
   closeButton: {

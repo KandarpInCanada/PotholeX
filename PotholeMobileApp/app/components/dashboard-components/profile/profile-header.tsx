@@ -174,12 +174,10 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontWeight: "bold",
-    color: lightTheme.colors.text,
     marginBottom: 4,
   },
   email: {
     fontSize: 16,
-    color: lightTheme.colors.textSecondary,
     marginBottom: 16,
   },
   adminBadge: {

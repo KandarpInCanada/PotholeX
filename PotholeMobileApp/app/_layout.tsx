@@ -7,10 +7,25 @@ import { AuthProvider, useAuth } from "../context/auth-context";
 import { Provider as PaperProvider } from "react-native-paper";
 import { ThemeProvider, useTheme } from "../context/theme-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useRouter } from "expo-router";
+import { useEffect } from "react";
 
+// Update the RootLayoutInner component to handle auth state changes more reliably
 function RootLayoutInner() {
   const { user, loading, isAdmin } = useAuth();
   const { theme } = useTheme();
+  const router = useRouter();
+
+  // Effect to handle navigation based on auth state
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.replace("/(screens)/(auth)/login");
+      } else if (isAdmin) {
+        router.replace("/(screens)/(admin)/portal");
+      }
+    }
+  }, [user, isAdmin, loading, router]);
 
   if (loading) {
     return (

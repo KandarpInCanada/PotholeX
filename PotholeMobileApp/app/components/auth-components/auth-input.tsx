@@ -46,9 +46,11 @@ export const AuthInput = ({
       theme={{
         colors: {
           primary: "#4285F4",
-          text: "#FFFFFF",
-          placeholder: "rgba(255, 255, 255, 0.6)",
+          text: "#0F172A",
+          placeholder: "#64748B",
           background: "transparent",
+          onSurfaceVariant: "#475569",
+          disabled: "#334155",
         },
       }}
     />
