@@ -19,20 +19,6 @@ import {
   SeverityLevel,
 } from "../../../../lib/supabase";
 
-// Update the SEVERITY_COLORS and STATUS_COLORS constants to match the UI design
-const SEVERITY_COLORS = {
-  [SeverityLevel.DANGER]: "#DC2626", // Red for danger
-  [SeverityLevel.MEDIUM]: "#F59E0B", // Amber for medium
-  [SeverityLevel.LOW]: "#4ADE80", // Brighter green for low
-};
-
-const STATUS_COLORS = {
-  [ReportStatus.SUBMITTED]: "#64748B", // Gray for submitted
-  [ReportStatus.IN_PROGRESS]: "#3B82F6", // Blue for in progress
-  [ReportStatus.FIXED]: "#4ADE80", // Brighter green for fixed
-  [ReportStatus.REJECTED]: "#6B7280", // Gray for rejected
-};
-
 interface ReportCardProps {
   item: PotholeReport;
   index: number;
@@ -40,6 +26,7 @@ interface ReportCardProps {
   onPress: () => void;
 }
 
+// Update the ReportCard component to match the overall UI design
 const ReportCard: React.FC<ReportCardProps> = ({
   item,
   index,
@@ -48,7 +35,7 @@ const ReportCard: React.FC<ReportCardProps> = ({
 }) => {
   const [pressed, setPressed] = useState(false);
   const [liked, setLiked] = useState(false);
-  const profile = item.profiles;
+  const profile = item?.profiles || null;
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "";
@@ -107,24 +94,52 @@ const ReportCard: React.FC<ReportCardProps> = ({
           animate={{ scale: pressed ? 0.98 : 1 }}
           transition={{ type: "timing", duration: 100 }}
         >
-          {item.images && item.images.length > 0 && (
+          {/* Card Header */}
+          <View style={styles.cardHeader}>
+            <View style={styles.userInfo}>
+              {profile?.avatar_url ? (
+                <Image
+                  style={styles.avatar}
+                  source={{ uri: profile.avatar_url }}
+                />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarText}>
+                    {(profile?.username || "A").substring(0, 1).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.userDetails}>
+                <Text style={styles.userName}>
+                  {profile?.username || "Anonymous"}
+                </Text>
+                <Text style={styles.date}>{formatDate(item.created_at)}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Image */}
+          {item?.images && item.images.length > 0 && (
             <View style={styles.imageContainer}>
               <Image
                 source={{ uri: item.images[0] }}
                 style={styles.image}
                 defaultSource={require("../../../assets/placeholder-image.svg")}
               />
-              <View style={styles.gradientOverlay} />
 
-              <View style={styles.floatingCategory}>
+              {/* Category Badge */}
+              <View style={styles.categoryBadge}>
                 <MaterialCommunityIcons
-                  name={getCategoryIcon(item.category)}
+                  name={getCategoryIcon(item.category || "")}
                   size={14}
                   color="#475569"
                 />
-                <Text style={styles.categoryText}>{item.category}</Text>
+                <Text style={styles.categoryText}>
+                  {item.category || "Unknown"}
+                </Text>
               </View>
 
+              {/* Multiple Images Badge */}
               {item.images.length > 1 && (
                 <View style={styles.imageCountBadge}>
                   <MaterialCommunityIcons
@@ -141,70 +156,62 @@ const ReportCard: React.FC<ReportCardProps> = ({
           )}
 
           <View style={styles.contentContainer}>
-            <View style={styles.cardHeader}>
-              <View style={styles.userInfo}>
-                <Image
-                  style={styles.avatar}
-                  source={
-                    profile?.avatar_url
-                      ? { uri: profile.avatar_url }
-                      : require("../../../assets/default-avatar.png")
-                  }
-                />
-                <View style={styles.userDetails}>
-                  <Text style={styles.userName}>
-                    {profile?.username || "Anonymous"}
-                  </Text>
-                  <Text style={styles.date}>{formatDate(item.created_at)}</Text>
-                </View>
-              </View>
-            </View>
-
+            {/* Location */}
             <View style={styles.locationContainer}>
               <MaterialCommunityIcons
                 name="map-marker"
                 size={16}
-                color="#0284c7"
+                color="#3B82F6"
               />
               <Text style={styles.location} numberOfLines={1}>
-                {item.location}
+                {item?.location || "Unknown location"}
               </Text>
             </View>
 
+            {/* Description */}
             <Text style={styles.description} numberOfLines={2}>
-              {item.description}
+              {item?.description || "No description provided"}
             </Text>
 
-            <View style={styles.tagsContainer}>
+            {/* Status and Severity Badges */}
+            <View style={styles.badgesContainer}>
               <View
                 style={[
-                  styles.severityChip,
+                  styles.severityBadge,
                   {
                     backgroundColor:
-                      SEVERITY_COLORS[item.severity as SeverityLevel] ||
-                      "#6B7280",
+                      SEVERITY_COLORS[
+                        (item?.severity as SeverityLevel) ||
+                          SeverityLevel.MEDIUM
+                      ] || "#6B7280",
                   },
                 ]}
               >
-                <Text style={styles.chipText}>{item.severity}</Text>
+                <Text style={styles.badgeText}>
+                  {item?.severity || "Medium"}
+                </Text>
               </View>
+
               <View
                 style={[
-                  styles.statusChip,
+                  styles.statusBadge,
                   {
                     backgroundColor:
-                      STATUS_COLORS[item.status as ReportStatus] || "#6B7280",
+                      STATUS_COLORS[
+                        (item?.status as ReportStatus) || ReportStatus.SUBMITTED
+                      ] || "#6B7280",
                   },
                 ]}
               >
-                <Text style={styles.chipText}>
-                  {item.status.replace("_", " ")}
+                <Text style={styles.badgeText}>
+                  {(item?.status || "submitted").replace("_", " ")}
                 </Text>
               </View>
             </View>
 
+            {/* Footer with Like, Comment, Share */}
             <View style={styles.footer}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View style={styles.interactionButtons}>
                 <TouchableOpacity
                   style={[
                     styles.interactionButton,
@@ -215,25 +222,23 @@ const ReportCard: React.FC<ReportCardProps> = ({
                   <MaterialCommunityIcons
                     name={liked ? "thumb-up" : "thumb-up-outline"}
                     size={18}
-                    color={liked ? "#0284c7" : "#64748B"}
+                    color={liked ? "#3B82F6" : "#64748B"}
                   />
                   <Text
                     style={[styles.interactionText, liked && styles.likedText]}
                   >
-                    {(item.likes || 0) + (liked ? 1 : 0)}
+                    {(item?.likes || 0) + (liked ? 1 : 0)}
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[styles.interactionButton, { marginLeft: 8 }]}
-                >
+                <TouchableOpacity style={styles.interactionButton}>
                   <MaterialCommunityIcons
                     name="comment-outline"
                     size={18}
                     color="#64748B"
                   />
                   <Text style={styles.interactionText}>
-                    {item.comments || 0}
+                    {item?.comments || 0}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -253,87 +258,41 @@ const ReportCard: React.FC<ReportCardProps> = ({
   );
 };
 
+// Update the SEVERITY_COLORS and STATUS_COLORS constants to match the UI design
+const SEVERITY_COLORS = {
+  [SeverityLevel.DANGER]: "#DC2626", // Red for danger
+  [SeverityLevel.MEDIUM]: "#F59E0B", // Amber for medium
+  [SeverityLevel.LOW]: "#10B981", // Green for low
+};
+
+const STATUS_COLORS = {
+  [ReportStatus.SUBMITTED]: "#64748B", // Gray for submitted
+  [ReportStatus.IN_PROGRESS]: "#3B82F6", // Blue for in progress
+  [ReportStatus.FIXED]: "#10B981", // Green for fixed
+  [ReportStatus.REJECTED]: "#6B7280", // Gray for rejected
+};
+
+// Update the styles to match the overall UI design
 const styles = StyleSheet.create({
   card: {
-    width: "100%",
     backgroundColor: "#FFFFFF",
-    borderRadius: 20,
+    borderRadius: 16,
     marginBottom: 16,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(226, 232, 240, 0.7)",
     shadowColor: "#64748B",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   cardPressed: {
     backgroundColor: "#F8FAFC",
   },
-  imageContainer: {
-    position: "relative",
-    width: "100%",
-    height: 200,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    overflow: "hidden",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  gradientOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 60,
-    backgroundColor: "rgba(0,0,0,0.35)",
-  },
-  floatingCategory: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    backgroundColor: "rgba(255,255,255,0.95)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  categoryText: {
-    color: "#334155",
-    fontSize: 12,
-    fontWeight: "700",
-    marginLeft: 4,
-  },
-  imageCountBadge: {
-    position: "absolute",
-    right: 12,
-    top: 12,
-    backgroundColor: "rgba(0, 0, 0, 0.75)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  imageCountText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "600",
-    marginLeft: 4,
-  },
-  contentContainer: {
-    padding: 18,
-  },
   cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
+    padding: 16,
+    paddingBottom: 12,
   },
   userInfo: {
     flexDirection: "row",
@@ -345,6 +304,19 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 2,
     borderColor: "#E2E8F0",
+  },
+  avatarFallback: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#3B82F6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   userDetails: {
     marginLeft: 12,
@@ -360,92 +332,128 @@ const styles = StyleSheet.create({
     color: "#64748B",
     lineHeight: 18,
   },
+  imageContainer: {
+    position: "relative",
+    width: "100%",
+    height: 200,
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  categoryBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  categoryText: {
+    color: "#334155",
+    fontSize: 12,
+    fontWeight: "600",
+    marginLeft: 4,
+  },
+  imageCountBadge: {
+    position: "absolute",
+    right: 12,
+    top: 12,
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  imageCountText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
+    marginLeft: 4,
+  },
+  contentContainer: {
+    padding: 16,
+  },
   locationContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
     backgroundColor: "#F1F5F9",
     paddingVertical: 6,
     paddingHorizontal: 10,
-    borderRadius: 10,
+    borderRadius: 6,
     alignSelf: "flex-start",
   },
   location: {
     fontSize: 14,
-    color: "#0284c7",
+    color: "#3B82F6",
     marginLeft: 6,
-    fontWeight: "600",
-    lineHeight: 20,
+    fontWeight: "500",
   },
   description: {
     fontSize: 15,
     lineHeight: 22,
     color: "#334155",
     marginBottom: 14,
-    fontWeight: "400",
   },
-  tagsContainer: {
+  badgesContainer: {
     flexDirection: "row",
     marginBottom: 16,
-    flexWrap: "wrap",
     gap: 8,
   },
-  severityChip: {
-    height: 36,
-    borderRadius: 4,
+  severityBadge: {
     paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
-    minWidth: 80,
-    elevation: 0, // Remove any elevation that might affect alignment
   },
-  statusChip: {
-    height: 36,
-    borderRadius: 4,
+  statusBadge: {
     paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
-    minWidth: 80,
-    elevation: 0, // Remove any elevation that might affect alignment
   },
-  chipText: {
+  badgeText: {
     fontSize: 14,
     fontWeight: "600",
     color: "#FFFFFF",
-    textAlign: "center",
-    padding: 0,
-    margin: 0,
-    lineHeight: 14, // Match the font size
-    height: 14, // Set explicit height
-    alignSelf: "center", // Ensure self-alignment
   },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingTop: 14,
-    borderTopWidth: 1.5,
+    paddingTop: 12,
+    borderTopWidth: 1,
     borderTopColor: "#F1F5F9",
-    marginTop: 8,
+  },
+  interactionButtons: {
+    flexDirection: "row",
   },
   interactionButton: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: "transparent",
+    borderRadius: 6,
+    marginRight: 8,
   },
   likedButton: {
-    backgroundColor: "#EFF6FF", // Light blue background
+    backgroundColor: "#EFF6FF",
   },
   interactionText: {
     marginLeft: 6,
-    fontSize: 13.5,
-    color: "#475569",
-    fontWeight: "600",
+    fontSize: 13,
+    color: "#64748B",
+    fontWeight: "500",
   },
   likedText: {
-    color: "#3B82F6", // Blue color
+    color: "#3B82F6",
   },
 });
 
