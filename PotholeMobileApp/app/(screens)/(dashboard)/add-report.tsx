@@ -550,6 +550,7 @@ export default function AddReportScreen() {
   );
 }
 
+// Update form components to have curved edges
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -561,7 +562,7 @@ const styles = StyleSheet.create({
   headerBanner: {
     paddingVertical: 16,
     paddingHorizontal: 16,
-    borderRadius: 16,
+    borderRadius: 24, // Updated for more curved edges
     margin: 16,
     marginBottom: 8,
   },
@@ -586,7 +587,7 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
     backgroundColor: "#FFFFFF",
-    borderRadius: 4,
+    borderRadius: 16, // Updated for more curved edges
     padding: 16,
     shadowColor: "#64748B",
     shadowOffset: { width: 0, height: 1 },
@@ -602,7 +603,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     paddingVertical: 8,
-    borderRadius: 4,
+    borderRadius: 24, // Updated for more curved edges
     backgroundColor: "#374151",
     width: "100%",
   },
@@ -616,7 +617,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FEF3C7",
-    borderRadius: 12,
+    borderRadius: 16, // Updated for more curved edges
     padding: 12,
     marginHorizontal: 16,
     marginBottom: 16,
@@ -639,7 +640,7 @@ const styles = StyleSheet.create({
   },
   successContent: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 24, // Updated for more curved edges
     padding: 24,
     alignItems: "center",
     width: "80%",

@@ -276,7 +276,7 @@ const STATUS_COLORS = {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 24, // Updated to more rounded corners
     marginBottom: 16,
     overflow: "hidden",
     borderWidth: 1,
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
     top: 12,
     left: 12,
     backgroundColor: "rgba(255,255,255,0.95)",
-    borderRadius: 6,
+    borderRadius: 16, // Updated to more rounded corners
     paddingHorizontal: 10,
     paddingVertical: 4,
     flexDirection: "row",
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.75)",
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 6,
+    borderRadius: 16, // Updated to more rounded corners
     flexDirection: "row",
     alignItems: "center",
   },
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F1F5F9",
     paddingVertical: 6,
     paddingHorizontal: 10,
-    borderRadius: 6,
+    borderRadius: 16, // Updated to more rounded corners
     alignSelf: "flex-start",
   },
   location: {
@@ -409,14 +409,14 @@ const styles = StyleSheet.create({
   severityBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 16, // Updated to more rounded corners
     justifyContent: "center",
     alignItems: "center",
   },
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 16, // Updated to more rounded corners
     justifyContent: "center",
     alignItems: "center",
   },
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 6,
+    borderRadius: 16, // Updated to more rounded corners
     marginRight: 8,
   },
   likedButton: {

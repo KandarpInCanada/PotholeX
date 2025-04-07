@@ -273,7 +273,7 @@ export default function UserProfileScreen() {
 
   // Main profile screen rendering
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
@@ -616,10 +616,10 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 100,
+    paddingBottom: 0, // Completely removed bottom padding
   },
   profileHeader: {
-    borderRadius: 0,
+    borderRadius: 24, // Updated for more curved edges
     padding: 20,
     marginBottom: 16,
     alignItems: "center",
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#374151",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 4,
+    borderRadius: 20, // Updated for curved edges
     marginBottom: 16,
   },
   adminBadgeText: {
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
   },
   editProfileButton: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 4,
+    borderRadius: 24, // Updated for curved edges
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginTop: 16,
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     marginBottom: 16,
-    borderRadius: 4,
+    borderRadius: 24, // Updated for curved corners
     overflow: "hidden",
     backgroundColor: "#FFFFFF",
     elevation: 2,
@@ -718,6 +718,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: "#FFFFFF",
+    borderRadius: 16, // Added curved borders for inputs
   },
   helperText: {
     fontSize: 12,
@@ -764,22 +765,23 @@ const styles = StyleSheet.create({
   },
   editActionButton: {
     flex: 1,
-    borderRadius: 4,
+    borderRadius: 24, // Updated for curved edges
   },
   cancelButton: {
     borderColor: "#E2E8F0",
   },
   logoutButton: {
     marginTop: 8,
-    marginBottom: 24,
+    marginBottom: 16, // Reduced from 24 to 16
     borderColor: "#EF4444",
     borderWidth: 1.5,
-    borderRadius: 4,
+    borderRadius: 24, // Updated for curved edges
   },
   versionText: {
     textAlign: "center",
     fontSize: 14,
     color: "#94A3B8",
+    marginBottom: 0, // Added to ensure no extra space
   },
   loggingOutContainer: {
     flex: 1,

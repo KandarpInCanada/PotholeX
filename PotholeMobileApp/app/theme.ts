@@ -37,7 +37,7 @@ const lightTheme = {
     accent2: "#F43F5E", // Rose
     accent3: "#0EA5E9", // Sky
   },
-  roundness: 12, // Rounded corners matching the design
+  roundness: 16, // Increased roundness for a more curved look
   fonts: {
     ...MD3LightTheme.fonts,
   },
@@ -80,7 +80,7 @@ const darkTheme = {
     accent2: "#FB7185", // Lighter rose for dark mode
     accent3: "#38BDF8", // Lighter sky for dark mode
   },
-  roundness: 12,
+  roundness: 16, // Increased roundness for dark theme as well
   fonts: {
     ...MD3DarkTheme.fonts,
   },

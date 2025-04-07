@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#F1F5F9",
-    borderRadius: 4,
+    borderRadius: 16, // Updated to rounded corners
     borderWidth: 1,
     borderColor: "#E2E8F0",
     borderStyle: "dashed",
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   thumbnailImage: {
     width: 110,
     height: 110,
-    borderRadius: 12,
+    borderRadius: 16, // Updated to rounded corners
   },
   removeImageButton: {
     position: "absolute",
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   detectionContainer: {
     marginTop: 16,
     backgroundColor: "#F8FAFC",
-    borderRadius: 12,
+    borderRadius: 16, // Updated to rounded corners
     padding: 12,
     borderWidth: 1,
     borderColor: "#E2E8F0",
@@ -327,13 +327,16 @@ const styles = StyleSheet.create({
   analyzeButton: {
     flex: 1,
     backgroundColor: "#374151",
+    borderRadius: 16, // Updated to rounded corners
   },
   closeButton: {
     flex: 1,
+    borderRadius: 16, // Updated to rounded corners
   },
   viewImagesButton: {
     marginTop: 8,
     marginBottom: 8,
+    borderRadius: 16, // Updated to rounded corners
   },
   validationBadge: {
     position: "absolute",

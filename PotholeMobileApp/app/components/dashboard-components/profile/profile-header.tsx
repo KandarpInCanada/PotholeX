@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#3B82F6",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 4, // Changed from rounded to square
+    borderRadius: 20, // Updated for rounded edges
     marginBottom: 16,
   },
   adminBadgeText: {
@@ -206,13 +206,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   editButton: {
-    borderRadius: 8,
+    borderRadius: 24, // Updated for curved edges
     paddingHorizontal: 16,
     backgroundColor: "#3B82F6", // Updated to blue
     width: "100%",
   },
   adminButton: {
     backgroundColor: "#8B5CF6", // Purple for admin button
+    borderRadius: 24, // Updated for curved edges
   },
   editModeButtons: {
     flexDirection: "row",
@@ -222,7 +223,7 @@ const styles = StyleSheet.create({
   },
   editActionButton: {
     flex: 1,
-    borderRadius: 8,
+    borderRadius: 24, // Updated for curved edges
   },
   cancelButton: {
     borderColor: lightTheme.colors.outline,
