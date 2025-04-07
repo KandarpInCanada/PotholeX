@@ -220,31 +220,6 @@ const HomeScreen: React.FC = () => {
               Overview of your pothole reports
             </Text>
           </View>
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={() => router.push("(screens)/(dashboard)/profile")}
-          >
-            {userProfile?.avatar_url ? (
-              <Avatar.Image
-                size={40}
-                source={{ uri: userProfile.avatar_url }}
-                style={styles.avatar}
-              />
-            ) : (
-              <Avatar.Text
-                size={40}
-                label={
-                  userProfile?.full_name
-                    ? userProfile.full_name
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
-                    : "U"
-                }
-                style={styles.avatar}
-              />
-            )}
-          </TouchableOpacity>
         </View>
 
         {/* Search bar */}

@@ -663,10 +663,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     height: 40,
     fontSize: 14,
+    justifyContent: "center", // Add this to center content vertically
   },
   searchInput: {
     fontSize: 14,
     color: "#0F172A",
+    alignSelf: "center", // Add this to center the text vertically
+    includeFontPadding: false, // Remove extra padding
+    textAlignVertical: "center", // Ensure text is vertically centered
   },
   filterButtonsContainer: {
     flexDirection: "row",
