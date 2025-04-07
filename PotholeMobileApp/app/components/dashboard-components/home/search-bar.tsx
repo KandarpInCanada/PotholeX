@@ -31,7 +31,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         <View style={styles.searchBar}>
           <MaterialCommunityIcons
             name="magnify"
-            size={22}
+            size={20}
             color="#64748B"
             style={styles.searchIcon}
           />
@@ -48,7 +48,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
               <MaterialCommunityIcons
                 name="close-circle"
-                size={18}
+                size={16}
                 color="#94A3B8"
               />
             </TouchableOpacity>
@@ -61,8 +61,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
     zIndex: 10,
   },
   searchBarWrapper: {
@@ -81,14 +81,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
-    height: 52,
+    height: 40,
   },
   searchIcon: {
     marginRight: 8,
   },
   input: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "400",
     color: "#0F172A",
     padding: 0,

@@ -12,7 +12,14 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button, Divider, TextInput, Avatar, Switch } from "react-native-paper";
+import {
+  Button,
+  Divider,
+  TextInput,
+  Avatar,
+  Switch,
+  Card,
+} from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotiView } from "moti";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -23,12 +30,12 @@ import {
   updateUserProfile,
   uploadProfileAvatar,
 } from "../../services/profile-service";
-import { lightTheme } from "../../theme";
+import { LinearGradient } from "expo-linear-gradient";
 import LoadingScreen from "../../components/dashboard-components/profile/loading-screen";
 
 export default function UserProfileScreen() {
   // Authentication and routing hooks
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
 
   // State management for loading, updating, profile data, and edit mode
   const [loading, setLoading] = useState(true);
@@ -243,7 +250,7 @@ export default function UserProfileScreen() {
   if (loggingOut) {
     return (
       <View style={styles.loggingOutContainer}>
-        <ActivityIndicator size="large" color={lightTheme.colors.primary} />
+        <ActivityIndicator size="large" color="#4B5563" />
         <Text style={styles.loggingOutText}>Logging out...</Text>
       </View>
     );
@@ -279,7 +286,12 @@ export default function UserProfileScreen() {
           transition={{ type: "timing", duration: 500 }}
         >
           {/* Profile Header */}
-          <View style={styles.header}>
+          <LinearGradient
+            colors={["#374151", "#1F2937"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.profileHeader}
+          >
             <TouchableOpacity
               style={styles.avatarContainer}
               onPress={pickImage}
@@ -308,230 +320,270 @@ export default function UserProfileScreen() {
               )}
             </TouchableOpacity>
 
-            <Text style={styles.name}>
-              {profile.full_name || profile.username || "Update your profile"}
-            </Text>
-            <Text style={styles.email}>{profile.email || ""}</Text>
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>
+                {profile.full_name || profile.username}
+              </Text>
+              <Text style={styles.profileEmail}>{profile.email}</Text>
 
-            <View style={styles.editButtonContainer}>
-              {!editMode ? (
-                <Button
-                  mode="contained"
-                  onPress={() => setEditMode(true)}
-                  style={styles.editButton}
-                  icon="account-edit"
-                >
-                  Edit Profile
-                </Button>
-              ) : (
-                <View style={styles.editModeButtons}>
-                  <Button
-                    mode="outlined"
-                    onPress={() => {
-                      setEditMode(false);
-                      fetchUserProfile(); // Reset to original values
-                    }}
-                    style={[styles.editActionButton, styles.cancelButton]}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    mode="contained"
-                    onPress={handleUpdateProfile}
-                    style={styles.editActionButton}
-                    loading={updating}
-                    disabled={updating}
-                  >
-                    Save
-                  </Button>
+              {isAdmin && (
+                <View style={styles.adminBadge}>
+                  <MaterialCommunityIcons
+                    name="shield"
+                    size={16}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.adminBadgeText}>Administrator</Text>
                 </View>
               )}
             </View>
-          </View>
+
+            <TouchableOpacity
+              style={styles.editProfileButton}
+              onPress={() => setEditMode(true)}
+              disabled={editMode}
+            >
+              <Text style={styles.editProfileButtonText}>Edit Profile</Text>
+            </TouchableOpacity>
+          </LinearGradient>
 
           <Divider style={styles.divider} />
 
           {/* Profile Form */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Profile Information</Text>
+          <Card style={styles.sectionCard}>
+            <Card.Title
+              title="Profile Information"
+              titleStyle={styles.sectionTitle}
+              left={(props) => (
+                <MaterialCommunityIcons
+                  name="account-circle"
+                  size={24}
+                  color="#4B5563"
+                />
+              )}
+            />
+            <Card.Content>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Username</Text>
+                <TextInput
+                  value={profile.username}
+                  onChangeText={(text) =>
+                    setProfile((prev) => ({ ...prev, username: text }))
+                  }
+                  style={styles.input}
+                  disabled={!editMode}
+                  mode="outlined"
+                  outlineColor="#E2E8F0"
+                  activeOutlineColor="#4B5563"
+                  left={<TextInput.Icon icon="account" color="#4B5563" />}
+                />
+              </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Username</Text>
-              <TextInput
-                value={profile.username || ""}
-                onChangeText={(text) =>
-                  setProfile((prev) => ({ ...prev, username: text }))
-                }
-                style={styles.input}
-                disabled={!editMode}
-                mode="outlined"
-                outlineColor={lightTheme.colors.outline}
-                activeOutlineColor={lightTheme.colors.primary}
-                left={<TextInput.Icon icon="account" />}
-                placeholder="Enter username"
-              />
-            </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Full Name</Text>
+                <TextInput
+                  value={profile.full_name}
+                  onChangeText={(text) =>
+                    setProfile((prev) => ({ ...prev, full_name: text }))
+                  }
+                  style={styles.input}
+                  disabled={!editMode}
+                  mode="outlined"
+                  outlineColor="#E2E8F0"
+                  activeOutlineColor="#4B5563"
+                  left={<TextInput.Icon icon="badge-account" color="#4B5563" />}
+                />
+              </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Full Name</Text>
-              <TextInput
-                value={profile.full_name || ""}
-                onChangeText={(text) =>
-                  setProfile((prev) => ({ ...prev, full_name: text }))
-                }
-                style={styles.input}
-                disabled={!editMode}
-                mode="outlined"
-                outlineColor={lightTheme.colors.outline}
-                activeOutlineColor={lightTheme.colors.primary}
-                left={<TextInput.Icon icon="badge-account" />}
-                placeholder="Enter full name"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Email</Text>
-              <TextInput
-                value={profile.email || ""}
-                style={styles.input}
-                disabled={true}
-                mode="outlined"
-                outlineColor={lightTheme.colors.outline}
-                left={<TextInput.Icon icon="email" />}
-              />
-              <Text style={styles.helperText}>Email cannot be changed</Text>
-            </View>
-          </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Email</Text>
+                <TextInput
+                  value={profile.email}
+                  style={styles.input}
+                  disabled={true}
+                  mode="outlined"
+                  outlineColor="#E2E8F0"
+                  left={<TextInput.Icon icon="email" color="#4B5563" />}
+                />
+                <Text style={styles.helperText}>Email cannot be changed</Text>
+              </View>
+            </Card.Content>
+          </Card>
 
           <Divider style={styles.divider} />
 
-          {/* User Preferences */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Preferences</Text>
-
-            <View style={styles.settingItem}>
-              <View style={styles.settingInfo}>
-                <MaterialCommunityIcons
-                  name="bell-outline"
-                  size={24}
-                  color="#3B82F6"
+          {/* General Settings */}
+          <Card style={styles.sectionCard}>
+            <Card.Title
+              title="General Settings"
+              titleStyle={styles.sectionTitle}
+              left={(props) => (
+                <MaterialCommunityIcons name="cog" size={24} color="#4B5563" />
+              )}
+            />
+            <Card.Content>
+              <View style={styles.settingItem}>
+                <View style={styles.settingInfo}>
+                  <MaterialCommunityIcons
+                    name="bell-outline"
+                    size={24}
+                    color="#4B5563"
+                  />
+                  <Text style={styles.settingLabel}>Notifications</Text>
+                </View>
+                <Switch
+                  value={notificationsEnabled}
+                  onValueChange={(value) => {
+                    setNotificationsEnabled(value);
+                    if (editMode) saveUserPreferences();
+                  }}
+                  disabled={!editMode}
+                  trackColor={{ false: "#CBD5E1", true: "#9CA3AF" }}
+                  thumbColor={notificationsEnabled ? "#4B5563" : "#F1F5F9"}
                 />
-                <Text style={styles.settingLabel}>Notifications</Text>
               </View>
-              <Switch
-                value={notificationsEnabled}
-                onValueChange={(value) => {
-                  setNotificationsEnabled(value);
-                  if (editMode) saveUserPreferences();
-                }}
-                disabled={!editMode}
-                color="#3B82F6"
-              />
-            </View>
-
-            <View style={styles.settingItem}>
-              <View style={styles.settingInfo}>
-                <MaterialCommunityIcons
-                  name="map-marker"
-                  size={24}
-                  color="#3B82F6"
+              <View style={styles.settingItem}>
+                <View style={styles.settingInfo}>
+                  <MaterialCommunityIcons
+                    name="map-marker"
+                    size={24}
+                    color="#4B5563"
+                  />
+                  <Text style={styles.settingLabel}>Location Services</Text>
+                </View>
+                <Switch
+                  value={locationEnabled}
+                  onValueChange={(value) => {
+                    setLocationEnabled(value);
+                    if (editMode) saveUserPreferences();
+                  }}
+                  disabled={!editMode}
+                  trackColor={{ false: "#CBD5E1", true: "#9CA3AF" }}
+                  thumbColor={locationEnabled ? "#4B5563" : "#F1F5F9"}
                 />
-                <Text style={styles.settingLabel}>Location Services</Text>
               </View>
-              <Switch
-                value={locationEnabled}
-                onValueChange={(value) => {
-                  setLocationEnabled(value);
-                  if (editMode) saveUserPreferences();
-                }}
-                disabled={!editMode}
-                color="#3B82F6"
-              />
-            </View>
-
-            <View style={styles.settingItem}>
-              <View style={styles.settingInfo}>
-                <MaterialCommunityIcons
-                  name="theme-light-dark"
-                  size={24}
-                  color="#3B82F6"
+              <View style={styles.settingItem}>
+                <View style={styles.settingInfo}>
+                  <MaterialCommunityIcons
+                    name="theme-light-dark"
+                    size={24}
+                    color="#4B5563"
+                  />
+                  <Text style={styles.settingLabel}>Dark Mode</Text>
+                </View>
+                <Switch
+                  value={darkModeEnabled}
+                  onValueChange={(value) => {
+                    setDarkModeEnabled(value);
+                    if (editMode) saveUserPreferences();
+                  }}
+                  disabled={!editMode}
+                  trackColor={{ false: "#CBD5E1", true: "#9CA3AF" }}
+                  thumbColor={darkModeEnabled ? "#4B5563" : "#F1F5F9"}
                 />
-                <Text style={styles.settingLabel}>Dark Mode</Text>
               </View>
-              <Switch
-                value={darkModeEnabled}
-                onValueChange={(value) => {
-                  setDarkModeEnabled(value);
-                  if (editMode) saveUserPreferences();
-                }}
-                disabled={!editMode}
-                color="#3B82F6"
-              />
-            </View>
-          </View>
+            </Card.Content>
+          </Card>
 
           <Divider style={styles.divider} />
 
           {/* App Information */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>App Information</Text>
+          <Card style={styles.sectionCard}>
+            <Card.Title
+              title="App Information"
+              titleStyle={styles.sectionTitle}
+              left={(props) => (
+                <MaterialCommunityIcons
+                  name="information-outline"
+                  size={24}
+                  color="#4B5563"
+                />
+              )}
+            />
+            <Card.Content>
+              <TouchableOpacity style={styles.infoRow}>
+                <MaterialCommunityIcons
+                  name="information-outline"
+                  size={24}
+                  color="#4B5563"
+                />
+                <Text style={styles.infoText}>About PotholeX</Text>
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={24}
+                  color="#64748B"
+                />
+              </TouchableOpacity>
 
-            <TouchableOpacity style={styles.infoRow}>
-              <MaterialCommunityIcons
-                name="information-outline"
-                size={24}
-                color="#3B82F6"
-              />
-              <Text style={styles.infoText}>About PotholeX</Text>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={24}
-                color={lightTheme.colors.textSecondary}
-              />
-            </TouchableOpacity>
+              <TouchableOpacity style={styles.infoRow}>
+                <MaterialCommunityIcons
+                  name="shield-check-outline"
+                  size={24}
+                  color="#4B5563"
+                />
+                <Text style={styles.infoText}>Privacy Policy</Text>
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={24}
+                  color="#64748B"
+                />
+              </TouchableOpacity>
 
-            <TouchableOpacity style={styles.infoRow}>
-              <MaterialCommunityIcons
-                name="shield-check-outline"
-                size={24}
-                color="#3B82F6"
-              />
-              <Text style={styles.infoText}>Privacy Policy</Text>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={24}
-                color={lightTheme.colors.textSecondary}
-              />
-            </TouchableOpacity>
+              <TouchableOpacity style={styles.infoRow}>
+                <MaterialCommunityIcons
+                  name="file-document-outline"
+                  size={24}
+                  color="#4B5563"
+                />
+                <Text style={styles.infoText}>Terms of Service</Text>
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={24}
+                  color="#64748B"
+                />
+              </TouchableOpacity>
 
-            <TouchableOpacity style={styles.infoRow}>
-              <MaterialCommunityIcons
-                name="file-document-outline"
-                size={24}
-                color="#3B82F6"
-              />
-              <Text style={styles.infoText}>Terms of Service</Text>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={24}
-                color={lightTheme.colors.textSecondary}
-              />
-            </TouchableOpacity>
+              <TouchableOpacity style={styles.infoRow}>
+                <MaterialCommunityIcons
+                  name="help-circle-outline"
+                  size={24}
+                  color="#4B5563"
+                />
+                <Text style={styles.infoText}>Help & Support</Text>
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={24}
+                  color="#64748B"
+                />
+              </TouchableOpacity>
+            </Card.Content>
+          </Card>
 
-            <TouchableOpacity style={styles.infoRow}>
-              <MaterialCommunityIcons
-                name="help-circle-outline"
-                size={24}
-                color="#3B82F6"
-              />
-              <Text style={styles.infoText}>Help & Support</Text>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={24}
-                color={lightTheme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
+          {/* Edit Mode Buttons */}
+          {editMode && (
+            <View style={styles.editModeButtons}>
+              <Button
+                mode="outlined"
+                onPress={() => {
+                  setEditMode(false);
+                  fetchUserProfile(); // Reset to original values
+                }}
+                style={[styles.editActionButton, styles.cancelButton]}
+              >
+                Cancel
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleUpdateProfile}
+                style={styles.editActionButton}
+                loading={updating}
+                disabled={updating}
+                buttonColor="#374151"
+              >
+                Save
+              </Button>
+            </View>
+          )}
 
           {/* Logout Button */}
           <Button
@@ -539,7 +591,7 @@ export default function UserProfileScreen() {
             onPress={handleLogout}
             style={styles.logoutButton}
             icon="logout"
-            textColor={lightTheme.colors.error}
+            textColor="#EF4444"
             buttonColor="transparent"
           >
             Logout
@@ -555,37 +607,37 @@ export default function UserProfileScreen() {
 
 // Styles for the profile screen
 const styles = StyleSheet.create({
-  // Safe area styling to prevent content overlap with device edges
   safeArea: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F3F4F6",
   },
-  // Container and content container styles
   container: {
     flex: 1,
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 100, // Increase this value to ensure content isn't hidden behind the tab bar
+    paddingBottom: 100,
   },
-  // Header styles
-  header: {
+  profileHeader: {
+    borderRadius: 0,
+    padding: 20,
+    marginBottom: 16,
     alignItems: "center",
-    paddingVertical: 24,
   },
   avatarContainer: {
-    position: "relative",
+    alignSelf: "center",
     marginBottom: 16,
+    position: "relative",
   },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
     borderWidth: 3,
-    borderColor: "#3B82F6",
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   avatarFallback: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
   editAvatarOverlay: {
     position: "absolute",
@@ -598,81 +650,88 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  name: {
+  profileInfo: {
+    alignItems: "center",
+  },
+  profileName: {
     fontSize: 24,
     fontWeight: "bold",
-    color: lightTheme.colors.text,
+    color: "#FFFFFF",
     marginBottom: 4,
   },
-  email: {
+  profileEmail: {
     fontSize: 16,
-    color: lightTheme.colors.textSecondary,
+    color: "rgba(255, 255, 255, 0.8)",
+    marginBottom: 12,
+  },
+  adminBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#374151",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
     marginBottom: 16,
   },
-  editButtonContainer: {
+  adminBadgeText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    marginLeft: 4,
+  },
+  editProfileButton: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: 16,
     width: "100%",
     alignItems: "center",
   },
-  editButton: {
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    backgroundColor: "#3B82F6",
-    width: "100%",
+  editProfileButtonText: {
+    color: "#4B5563",
+    fontWeight: "600",
+    fontSize: 16,
   },
-  editModeButtons: {
-    flexDirection: "row",
-    justifyContent: "center",
-    width: "100%",
-    gap: 16,
-  },
-  editActionButton: {
-    flex: 1,
-    borderRadius: 8,
-  },
-  cancelButton: {
-    borderColor: lightTheme.colors.outline,
-  },
-  // Divider styling
   divider: {
     marginVertical: 16,
-    backgroundColor: lightTheme.colors.outline,
+    backgroundColor: "#E2E8F0",
   },
-  // Section styling
-  section: {
+  sectionCard: {
     marginBottom: 16,
+    borderRadius: 4,
+    overflow: "hidden",
+    backgroundColor: "#FFFFFF",
+    elevation: 2,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: lightTheme.colors.text,
-    marginBottom: 16,
+    color: "#0F172A",
   },
-  // Input styling
   inputContainer: {
     marginBottom: 16,
   },
   inputLabel: {
     fontSize: 14,
-    color: lightTheme.colors.textSecondary,
+    color: "#64748B",
     marginBottom: 8,
   },
   input: {
-    backgroundColor: lightTheme.colors.background,
+    backgroundColor: "#FFFFFF",
   },
   helperText: {
     fontSize: 12,
-    color: lightTheme.colors.textSecondary,
+    color: "#94A3B8",
     marginTop: 4,
     marginLeft: 8,
   },
-  // Settings styling
   settingItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: lightTheme.colors.outline,
+    borderBottomColor: "#E2E8F0",
   },
   settingInfo: {
     flexDirection: "row",
@@ -680,48 +739,58 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 16,
-    color: lightTheme.colors.text,
+    color: "#334155",
     marginLeft: 12,
   },
-  // Info row styling
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: lightTheme.colors.outline,
+    borderBottomColor: "#E2E8F0",
   },
   infoText: {
     flex: 1,
     fontSize: 16,
-    color: lightTheme.colors.text,
+    color: "#334155",
     marginLeft: 16,
   },
-  // Logout button styling
-  logoutButton: {
-    marginBottom: 24,
-    borderColor: lightTheme.colors.error,
-    borderWidth: 1.5,
+  editModeButtons: {
+    flexDirection: "row",
+    justifyContent: "center",
+    width: "100%",
+    gap: 16,
+    marginTop: 16,
   },
-  // Version text styling
+  editActionButton: {
+    flex: 1,
+    borderRadius: 4,
+  },
+  cancelButton: {
+    borderColor: "#E2E8F0",
+  },
+  logoutButton: {
+    marginTop: 8,
+    marginBottom: 24,
+    borderColor: "#EF4444",
+    borderWidth: 1.5,
+    borderRadius: 4,
+  },
   versionText: {
     textAlign: "center",
     fontSize: 14,
-    color: lightTheme.colors.textSecondary,
-    marginBottom: 16,
+    color: "#94A3B8",
   },
-  // Logging out container
   loggingOutContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F3F4F6",
   },
-  // Logging out text
   loggingOutText: {
     marginTop: 16,
     fontSize: 18,
-    color: lightTheme.colors.text,
+    color: "#4B5563",
     fontWeight: "500",
   },
 });

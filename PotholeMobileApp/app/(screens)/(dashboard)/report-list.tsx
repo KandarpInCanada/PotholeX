@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
-  ScrollView, // Added ScrollView import
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -22,6 +22,7 @@ import { FAB, Menu, Divider, Searchbar } from "react-native-paper";
 import { Swipeable } from "react-native-gesture-handler";
 import ReportItem from "../../components/dashboard-components/report-list/report-item";
 import EmptyState from "../../components/dashboard-components/report-list/empty-state";
+import { LinearGradient } from "expo-linear-gradient";
 
 const { width } = Dimensions.get("window");
 
@@ -247,7 +248,7 @@ export default function ReportListScreen() {
       outputRange: [0, 60],
     }),
     opacity: filterBarHeight,
-    overflow: "hidden" as const, // Add type assertion
+    overflow: "hidden" as const,
   };
 
   // Render swipeable actions for report items
@@ -285,7 +286,7 @@ export default function ReportListScreen() {
     if (loading && !refreshing) {
       return (
         <EmptyState
-          icon={<ActivityIndicator size="large" color="#0284c7" />}
+          icon={<ActivityIndicator size="large" color="#4B5563" />}
           title="Loading your reports..."
           subtitle=""
           buttonLabel=""
@@ -367,8 +368,8 @@ export default function ReportListScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={["#0284c7"]}
-            tintColor="#0284c7"
+            colors={["#4B5563"]}
+            tintColor="#4B5563"
             progressBackgroundColor="#FFFFFF"
           />
         }
@@ -404,189 +405,179 @@ export default function ReportListScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       {/* Header with search and filter */}
-      <Animated.View style={[styles.header, headerAnimatedStyle]}>
-        <View style={styles.headerTop}>
-          <Text style={styles.headerTitle}>My Reports</Text>
-          <View style={styles.headerActions}>
-            <Menu
-              visible={showMenu}
-              onDismiss={() => setShowMenu(false)}
-              anchor={
-                <TouchableOpacity
-                  style={styles.sortButton}
-                  onPress={() => setShowMenu(true)}
-                  activeOpacity={0.7}
-                >
-                  <MaterialCommunityIcons
-                    name={
-                      (SORT_OPTIONS.find((option) => option.id === activeSort)
-                        ?.icon || "sort") as any
-                    }
-                    size={22}
-                    color="#0284c7"
-                  />
-                </TouchableOpacity>
-              }
-              contentStyle={styles.menuContent}
-            >
-              <View style={styles.menuHeader}>
-                <Text style={styles.menuTitle}>Sort By</Text>
-              </View>
-              <Divider />
-              {SORT_OPTIONS.map((option) => (
-                <Menu.Item
-                  key={option.id}
-                  onPress={() => handleSort(option.id)}
-                  title={option.label}
-                  leadingIcon={option.icon}
-                  titleStyle={[
-                    styles.menuItemText,
-                    activeSort === option.id && styles.activeMenuItemText,
-                  ]}
-                  style={[
-                    styles.menuItem,
-                    activeSort === option.id && styles.activeMenuItem,
-                  ]}
-                />
-              ))}
-            </Menu>
-            <TouchableOpacity
-              style={styles.filterToggleButton}
-              onPress={toggleFilterBar}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons
-                name={
-                  showFilterBar ? "filter-variant-minus" : "filter-variant-plus"
-                }
-                size={22}
-                color="#0284c7"
-              />
-            </TouchableOpacity>
+      <LinearGradient
+        colors={["#374151", "#1F2937"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.headerBanner}
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>My Reports</Text>
+            <Text style={styles.headerSubtitle}>
+              View and manage your pothole reports
+            </Text>
           </View>
         </View>
 
-        <Searchbar
-          placeholder="Search reports..."
-          onChangeText={handleSearch}
-          value={searchQuery}
-          style={styles.searchBar}
-          inputStyle={styles.searchInput}
-          iconColor="#64748B"
-          clearIcon="close-circle"
-          placeholderTextColor="#94A3B8"
-        />
+        <View style={styles.searchContainer}>
+          <Searchbar
+            placeholder="Search reports..."
+            onChangeText={handleSearch}
+            value={searchQuery}
+            style={styles.searchBar}
+            inputStyle={styles.searchInput}
+            iconColor="#64748B"
+            clearIcon="close-circle"
+            placeholderTextColor="#94A3B8"
+          />
+        </View>
+      </LinearGradient>
 
-        {/* Update the ScrollView for filter chips to ensure proper spacing and alignment */}
-        <Animated.View
-          style={[styles.filterBarContainer, filterBarAnimatedStyle]}
+      <View style={styles.filterButtonsContainer}>
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            activeFilter === "all" && styles.activeFilterButton,
+          ]}
+          onPress={() => handleFilter("all")}
         >
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterBar}
+          <MaterialCommunityIcons
+            name="filter-variant"
+            size={16}
+            color={activeFilter === "all" ? "#FFFFFF" : "#4B5563"}
+          />
+          <Text
+            style={[
+              styles.filterButtonText,
+              activeFilter === "all" && styles.activeFilterButtonText,
+            ]}
           >
-            <TouchableOpacity
+            Status
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => setShowMenu(true)}
+        >
+          <MaterialCommunityIcons
+            name="sort-variant"
+            size={16}
+            color="#4B5563"
+          />
+          <Text style={styles.filterButtonText}>Sort</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Filter bar */}
+      <Animated.View
+        style={[styles.filterBarContainer, filterBarAnimatedStyle]}
+      >
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterBar}
+        >
+          <TouchableOpacity
+            style={[
+              styles.filterChip,
+              activeFilter === "all" && styles.activeFilterChip,
+            ]}
+            onPress={() => handleFilter("all")}
+          >
+            <Text
               style={[
-                styles.filterChip,
-                activeFilter === "all" && styles.activeFilterChip,
+                styles.filterChipText,
+                activeFilter === "all" && styles.activeFilterChipText,
               ]}
-              onPress={() => handleFilter("all")}
             >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  activeFilter === "all" && styles.activeFilterChipText,
-                ]}
-              >
-                All ({statusCounts.all})
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+              All ({statusCounts.all})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterChip,
+              activeFilter === ReportStatus.SUBMITTED &&
+                styles.activeFilterChip,
+              activeFilter === ReportStatus.SUBMITTED && {
+                backgroundColor: "#64748B",
+              },
+            ]}
+            onPress={() => handleFilter(ReportStatus.SUBMITTED)}
+          >
+            <Text
               style={[
-                styles.filterChip,
+                styles.filterChipText,
                 activeFilter === ReportStatus.SUBMITTED &&
-                  styles.activeFilterChip,
-                activeFilter === ReportStatus.SUBMITTED && {
-                  backgroundColor: "#64748B",
-                },
+                  styles.activeFilterChipText,
               ]}
-              onPress={() => handleFilter(ReportStatus.SUBMITTED)}
             >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  activeFilter === ReportStatus.SUBMITTED &&
-                    styles.activeFilterChipText,
-                ]}
-              >
-                Submitted ({statusCounts.submitted})
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+              Submitted ({statusCounts.submitted})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterChip,
+              activeFilter === ReportStatus.IN_PROGRESS &&
+                styles.activeFilterChip,
+              activeFilter === ReportStatus.IN_PROGRESS && {
+                backgroundColor: "#4B5563",
+              },
+            ]}
+            onPress={() => handleFilter(ReportStatus.IN_PROGRESS)}
+          >
+            <Text
               style={[
-                styles.filterChip,
+                styles.filterChipText,
                 activeFilter === ReportStatus.IN_PROGRESS &&
-                  styles.activeFilterChip,
-                activeFilter === ReportStatus.IN_PROGRESS && {
-                  backgroundColor: "#3B82F6",
-                },
+                  styles.activeFilterChipText,
               ]}
-              onPress={() => handleFilter(ReportStatus.IN_PROGRESS)}
             >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  activeFilter === ReportStatus.IN_PROGRESS &&
-                    styles.activeFilterChipText,
-                ]}
-              >
-                In Progress ({statusCounts.in_progress})
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+              In Progress ({statusCounts.in_progress})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterChip,
+              activeFilter === ReportStatus.FIXED && styles.activeFilterChip,
+              activeFilter === ReportStatus.FIXED && {
+                backgroundColor: "#10B981",
+              },
+            ]}
+            onPress={() => handleFilter(ReportStatus.FIXED)}
+          >
+            <Text
               style={[
-                styles.filterChip,
-                activeFilter === ReportStatus.FIXED && styles.activeFilterChip,
-                activeFilter === ReportStatus.FIXED && {
-                  backgroundColor: "#10B981",
-                },
+                styles.filterChipText,
+                activeFilter === ReportStatus.FIXED &&
+                  styles.activeFilterChipText,
               ]}
-              onPress={() => handleFilter(ReportStatus.FIXED)}
             >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  activeFilter === ReportStatus.FIXED &&
-                    styles.activeFilterChipText,
-                ]}
-              >
-                Fixed ({statusCounts.fixed})
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+              Fixed ({statusCounts.fixed})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterChip,
+              activeFilter === ReportStatus.REJECTED && styles.activeFilterChip,
+              activeFilter === ReportStatus.REJECTED && {
+                backgroundColor: "#6B7280",
+              },
+            ]}
+            onPress={() => handleFilter(ReportStatus.REJECTED)}
+          >
+            <Text
               style={[
-                styles.filterChip,
+                styles.filterChipText,
                 activeFilter === ReportStatus.REJECTED &&
-                  styles.activeFilterChip,
-                activeFilter === ReportStatus.REJECTED && {
-                  backgroundColor: "#6B7280",
-                },
+                  styles.activeFilterChipText,
               ]}
-              onPress={() => handleFilter(ReportStatus.REJECTED)}
             >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  activeFilter === ReportStatus.REJECTED &&
-                    styles.activeFilterChipText,
-                ]}
-              >
-                Rejected ({statusCounts.rejected})
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </Animated.View>
+              Rejected ({statusCounts.rejected})
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
       </Animated.View>
 
       {/* Main content */}
@@ -599,6 +590,35 @@ export default function ReportListScreen() {
         color="#FFFFFF"
         onPress={navigateToAddReport}
       />
+
+      {/* Sort Menu */}
+      <Menu
+        visible={showMenu}
+        onDismiss={() => setShowMenu(false)}
+        anchor={{ x: width / 2, y: 180 }}
+        contentStyle={styles.menuContent}
+      >
+        <View style={styles.menuHeader}>
+          <Text style={styles.menuTitle}>Sort By</Text>
+        </View>
+        <Divider />
+        {SORT_OPTIONS.map((option) => (
+          <Menu.Item
+            key={option.id}
+            onPress={() => handleSort(option.id)}
+            title={option.label}
+            leadingIcon={option.icon}
+            titleStyle={[
+              styles.menuItemText,
+              activeSort === option.id && styles.activeMenuItemText,
+            ]}
+            style={[
+              styles.menuItem,
+              activeSort === option.id && styles.activeMenuItem,
+            ]}
+          />
+        ))}
+      </Menu>
     </SafeAreaView>
   );
 }
@@ -606,94 +626,108 @@ export default function ReportListScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F3F4F6",
   },
-  header: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 3,
-    zIndex: 10,
+  headerBanner: {
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    margin: 16,
+    marginBottom: 8,
   },
-  headerTop: {
+  headerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+  },
+  headerTextContainer: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#0F172A",
+    color: "#FFFFFF",
     letterSpacing: -0.5,
   },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
+  headerSubtitle: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.8)",
+    marginTop: 2,
   },
-  sortButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F1F5F9",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
-  },
-  filterToggleButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F1F5F9",
-    justifyContent: "center",
-    alignItems: "center",
+  searchContainer: {
+    marginTop: 20,
   },
   searchBar: {
-    backgroundColor: "#F1F5F9",
     elevation: 0,
-    borderRadius: 12,
-    height: 48,
-    marginBottom: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    height: 40,
+    fontSize: 14,
   },
   searchInput: {
-    fontSize: 15,
+    fontSize: 14,
     color: "#0F172A",
+  },
+  filterButtonsContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    justifyContent: "space-between",
+  },
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "#4B5563",
+    borderRadius: 4,
+    backgroundColor: "white",
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  activeFilterButton: {
+    backgroundColor: "#4B5563",
+    borderColor: "#4B5563",
+  },
+  filterButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#4B5563",
+    marginLeft: 6,
+  },
+  activeFilterButtonText: {
+    color: "#FFFFFF",
   },
   filterBarContainer: {
     marginBottom: 4,
   },
   filterBar: {
-    paddingRight: 16,
-    gap: 12, // Increased gap between filter chips
-    paddingVertical: 8, // Added vertical padding
+    paddingHorizontal: 16,
+    gap: 8,
+    paddingVertical: 8,
   },
   filterChip: {
-    paddingHorizontal: 12, // Reduced from 16
-    paddingVertical: 8, // Reduced from 12
-    borderRadius: 16, // Reduced from 24
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 4,
     backgroundColor: "#F1F5F9",
     borderWidth: 1,
     borderColor: "#E2E8F0",
     alignItems: "center",
     justifyContent: "center",
-    minWidth: 80, // Reduced from 100
+    minWidth: 80,
   },
   activeFilterChip: {
-    backgroundColor: "#3B82F6", // Updated to blue
-    borderColor: "#3B82F6",
+    backgroundColor: "#4B5563",
+    borderColor: "#4B5563",
   },
   filterChipText: {
     fontSize: 14,
     fontWeight: "500",
     color: "#334155",
-    textAlign: "center", // Added to center text
+    textAlign: "center",
   },
   activeFilterChipText: {
     color: "#FFFFFF",
@@ -703,7 +737,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
-    paddingBottom: 100, // Increase this value to ensure content isn't hidden behind the tab bar
+    paddingBottom: 100,
   },
   listHeader: {
     marginBottom: 16,
@@ -722,12 +756,12 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 16,
     bottom: 16,
-    backgroundColor: "#3B82F6", // Updated to blue
+    backgroundColor: "#374151",
     borderRadius: 28,
   },
   menuContent: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    borderRadius: 4,
     width: 220,
     marginTop: 50,
   },
@@ -750,12 +784,12 @@ const styles = StyleSheet.create({
     color: "#334155",
   },
   activeMenuItemText: {
-    color: "#0284c7",
+    color: "#4B5563",
     fontWeight: "500",
   },
   swipeActionsContainer: {
     flexDirection: "row",
-    width: width * 0.6, // 60% of screen width
+    width: width * 0.6,
     height: "100%",
   },
   swipeAction: {
@@ -765,10 +799,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   viewAction: {
-    backgroundColor: "#0284c7",
+    backgroundColor: "#4B5563",
   },
   shareAction: {
-    backgroundColor: "#0369a1",
+    backgroundColor: "#374151",
   },
   deleteAction: {
     backgroundColor: "#DC2626",

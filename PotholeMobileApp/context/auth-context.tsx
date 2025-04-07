@@ -164,6 +164,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           const adminStatus = await checkAdminStatus(user.id);
           setIsAdmin(adminStatus);
           console.log("User logged in, admin status:", adminStatus);
+
+          // Add a small delay to ensure state is updated
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }
 

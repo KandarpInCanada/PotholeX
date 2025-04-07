@@ -1,7 +1,6 @@
 // components/reports/ReportItem.tsx
 import type React from "react";
 import { View, Text, StyleSheet, Image, Pressable } from "react-native";
-import { Badge } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -45,6 +44,7 @@ const STATUS_ICONS: Record<ReportStatus, IconName> = {
   [ReportStatus.REJECTED]: "close-circle",
 };
 
+// Update the ReportItem component to place severity and status badges side by side
 const ReportItem: React.FC<ReportItemProps> = ({
   report,
   index,
@@ -86,50 +86,34 @@ const ReportItem: React.FC<ReportItemProps> = ({
       onPress={onPress}
     >
       <Animated.View style={[styles.reportItem, animatedStyle]}>
+        {/* Header with title and date */}
         <View style={styles.reportHeader}>
-          <View style={styles.reportInfo}>
+          <View style={styles.titleDateContainer}>
             <Text style={styles.reportCategory}>{report.category}</Text>
             <Text style={styles.reportDate}>
               {formatDate(report.created_at)}
             </Text>
           </View>
-          <StatusChip status={report.status as ReportStatus} />
+          {/* Status badge moved to the badges container below */}
         </View>
 
         <View style={styles.reportContent}>
+          {/* Image thumbnail */}
           <ReportImage images={report.images} />
 
           <View style={styles.reportDetails}>
+            {/* Location with pin icon */}
             <LocationInfo location={report.location} />
+
+            {/* Description */}
             <Text style={styles.description} numberOfLines={2}>
               {report.description}
             </Text>
 
-            <View style={styles.reportFooter}>
-              <SeverityChip severity={report.severity as SeverityLevel} />
-
-              <View style={styles.reportStats}>
-                {report.likes && report.likes > 0 && (
-                  <View style={styles.statItem}>
-                    <MaterialCommunityIcons
-                      name="thumb-up"
-                      size={14}
-                      color="#64748B"
-                    />
-                    <Text style={styles.statText}>{report.likes}</Text>
-                  </View>
-                )}
-                {report.comments && report.comments > 0 && (
-                  <View style={styles.statItem}>
-                    <MaterialCommunityIcons
-                      name="comment"
-                      size={14}
-                      color="#64748B"
-                    />
-                    <Text style={styles.statText}>{report.comments}</Text>
-                  </View>
-                )}
-              </View>
+            {/* Badges container - both badges side by side */}
+            <View style={styles.badgesContainer}>
+              <SeverityBadge severity={report.severity as SeverityLevel} />
+              <StatusBadge status={report.status as ReportStatus} />
             </View>
           </View>
         </View>
@@ -138,40 +122,71 @@ const ReportItem: React.FC<ReportItemProps> = ({
   );
 };
 
-// Sub-components
-const StatusChip: React.FC<{ status: ReportStatus }> = ({ status }) => (
-  <View
-    style={[
-      styles.statusChip,
-      {
-        backgroundColor: STATUS_COLORS[status] || "#6B7280",
-      },
-    ]}
-  >
-    <MaterialCommunityIcons
-      name={STATUS_ICONS[status]}
-      size={16}
-      color="#FFFFFF"
-      style={{ marginRight: 4 }}
-    />
-    <Text style={styles.chipText}>{status.toString().replace("_", " ")}</Text>
+// Update the StatusBadge component to be smaller
+const StatusBadge: React.FC<{ status: ReportStatus }> = ({ status }) => {
+  // Convert the status to a properly formatted string
+  const statusText = status.toString().replace("_", " ");
+
+  return (
+    <View
+      style={[
+        styles.statusBadge,
+        {
+          backgroundColor:
+            status === ReportStatus.FIXED
+              ? "#4ADE80"
+              : STATUS_COLORS[status] || "#6B7280",
+        },
+      ]}
+    >
+      {status === ReportStatus.FIXED && (
+        <MaterialCommunityIcons
+          name="check"
+          size={14}
+          color="#FFFFFF"
+          style={{ marginRight: 2 }}
+        />
+      )}
+      <Text style={styles.badgeText}>
+        {status === ReportStatus.FIXED ? "fixed" : statusText}
+      </Text>
+    </View>
+  );
+};
+
+// Update the SeverityBadge component to be smaller
+const SeverityBadge: React.FC<{ severity: SeverityLevel }> = ({ severity }) => {
+  // Make sure severity is a string
+  const severityText = String(severity);
+
+  return (
+    <View
+      style={[
+        styles.severityBadge,
+        {
+          backgroundColor:
+            severity === SeverityLevel.LOW
+              ? "#4ADE80"
+              : SEVERITY_COLORS[severity] || "#6B7280",
+        },
+      ]}
+    >
+      <Text style={styles.badgeText}>{severityText}</Text>
+    </View>
+  );
+};
+
+// Update LocationInfo with blue pin icon and text
+const LocationInfo: React.FC<{ location: string }> = ({ location }) => (
+  <View style={styles.locationContainer}>
+    <MaterialCommunityIcons name="map-marker" size={18} color="#3B82F6" />
+    <Text style={styles.location} numberOfLines={1}>
+      {location}
+    </Text>
   </View>
 );
 
-// Replace the SeverityChip component with this implementation
-const SeverityChip: React.FC<{ severity: SeverityLevel }> = ({ severity }) => (
-  <View
-    style={[
-      styles.severityChip,
-      {
-        backgroundColor: SEVERITY_COLORS[severity] || "#6B7280",
-      },
-    ]}
-  >
-    <Text style={styles.chipText}>{severity}</Text>
-  </View>
-);
-
+// Update the ReportImage component for a cleaner look
 const ReportImage: React.FC<{ images?: string[] }> = ({ images }) => {
   if (images && images.length > 0) {
     return (
@@ -181,11 +196,6 @@ const ReportImage: React.FC<{ images?: string[] }> = ({ images }) => {
           style={styles.reportImage}
           defaultSource={require("../../../assets/placeholder-image.svg")}
         />
-        {images.length > 1 && (
-          <Badge style={styles.imageBadge} size={20}>
-            {`+${images.length - 1}`}
-          </Badge>
-        )}
       </View>
     );
   }
@@ -197,23 +207,13 @@ const ReportImage: React.FC<{ images?: string[] }> = ({ images }) => {
   );
 };
 
-const LocationInfo: React.FC<{ location: string }> = ({ location }) => (
-  <View style={styles.locationContainer}>
-    <MaterialCommunityIcons name="map-marker" size={14} color="#0284c7" />
-    <Text style={styles.location} numberOfLines={1}>
-      {location}
-    </Text>
-  </View>
-);
-
+// Update the styles for the badges
 const styles = StyleSheet.create({
   reportItem: {
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
     shadowColor: "#64748B",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -223,67 +223,65 @@ const styles = StyleSheet.create({
   reportHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
+    alignItems: "flex-start",
+    marginBottom: 16,
   },
-  reportInfo: {
+  titleDateContainer: {
     flex: 1,
   },
   reportCategory: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
-    color: "#0F172A",
+    color: "#1E293B",
+    marginBottom: 4,
   },
   reportDate: {
-    fontSize: 12,
+    fontSize: 14,
     color: "#64748B",
-    marginTop: 2,
   },
-  statusChip: {
-    height: 36,
-    borderRadius: 4,
-    paddingHorizontal: 12,
-    justifyContent: "center",
+  statusBadge: {
+    flexDirection: "row",
     alignItems: "center",
-    minWidth: 80,
-    elevation: 0, // Remove any elevation that might affect alignment
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: "#4ADE80",
   },
-  chipText: {
+  severityBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: "#4ADE80",
+    marginRight: 8,
+  },
+  badgeText: {
     color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
-    padding: 0,
-    margin: 0,
-    lineHeight: 14, // Match the font size
-    height: 14, // Set explicit height
-    alignSelf: "center", // Ensure self-alignment
+    fontWeight: "500",
+  },
+  badgesContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   reportContent: {
     flexDirection: "row",
-    gap: 12,
+    gap: 16,
   },
   imageContainer: {
-    position: "relative",
+    borderRadius: 8,
+    overflow: "hidden",
   },
   reportImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 12,
+    width: 80,
+    height: 80,
+    borderRadius: 8,
   },
-  imageBadge: {
-    position: "absolute",
-    bottom: -5,
-    right: -5,
-    backgroundColor: "#0284c7",
-    color: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-  } as const,
   noImageContainer: {
-    width: 90,
-    height: 90,
-    borderRadius: 12,
+    width: 80,
+    height: 80,
+    borderRadius: 8,
     backgroundColor: "#F1F5F9",
     justifyContent: "center",
     alignItems: "center",
@@ -294,49 +292,19 @@ const styles = StyleSheet.create({
   locationContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
-  },
-  location: {
-    fontSize: 13,
-    color: "#0284c7",
-    marginLeft: 4,
-    fontWeight: "500",
-    flex: 1,
-  },
-  description: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#334155",
     marginBottom: 8,
   },
-  reportFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  severityChip: {
-    height: 36,
-    borderRadius: 4,
-    paddingHorizontal: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    minWidth: 80,
-    elevation: 0, // Remove any elevation that might affect alignment
-  },
-  reportStats: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  statItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  statText: {
-    fontSize: 12,
-    color: "#64748B",
+  location: {
+    fontSize: 16,
+    color: "#3B82F6",
+    marginLeft: 4,
     fontWeight: "500",
+  },
+  description: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: "#334155",
+    marginBottom: 12,
   },
 });
 

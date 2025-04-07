@@ -16,21 +16,16 @@ import { GoogleButton } from "../../components/auth-components/google-button";
 import { AuthFooter } from "../../components/auth-components/auth-footer";
 import { AuthDialog } from "../../components/auth-components/auth-dialog";
 import NewRadarLoader from "../../components/auth-components/radar-loader";
+import { checkAdminStatus } from "../../services/admin-service"; // Import directly
+import { supabase } from "../../../lib/supabase"; // Import supabase
 
 const LoginScreen = () => {
   // Initialize router for navigation
   const router = useRouter();
 
   // Destructure authentication-related functions and states from custom auth context
-  const {
-    signIn,
-    user,
-    signInWithGoogle,
-    googleAuthLoading,
-    googleError,
-    isAdmin,
-    refreshAdminStatus,
-  } = useAuth();
+  const { signIn, user, signInWithGoogle, googleAuthLoading, googleError } =
+    useAuth();
 
   // Use custom form state hook to manage input values and secure text entries
   const {
@@ -56,15 +51,25 @@ const LoginScreen = () => {
 
   // Redirect to dashboard if user is already authenticated
   useEffect(() => {
-    if (user) {
-      // Check if user is admin and redirect accordingly
-      if (isAdmin) {
-        router.replace("(screens)/(admin)/portal");
-      } else {
-        router.replace("(screens)/(dashboard)/home");
+    const checkUserStatus = async () => {
+      if (user) {
+        try {
+          // Check admin status directly
+          const isAdmin = await checkAdminStatus(user.id);
+          if (isAdmin) {
+            router.replace("(screens)/(admin)/portal");
+          } else {
+            router.replace("(screens)/(dashboard)/home");
+          }
+        } catch (error) {
+          console.error("Error checking admin status:", error);
+          router.replace("(screens)/(dashboard)/home"); // Default to user dashboard on error
+        }
       }
-    }
-  }, [user, isAdmin, router]);
+    };
+
+    checkUserStatus();
+  }, [user, router]);
 
   // Handle Google authentication errors
   useEffect(() => {
@@ -96,8 +101,23 @@ const LoginScreen = () => {
         setError(signInError.message || "Authentication failed");
         setShowError(true);
       } else {
-        // Successfully signed in, refresh admin status before navigation
-        await refreshAdminStatus();
+        // Get the current user
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          // Check admin status directly
+          const isAdmin = await checkAdminStatus(user.id);
+          console.log("User logged in, admin status:", isAdmin);
+
+          // Navigate based on admin status
+          if (isAdmin) {
+            router.replace("(screens)/(admin)/portal");
+          } else {
+            router.replace("(screens)/(dashboard)/home");
+          }
+        }
       }
     } catch (err) {
       // Catch any unexpected errors during sign-in

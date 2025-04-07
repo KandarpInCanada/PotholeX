@@ -13,13 +13,14 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { FAB, Avatar } from "react-native-paper";
+import { FAB, Avatar, Card } from "react-native-paper";
 import { useRouter, useFocusEffect } from "expo-router";
 import { getAllReports, likeReport } from "../../services/report-service";
 import { getUserProfile } from "../../services/profile-service";
 import type { PotholeReport } from "../../../lib/supabase";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotiView } from "moti";
+import { LinearGradient } from "expo-linear-gradient";
 import SearchBar from "../../components/dashboard-components/home/search-bar";
 import ReportCard from "../../components/dashboard-components/home/report-card";
 import EmptyState from "../../components/dashboard-components/home/empty-state";
@@ -173,137 +174,103 @@ const HomeScreen: React.FC = () => {
         animate={{ opacity: 1, translateY: 0 }}
         transition={{ type: "timing", duration: 500 }}
         exit={{ opacity: 0, translateY: -20 }}
-        style={styles.welcomeBanner}
       >
-        <View style={styles.welcomeContent}>
-          <Text style={styles.welcomeText}>
-            Welcome back, {userProfile.username || "User"}!
-          </Text>
-          <Text style={styles.welcomeSubtext}>
-            Help your community by reporting potholes
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => setShowWelcome(false)}
-        >
-          <MaterialCommunityIcons name="close" size={20} color="#64748B" />
-        </TouchableOpacity>
+        <Card style={styles.welcomeBanner}>
+          <Card.Content style={styles.welcomeContent}>
+            <View style={styles.welcomeTextContainer}>
+              <Text style={styles.welcomeText}>
+                Welcome back, {userProfile.username || "User"}!
+              </Text>
+              <Text style={styles.welcomeSubtext}>
+                Help your community by reporting potholes
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowWelcome(false)}
+            >
+              <MaterialCommunityIcons name="close" size={20} color="#64748B" />
+            </TouchableOpacity>
+          </Card.Content>
+        </Card>
       </MotiView>
     );
   };
 
-  // Render the header with user profile
-  const renderHeader = () => {
-    return (
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>PotholeX</Text>
-          <View style={styles.headerSubtitle}>
-            <MaterialCommunityIcons
-              name="map-marker"
-              size={14}
-              color="#64748B"
-            />
-            <Text style={styles.locationText}>Your City</Text>
-          </View>
-        </View>
-        <TouchableOpacity
-          style={styles.profileButton}
-          onPress={() => router.push("(screens)/(dashboard)/profile")}
-        >
-          {userProfile?.avatar_url ? (
-            <Avatar.Image
-              size={40}
-              source={{ uri: userProfile.avatar_url }}
-              style={styles.avatar}
-            />
-          ) : (
-            <Avatar.Text
-              size={40}
-              label={
-                userProfile?.full_name
-                  ? userProfile.full_name
-                      .split(" ")
-                      .map((n: string) => n[0])
-                      .join("")
-                  : "U"
-              }
-              style={styles.avatar}
-            />
-          )}
-        </TouchableOpacity>
-      </View>
-    );
-  };
+  // Render stats summary
 
-  // Render category filters
-  const renderCategories = () => {
-    return (
-      <View style={styles.categoriesContainer}>
+  return (
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={Platform.OS === "android" ? "#1F2937" : undefined}
+      />
+
+      {/* Header with profile */}
+      <LinearGradient
+        colors={["#374151", "#1F2937"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.headerBanner}
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>User Dashboard</Text>
+            <Text style={styles.headerSubtitle}>
+              Overview of your pothole reports
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={() => router.push("(screens)/(dashboard)/profile")}
+          >
+            {userProfile?.avatar_url ? (
+              <Avatar.Image
+                size={40}
+                source={{ uri: userProfile.avatar_url }}
+                style={styles.avatar}
+              />
+            ) : (
+              <Avatar.Text
+                size={40}
+                label={
+                  userProfile?.full_name
+                    ? userProfile.full_name
+                        .split(" ")
+                        .map((n: string) => n[0])
+                        .join("")
+                    : "U"
+                }
+                style={styles.avatar}
+              />
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Search bar */}
+        <View style={styles.searchContainer}>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={handleSearch}
+            placeholder="Search reports..."
+          />
+        </View>
+      </LinearGradient>
+
+      {/* Welcome banner */}
+      {renderWelcomeBanner()}
+
+      {/* Category filters */}
+      <View style={styles.filterButtonsContainer}>
         <ScrollableCategories
           categories={CATEGORIES}
           activeCategory={activeCategory}
           onSelectCategory={setActiveCategory}
         />
       </View>
-    );
-  };
-
-  // Render stats summary
-  const renderStats = () => {
-    return (
-      <MotiView
-        from={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: "timing", duration: 500, delay: 300 }}
-        style={styles.statsContainer}
-      >
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{reports.length}</Text>
-          <Text style={styles.statLabel}>Total Reports</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>
-            {reports.filter((r) => r.status === "fixed").length}
-          </Text>
-          <Text style={styles.statLabel}>Fixed</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>
-            {reports.filter((r) => r.status === "in_progress").length}
-          </Text>
-          <Text style={styles.statLabel}>In Progress</Text>
-        </View>
-      </MotiView>
-    );
-  };
-
-  return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor={Platform.OS === "android" ? "#F8FAFC" : undefined}
-      />
-
-      {/* Header with profile */}
-      {renderHeader()}
-
-      {/* Welcome banner */}
-      {renderWelcomeBanner()}
-
-      {/* Search bar */}
-      <SearchBar
-        value={searchQuery}
-        onChangeText={handleSearch}
-        placeholder="Search reports, locations..."
-      />
-
-      {/* Category filters */}
-      {renderCategories()}
 
       {/* Stats summary */}
-      {!loading && !refreshing && reports.length > 0 && renderStats()}
+      {!loading && !refreshing && reports.length > 0}
 
       {/* Conditional rendering based on loading and report availability */}
       {loading && !refreshing ? (
@@ -345,8 +312,8 @@ const HomeScreen: React.FC = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              colors={["#0284c7"]}
-              tintColor="#0284c7"
+              colors={["#4B5563"]}
+              tintColor="#4B5563"
               title="Pull to refresh"
               titleColor="#64748B"
             />
@@ -426,15 +393,19 @@ const ScrollableCategories = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F3F4F6",
   },
-  header: {
+  headerBanner: {
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    margin: 16,
+    marginBottom: 8,
+  },
+  headerContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#F8FAFC",
   },
   headerLeft: {
     flex: 1,
@@ -442,37 +413,37 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#0F172A",
+    color: "#FFFFFF",
     letterSpacing: -0.5,
   },
   headerSubtitle: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 2,
-  },
-  locationText: {
     fontSize: 14,
-    color: "#64748B",
-    marginLeft: 4,
+    color: "rgba(255, 255, 255, 0.8)",
+    marginTop: 2,
   },
   profileButton: {
     marginLeft: 16,
   },
   avatar: {
-    backgroundColor: "#0284c7",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+  },
+  searchContainer: {
+    marginTop: 20,
+    height: 48,
   },
   welcomeBanner: {
-    backgroundColor: "#EEF2FF", // Updated to match theme
-    borderRadius: 12,
     marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
+    marginTop: 16,
+    borderRadius: 4,
     borderLeftWidth: 4,
-    borderLeftColor: "#6366F1", // Updated to new primary color
+    borderLeftColor: "#4B5563",
   },
   welcomeContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 0,
+  },
+  welcomeTextContainer: {
     flex: 1,
   },
   welcomeText: {
@@ -488,38 +459,36 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 4,
   },
-  categoriesContainer: {
-    marginBottom: 16,
+  filterButtonsContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    justifyContent: "space-between",
   },
   categoriesContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+    gap: 8,
   },
   categoryChip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16, // Reduced from 20
-    paddingHorizontal: 12, // Reduced from 16
-    paddingVertical: 6, // Reduced from 8
-    marginRight: 8,
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#64748B",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    borderColor: "#4B5563",
+    borderRadius: 4,
+    backgroundColor: "white",
+    marginRight: 8,
   },
   activeCategoryChip: {
-    backgroundColor: "#3B82F6", // Updated to blue
-    borderColor: "#3B82F6",
+    backgroundColor: "#4B5563",
+    borderColor: "#4B5563",
   },
   categoryIcon: {
-    marginRight: 4, // Reduced from 6
+    marginRight: 4,
   },
   categoryLabel: {
-    fontSize: 12, // Reduced from 14
+    fontSize: 14,
     fontWeight: "500",
     color: "#64748B",
   },
@@ -534,23 +503,18 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 12,
-    alignItems: "center",
     marginHorizontal: 4,
-    shadowColor: "#64748B",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderRadius: 4,
+    elevation: 2,
+  },
+  statCardContent: {
+    alignItems: "center",
+    padding: 12,
   },
   statValue: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#3B82F6", // Updated to blue
+    color: "#4B5563",
   },
   statLabel: {
     fontSize: 12,
@@ -566,19 +530,19 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
-    paddingBottom: 100, // Increase this value to ensure content isn't hidden behind the tab bar
+    paddingBottom: 100,
   },
   fab: {
     position: "absolute",
     right: 20,
     bottom: 24,
-    backgroundColor: "#3B82F6", // Updated to blue
-    borderRadius: 16,
+    backgroundColor: "#374151",
+    borderRadius: 28,
     height: 56,
     width: 56,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#3B82F6",
+    shadowColor: "#1F2937",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 16,

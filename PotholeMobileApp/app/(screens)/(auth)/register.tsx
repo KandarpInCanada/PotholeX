@@ -15,20 +15,15 @@ import { AuthDivider } from "../../components/auth-components/auth-divider";
 import { GoogleButton } from "../../components/auth-components/google-button";
 import { AuthFooter } from "../../components/auth-components/auth-footer";
 import { AuthDialog } from "../../components/auth-components/auth-dialog";
+import { checkAdminStatus } from "../../services/admin-service"; // Import directly
 
 const RegisterScreen = () => {
   // Initialize router for navigation between screens
   const router = useRouter();
 
   // Destructure authentication-related functions and states from custom auth context
-  const {
-    signUp,
-    user,
-    signInWithGoogle,
-    googleAuthLoading,
-    googleError,
-    isAdmin,
-  } = useAuth();
+  const { signUp, user, signInWithGoogle, googleAuthLoading, googleError } =
+    useAuth();
 
   // Use custom form state hook to manage input values and secure text entries
   const {
@@ -56,15 +51,25 @@ const RegisterScreen = () => {
 
   // Redirect to dashboard if user is already authenticated
   useEffect(() => {
-    if (user) {
-      // Check if user is admin and redirect accordingly
-      if (isAdmin) {
-        router.replace("(screens)/(admin)/portal");
-      } else {
-        router.replace("(screens)/(dashboard)/home");
+    const checkUserStatus = async () => {
+      if (user) {
+        try {
+          // Check admin status directly
+          const isAdmin = await checkAdminStatus(user.id);
+          if (isAdmin) {
+            router.replace("(screens)/(admin)/portal");
+          } else {
+            router.replace("(screens)/(dashboard)/home");
+          }
+        } catch (error) {
+          console.error("Error checking admin status:", error);
+          router.replace("(screens)/(dashboard)/home"); // Default to user dashboard on error
+        }
       }
-    }
-  }, [user, isAdmin, router]);
+    };
+
+    checkUserStatus();
+  }, [user, router]);
 
   // Handle Google authentication errors
   useEffect(() => {

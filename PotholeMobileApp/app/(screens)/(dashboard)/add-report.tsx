@@ -14,7 +14,7 @@ import {
   Text,
   KeyboardAvoidingView,
 } from "react-native";
-import { Button, IconButton } from "react-native-paper";
+import { Button } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter, useFocusEffect } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -36,6 +36,9 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
+
+// Add LinearGradient import
+import { LinearGradient } from "expo-linear-gradient";
 
 import ImageGallery from "../../components/dashboard-components/add-report/image-gallery";
 import DescriptionInput from "../../components/dashboard-components/add-report/description-input";
@@ -410,16 +413,16 @@ export default function AddReportScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         {/* Header */}
-        <View style={styles.header}>
-          <IconButton
-            icon="arrow-left"
-            size={24}
-            onPress={() => router.back()}
-            style={styles.backButton}
-          />
-          <Text style={styles.headerTitle}>Report a Pothole</Text>
-          <View style={{ width: 40 }} />
-        </View>
+        <LinearGradient
+          colors={["#374151", "#1F2937"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.headerBanner}
+        >
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>Report a Pothole</Text>
+          </View>
+        </LinearGradient>
 
         {/* Section tabs */}
 
@@ -550,39 +553,28 @@ export default function AddReportScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F3F4F6",
   },
   container: {
     flex: 1,
   },
-  header: {
+  headerBanner: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    margin: 16,
+    marginBottom: 8,
+  },
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  backButton: {
-    margin: 0,
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1E293B",
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#FFFFFF",
     textAlign: "center",
-    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -594,7 +586,7 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 4,
     padding: 16,
     shadowColor: "#64748B",
     shadowOffset: { width: 0, height: 1 },
@@ -610,8 +602,8 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: "#3B82F6",
+    borderRadius: 4,
+    backgroundColor: "#374151",
     width: "100%",
   },
   submitButtonLabel: {

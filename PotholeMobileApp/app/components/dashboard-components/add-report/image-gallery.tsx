@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#F1F5F9",
-    borderRadius: 12,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     borderStyle: "dashed",
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   },
   analyzeButton: {
     flex: 1,
-    backgroundColor: "#0284c7",
+    backgroundColor: "#374151",
   },
   closeButton: {
     flex: 1,
