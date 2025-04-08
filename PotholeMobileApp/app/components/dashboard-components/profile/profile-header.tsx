@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   adminButton: {
-    backgroundColor: "#8B5CF6", // Purple for admin button
+    backgroundColor: "#3B82F6", // Updated from purple to blue
     borderRadius: 24, // Updated for curved edges
   },
   editModeButtons: {

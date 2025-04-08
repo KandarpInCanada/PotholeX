@@ -211,7 +211,7 @@ export default function AdminProfileSettings() {
         >
           {/* Profile Header with Admin Badge */}
           <LinearGradient
-            colors={["#6366F1", "#8B5CF6"]}
+            colors={["#374151", "#1F2937"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.profileHeader}
@@ -279,7 +279,7 @@ export default function AdminProfileSettings() {
                 <MaterialCommunityIcons
                   name="account-circle"
                   size={24}
-                  color="#8B5CF6"
+                  color="#3B82F6"
                 />
               )}
             />
@@ -295,8 +295,8 @@ export default function AdminProfileSettings() {
                   disabled={!editMode}
                   mode="outlined"
                   outlineColor="#E2E8F0"
-                  activeOutlineColor="#8B5CF6"
-                  left={<TextInput.Icon icon="account" color="#8B5CF6" />}
+                  activeOutlineColor="#3B82F6"
+                  left={<TextInput.Icon icon="account" color="#3B82F6" />}
                 />
               </View>
 
@@ -311,8 +311,8 @@ export default function AdminProfileSettings() {
                   disabled={!editMode}
                   mode="outlined"
                   outlineColor="#E2E8F0"
-                  activeOutlineColor="#8B5CF6"
-                  left={<TextInput.Icon icon="badge-account" color="#8B5CF6" />}
+                  activeOutlineColor="#3B82F6"
+                  left={<TextInput.Icon icon="badge-account" color="#3B82F6" />}
                 />
               </View>
 
@@ -324,7 +324,7 @@ export default function AdminProfileSettings() {
                   disabled={true}
                   mode="outlined"
                   outlineColor="#E2E8F0"
-                  left={<TextInput.Icon icon="email" color="#8B5CF6" />}
+                  left={<TextInput.Icon icon="email" color="#3B82F6" />}
                 />
                 <Text style={styles.helperText}>Email cannot be changed</Text>
               </View>

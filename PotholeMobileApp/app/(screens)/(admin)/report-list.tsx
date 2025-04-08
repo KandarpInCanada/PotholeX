@@ -36,6 +36,8 @@ import {
 import { useAuth } from "../../../context/auth-context";
 import { EXPO_PUBLIC_SUPABASE_SECRET_KEY } from "@env";
 import { LinearGradient } from "expo-linear-gradient";
+// First, import the notification function at the top with the other imports
+import { notifyUserAboutStatusChange } from "../../../lib/notifications";
 
 export default function AdminReportList() {
   const router = useRouter();
@@ -190,6 +192,7 @@ export default function AdminReportList() {
     setShowDeleteDialog(true);
   };
 
+  // Then update the saveReportChanges function to send a notification
   const saveReportChanges = async () => {
     if (!selectedReport || !selectedReport.id) {
       console.error("No report selected or report ID is missing");
@@ -231,6 +234,27 @@ export default function AdminReportList() {
       }
 
       console.log("Update response:", data);
+
+      // Send notification to the user about status change
+      if (data && data.length > 0 && data[0].user_id) {
+        try {
+          await notifyUserAboutStatusChange(
+            selectedReport.id,
+            data[0].user_id,
+            statusValue,
+            {
+              location: data[0].location || "Unknown location",
+            }
+          );
+          console.log("Notification sent to user about status change");
+        } catch (notificationError) {
+          console.error(
+            "Error sending status change notification:",
+            notificationError
+          );
+          // Continue even if notification fails
+        }
+      }
 
       // Update local state
       setReports((prevReports) =>
@@ -468,7 +492,7 @@ export default function AdminReportList() {
       <View style={styles.content}>
         {/* Blue Header Banner */}
         <LinearGradient
-          colors={["#3B82F6", "#2563EB"]}
+          colors={["#374151", "#1F2937"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.headerBanner}

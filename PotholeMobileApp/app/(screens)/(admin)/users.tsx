@@ -234,7 +234,7 @@ export default function UsersScreen() {
       <View style={styles.content}>
         {/* Purple Header Banner */}
         <LinearGradient
-          colors={["#3B82F6", "#2563EB"]}
+          colors={["#374151", "#1F2937"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.headerBanner}

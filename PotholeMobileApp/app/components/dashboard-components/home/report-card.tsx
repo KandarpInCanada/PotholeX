@@ -74,6 +74,20 @@ const ReportCard: React.FC<ReportCardProps> = ({
     }
   };
 
+  // Add this helper function inside the ReportCard component, before the return statement
+  const wasRecentlyUpdated = (item: PotholeReport) => {
+    if (!item.updated_at || !item.created_at) return false;
+
+    // Check if updated_at is different from created_at (meaning it was updated)
+    const createdDate = new Date(item.created_at).getTime();
+    const updatedDate = new Date(item.updated_at).getTime();
+
+    // Check if it was updated in the last 24 hours
+    const oneDayAgo = new Date().getTime() - 24 * 60 * 60 * 1000;
+
+    return updatedDate > createdDate && updatedDate > oneDayAgo;
+  };
+
   return (
     <MotiView
       from={{ opacity: 0, translateY: 20 }}
@@ -116,6 +130,12 @@ const ReportCard: React.FC<ReportCardProps> = ({
                 <Text style={styles.date}>{formatDate(item.created_at)}</Text>
               </View>
             </View>
+
+            {wasRecentlyUpdated(item) && (
+              <View style={styles.notificationBadge}>
+                <MaterialCommunityIcons name="bell" size={16} color="#FFFFFF" />
+              </View>
+            )}
           </View>
 
           {/* Image */}
@@ -454,6 +474,17 @@ const styles = StyleSheet.create({
   },
   likedText: {
     color: "#3B82F6",
+  },
+  notificationBadge: {
+    backgroundColor: "#3B82F6",
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
+    top: 8,
+    right: 8,
   },
 });
 

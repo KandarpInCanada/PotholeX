@@ -50,8 +50,8 @@ export default function ProfileForm({
           disabled={!editMode}
           mode="outlined"
           outlineColor={theme.colors.outline}
-          activeOutlineColor={theme.colors.primary}
-          left={<TextInput.Icon icon="account" color={theme.colors.primary} />}
+          activeOutlineColor="#3B82F6"
+          left={<TextInput.Icon icon="account" color="#3B82F6" />}
           placeholder="Enter username"
           theme={{
             colors: {
@@ -62,7 +62,7 @@ export default function ProfileForm({
                 : theme.colors.onSurfaceVariant,
               onSurfaceVariant: theme.colors.onSurfaceVariant,
               background: theme.colors.surface,
-              primary: theme.colors.primary,
+              primary: "#3B82F6",
             },
           }}
         />
@@ -83,10 +83,8 @@ export default function ProfileForm({
           disabled={!editMode}
           mode="outlined"
           outlineColor={theme.colors.outline}
-          activeOutlineColor={theme.colors.primary}
-          left={
-            <TextInput.Icon icon="badge-account" color={theme.colors.primary} />
-          }
+          activeOutlineColor="#3B82F6"
+          left={<TextInput.Icon icon="badge-account" color="#3B82F6" />}
           placeholder="Enter full name"
           theme={{
             colors: {
@@ -97,7 +95,7 @@ export default function ProfileForm({
                 : theme.colors.onSurfaceVariant,
               onSurfaceVariant: theme.colors.onSurfaceVariant,
               background: theme.colors.surface,
-              primary: theme.colors.primary,
+              primary: "#3B82F6",
             },
           }}
         />
@@ -115,7 +113,7 @@ export default function ProfileForm({
           disabled={true}
           mode="outlined"
           outlineColor={theme.colors.outline}
-          left={<TextInput.Icon icon="email" color={theme.colors.primary} />}
+          left={<TextInput.Icon icon="email" color="#3B82F6" />}
           theme={{
             colors: {
               text: theme.colors.text,
@@ -125,7 +123,7 @@ export default function ProfileForm({
                 : theme.colors.onSurfaceVariant,
               onSurfaceVariant: theme.colors.onSurfaceVariant,
               background: theme.colors.surface,
-              primary: theme.colors.primary,
+              primary: "#3B82F6",
             },
           }}
         />

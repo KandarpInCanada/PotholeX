@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   StatusBar,
   Platform,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FAB, Card } from "react-native-paper";
@@ -25,6 +26,7 @@ import SearchBar from "../../components/dashboard-components/home/search-bar";
 import ReportCard from "../../components/dashboard-components/home/report-card";
 import EmptyState from "../../components/dashboard-components/home/empty-state";
 import LoadingState from "../../components/dashboard-components/home/loading-state";
+import { countUnreadNotifications } from "../../../lib/notifications";
 
 // Define category types for filtering
 const CATEGORIES = [
@@ -83,6 +85,33 @@ const HomeScreen: React.FC = () => {
 
     return () => clearTimeout(timer);
   }, [fetchReports, fetchUserProfile]);
+
+  // Add this effect to check for notifications when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const checkNotifications = async () => {
+        try {
+          // Count unread notifications
+          const unreadCount = await countUnreadNotifications(false);
+
+          // If there are unread notifications, show a message
+          if (unreadCount > 0) {
+            Alert.alert(
+              "New Notifications",
+              `You have ${unreadCount} unread notification${
+                unreadCount > 1 ? "s" : ""
+              }. Check your notifications for updates on your reports.`,
+              [{ text: "OK" }]
+            );
+          }
+        } catch (error) {
+          console.error("Error checking notifications:", error);
+        }
+      };
+
+      checkNotifications();
+    }, [])
+  );
 
   // Re-fetch reports when screen comes into focus
   useFocusEffect(

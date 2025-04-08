@@ -11,7 +11,7 @@ export default function AppInfo() {
         <MaterialCommunityIcons
           name="information-outline"
           size={24}
-          color={lightTheme.colors.primary}
+          color="#3B82F6"
         />
         <Text style={styles.infoText}>About PotholeX</Text>
         <MaterialCommunityIcons
@@ -25,7 +25,7 @@ export default function AppInfo() {
         <MaterialCommunityIcons
           name="shield-check-outline"
           size={24}
-          color={lightTheme.colors.primary}
+          color="#3B82F6"
         />
         <Text style={styles.infoText}>Privacy Policy</Text>
         <MaterialCommunityIcons
@@ -39,7 +39,7 @@ export default function AppInfo() {
         <MaterialCommunityIcons
           name="file-document-outline"
           size={24}
-          color={lightTheme.colors.primary}
+          color="#3B82F6"
         />
         <Text style={styles.infoText}>Terms of Service</Text>
         <MaterialCommunityIcons

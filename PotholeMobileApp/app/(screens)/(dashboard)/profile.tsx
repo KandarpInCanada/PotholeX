@@ -715,7 +715,7 @@ const styles = StyleSheet.create({
   },
   editProfileButton: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 24, // Updated for curved edges
+    borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginTop: 16,
@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   editProfileButtonText: {
-    color: "#4B5563",
+    color: "#3B82F6", // Updated from purple to blue
     fontWeight: "600",
     fontSize: 16,
   },

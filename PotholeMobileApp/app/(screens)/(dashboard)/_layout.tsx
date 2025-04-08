@@ -28,6 +28,8 @@ export default function DashboardLayout() {
             iconName = focused ? "map" : "map-outline";
           } else if (route.name === "profile") {
             iconName = focused ? "person" : "person-outline";
+          } else if (route.name === "notifications") {
+            iconName = focused ? "notifications" : "notifications-outline";
           }
           return <Ionicons name={iconName as any} size={size} color={color} />;
         },
@@ -71,6 +73,13 @@ export default function DashboardLayout() {
           title: "Map",
           headerShown: false,
           tabBarLabel: "Map",
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: "Notifications",
+          tabBarLabel: "Notifications",
         }}
       />
       <Tabs.Screen

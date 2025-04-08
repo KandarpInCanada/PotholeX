@@ -262,6 +262,88 @@ export async function notifyAdminsAboutNewReport(
   }
 }
 
+// Add this new function after the notifyAdminsAboutNewReport function
+export async function notifyUserAboutStatusChange(
+  reportId: string,
+  userId: string,
+  newStatus: string,
+  reportDetails: {
+    location: string
+  },
+) {
+  console.log(`Starting notification process for status change of report ${reportId} to user ${userId}`)
+
+  try {
+    // 1. Get user's push token
+    const { data: tokenData, error: tokenError } = await supabase
+      .from("push_tokens")
+      .select("token")
+      .eq("user_id", userId)
+
+    if (tokenError) {
+      console.error("Error fetching user push token:", tokenError)
+      return
+    }
+
+    const userTokens = tokenData?.map((item) => item.token) || []
+    console.log(`Found ${userTokens.length} user tokens`)
+
+    // 2. Prepare notification content
+    const title = "Report Status Updated"
+    const body = `Your pothole report at ${reportDetails.location} has been updated to: ${formatStatus(newStatus)}`
+
+    // 3. Save notification to database
+    try {
+      console.log("Saving notification to database")
+      await saveNotification(
+        reportId,
+        title,
+        body,
+        false, // Not for admins, for regular user
+      )
+      console.log("Notification saved successfully")
+    } catch (saveError) {
+      console.error("Failed to save notification to database:", saveError)
+      // Continue with push notification even if database save fails
+    }
+
+    // 4. Send push notification to user's devices
+    if (userTokens.length > 0) {
+      try {
+        console.log("Sending push notification to user")
+        await sendPushNotification(userTokens, title, body, {
+          reportId,
+          type: "status_change",
+          newStatus,
+        })
+        console.log("Push notification sent successfully")
+      } catch (pushError) {
+        console.error("Error sending push notification:", pushError)
+      }
+    }
+
+    console.log("Status change notification process completed")
+  } catch (error) {
+    console.error("Error in notifyUserAboutStatusChange:", error)
+  }
+}
+
+// Helper function to format status for user-friendly display
+function formatStatus(status: string): string {
+  switch (status) {
+    case "submitted":
+      return "Submitted"
+    case "in_progress":
+      return "In Progress"
+    case "fixed":
+      return "Fixed"
+    case "rejected":
+      return "Rejected"
+    default:
+      return status.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())
+  }
+}
+
 /**
  * Get notifications for a user
  * @param isAdmin Whether the user is an admin

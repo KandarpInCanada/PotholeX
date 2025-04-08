@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,18 +11,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Divider, Portal } from "react-native-paper";
+import { Divider } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import {
   getNotifications,
   markNotificationsAsRead,
+  countUnreadNotifications,
 } from "../../../lib/notifications";
 import { MotiView } from "moti";
 import { useAuth } from "../../../context/auth-context";
-import ReportDetailsSheet, {
-  type ReportDetailsSheetRef,
-} from "../../components/admin-components/report-details-sheet";
 
 interface Notification {
   id: string;
@@ -34,36 +32,45 @@ interface Notification {
   for_admins: boolean;
 }
 
-export default function AdminNotificationsScreen() {
-  // Renamed function to match new screen name
-  const { isAdmin } = useAuth();
+export default function NotificationsScreen() {
+  const { user } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const reportDetailsRef = useRef<ReportDetailsSheetRef>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchNotifications = useCallback(async () => {
-    if (!isAdmin) {
-      router.replace("/(screens)/(dashboard)/home");
+    if (!user) {
+      router.replace("/(screens)/(auth)/login");
       return;
     }
 
     try {
       setLoading(true);
-      const fetchedNotifications = await getNotifications(true);
+      const fetchedNotifications = await getNotifications(false); // false = not admin notifications
       setNotifications(fetchedNotifications as Notification[]);
+
+      // Count unread notifications
+      const count = await countUnreadNotifications(false);
+      setUnreadCount(count);
     } catch (error) {
       console.error("Error fetching notifications:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [isAdmin, router]);
+  }, [user, router]);
 
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchNotifications();
+    }, [fetchNotifications])
+  );
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -82,11 +89,14 @@ export default function AdminNotificationsScreen() {
             n.id === notification.id ? { ...n, is_read: true } : n
           )
         );
+
+        // Update unread count
+        setUnreadCount((prev) => Math.max(0, prev - 1));
       }
 
-      // Show report details if there's a report_id
+      // Navigate to report details if there's a report_id
       if (notification.report_id) {
-        reportDetailsRef.current?.open(notification.report_id);
+        router.push(`/dashboard/report-details/${notification.report_id}`);
       }
     } catch (error) {
       console.error("Error handling notification:", error);
@@ -119,7 +129,9 @@ export default function AdminNotificationsScreen() {
       >
         <View style={styles.notificationIcon}>
           <MaterialCommunityIcons
-            name="alert-circle"
+            name={
+              item.title.includes("Status") ? "clipboard-check" : "alert-circle"
+            }
             size={28}
             color={item.is_read ? "#64748B" : "#3B82F6"}
           />
@@ -156,7 +168,11 @@ export default function AdminNotificationsScreen() {
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>Notifications</Text>
             <Text style={styles.headerSubtitle}>
-              Stay updated on new pothole reports
+              {unreadCount > 0
+                ? `You have ${unreadCount} unread notification${
+                    unreadCount > 1 ? "s" : ""
+                  }`
+                : "Stay updated on your reports"}
             </Text>
           </View>
         </View>
@@ -187,17 +203,12 @@ export default function AdminNotificationsScreen() {
             <Text style={styles.emptySubtext}>
               {loading
                 ? "Loading notifications..."
-                : "You'll be notified about new reports here"}
+                : "You'll be notified about updates to your reports here"}
             </Text>
           </View>
         }
         ItemSeparatorComponent={() => <Divider style={styles.divider} />}
       />
-
-      {/* Report Details Sheet */}
-      <Portal>
-        <ReportDetailsSheet ref={reportDetailsRef} />
-      </Portal>
     </SafeAreaView>
   );
 }
@@ -205,7 +216,7 @@ export default function AdminNotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F0F4FF",
+    backgroundColor: "#F3F4F6",
   },
   headerBanner: {
     paddingVertical: 24,
