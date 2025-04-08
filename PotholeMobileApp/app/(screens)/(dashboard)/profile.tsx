@@ -167,6 +167,7 @@ export default function UserProfileScreen() {
         {
           text: "Logout",
           onPress: performLogout,
+          style: "destructive",
         },
       ],
       { cancelable: true }

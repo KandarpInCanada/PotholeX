@@ -30,7 +30,6 @@ import {
 } from "../../services/profile-service";
 import { LinearGradient } from "expo-linear-gradient";
 import { Portal, Dialog } from "react-native-paper";
-import { ActivityIndicator } from "react-native-paper";
 import { useRouter } from "expo-router";
 
 // Update the component to remove AdminHeader
@@ -155,13 +154,6 @@ export default function AdminProfileSettings() {
   const handleLogout = async () => {
     try {
       setShowLogoutDialog(false);
-      // Show loading state
-      const loadingOverlay = (
-        <View style={styles.loggingOutContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loggingOutText}>Logging out...</Text>
-        </View>
-      );
 
       // Actually perform the logout
       await signOut();
@@ -386,6 +378,7 @@ export default function AdminProfileSettings() {
             style={styles.logoutButton}
             icon="logout"
             textColor="#EF4444"
+            buttonColor="transparent"
           >
             Logout from Admin
           </Button>
@@ -415,28 +408,18 @@ export default function AdminProfileSettings() {
               activeOutlineColor="#3B82F6"
             />
           </Dialog.Content>
-          <Dialog.Actions style={styles.logoutDialogActions}>
-            <Button
-              onPress={() => setShowApiDialog(false)}
-              textColor="#64748B"
-              style={styles.dialogButton}
-              labelStyle={styles.dialogButtonLabel}
-            >
+          <Dialog.Actions>
+            <Button onPress={() => setShowApiDialog(false)} textColor="#64748B">
               Cancel
             </Button>
-            <Button
-              onPress={saveApiSettings}
-              textColor="#3B82F6"
-              style={styles.dialogButton}
-              labelStyle={styles.dialogButtonLabel}
-            >
+            <Button onPress={saveApiSettings} textColor="#3B82F6">
               Save
             </Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
 
-      {/* Logout Dialog */}
+      {/* Update the Logout Dialog to match the iOS style exactly */}
       <Portal>
         <Dialog
           visible={showLogoutDialog}
@@ -446,23 +429,28 @@ export default function AdminProfileSettings() {
           <Dialog.Title style={styles.logoutDialogTitle}>Logout</Dialog.Title>
           <Dialog.Content>
             <Text style={styles.logoutDialogContent}>
-              Are you sure you want to logout from the admin portal?
+              Are you sure you want to logout?
             </Text>
           </Dialog.Content>
+          <Divider style={styles.dialogDivider} />
+          {/* Update the Dialog.Actions section to ensure buttons are properly visible */}
           <Dialog.Actions style={styles.logoutDialogActions}>
             <Button
               onPress={() => setShowLogoutDialog(false)}
-              textColor="#3B82F6"
+              textColor="#007AFF"
               style={styles.dialogButton}
               labelStyle={styles.dialogButtonLabel}
+              contentStyle={styles.dialogButtonContent}
             >
               Cancel
             </Button>
+            <View style={styles.verticalDivider} />
             <Button
               onPress={handleLogout}
-              textColor="#EF4444"
+              textColor="#FF3B30"
               style={styles.dialogButton}
               labelStyle={styles.dialogButtonLabel}
+              contentStyle={styles.dialogButtonContent}
             >
               Logout
             </Button>
@@ -473,7 +461,7 @@ export default function AdminProfileSettings() {
   );
 }
 
-// Update the logout dialog styling to fix the text cutoff issue
+// Update the styles for the logout dialog to match iOS style exactly
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -667,10 +655,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
-  apiInput: {
-    marginTop: 8,
-    backgroundColor: "#FFFFFF",
-  },
   actionButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -695,59 +679,71 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#94A3B8",
   },
-  // Update these specific styles for the logout dialog
+  // Update the styles for the logout dialog to match iOS style exactly
   logoutDialog: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    width: "85%",
+    borderRadius: 14,
+    width: "70%",
+    maxWidth: 270,
     alignSelf: "center",
-    padding: 8,
-    maxHeight: 200, // Set a fixed maximum height
+    padding: 0,
+    overflow: "hidden",
   },
   logoutDialogTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#000000",
     textAlign: "center",
+    marginTop: 16,
     marginBottom: 8,
   },
   logoutDialogContent: {
-    fontSize: 16,
-    color: "#334155",
+    fontSize: 13,
+    color: "#000000",
     textAlign: "center",
-    lineHeight: 22,
-    paddingHorizontal: 8,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    lineHeight: 18,
+  },
+  dialogDivider: {
+    height: 0.5,
+    backgroundColor: "#E2E8F0",
+    width: "100%",
   },
   logoutDialogActions: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    justifyContent: "space-between",
+    marginTop: 0,
+    padding: 0,
+    height: 44,
   },
   dialogButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    minWidth: 80,
+    flex: 1,
+    borderRadius: 0,
+    margin: 0,
+    height: 44,
+    justifyContent: "center",
   },
   dialogButtonLabel: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 17,
+    fontWeight: "400",
+    margin: 0,
+    padding: 0,
+    textAlign: "center",
   },
-  loggingOutContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(255,255,255,0.7)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 10,
+  dialogButtonContent: {
+    height: 44,
+    paddingHorizontal: 0,
   },
-  loggingOutText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: "#3B82F6",
+  verticalDivider: {
+    width: 0.5,
+    height: 44,
+    backgroundColor: "#E2E8F0",
+    alignSelf: "center",
+  },
+  // Add these styles that were referenced but not defined
+  apiInput: {
+    marginTop: 8,
+    backgroundColor: "#FFFFFF",
   },
 });

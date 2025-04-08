@@ -23,6 +23,7 @@ import { Swipeable } from "react-native-gesture-handler";
 import ReportItem from "../../components/dashboard-components/report-list/report-item";
 import EmptyState from "../../components/dashboard-components/report-list/empty-state";
 import { LinearGradient } from "expo-linear-gradient";
+import { FlashList } from "@shopify/flash-list";
 
 const { width } = Dimensions.get("window");
 
@@ -33,6 +34,11 @@ const SORT_OPTIONS = [
   { id: "severity", label: "Severity", icon: "sort-variant" },
   { id: "status", label: "Status", icon: "sort-alphabetical-ascending" },
 ];
+
+// Create an animated version of FlashList
+const AnimatedFlashList = Animated.createAnimatedComponent(
+  FlashList<PotholeReport>
+);
 
 export default function ReportListScreen() {
   // Router for navigation
@@ -92,8 +98,8 @@ export default function ReportListScreen() {
   const toggleFilterBar = () => {
     Animated.timing(filterBarHeight, {
       toValue: showFilterBar ? 0 : 1,
-      duration: 300,
-      useNativeDriver: false,
+      duration: 250,
+      useNativeDriver: false, // Height animations can't use native driver
     }).start();
     setShowFilterBar(!showFilterBar);
   };
@@ -320,11 +326,8 @@ export default function ReportListScreen() {
 
     // Render list of reports
     return (
-      <Animated.FlatList
+      <AnimatedFlashList
         data={processedReports}
-        // Ensure unique key for each item
-        keyExtractor={(item) => item.id || Math.random().toString()}
-        // Render individual report item
         renderItem={({ item, index }) => (
           <Swipeable
             ref={(ref) => {
@@ -348,7 +351,7 @@ export default function ReportListScreen() {
               transition={{
                 type: "timing",
                 duration: 300,
-                delay: index * 50,
+                delay: Math.min(index * 30, 300), // Cap the delay to prevent too much staggering
               }}
             >
               <ReportItem
@@ -361,9 +364,9 @@ export default function ReportListScreen() {
             </MotiView>
           </Swipeable>
         )}
+        estimatedItemSize={200}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
-        // Pull-to-refresh control
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -373,15 +376,11 @@ export default function ReportListScreen() {
             progressBackgroundColor="#FFFFFF"
           />
         }
-        // Handle scroll for animations
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          {
-            useNativeDriver: false,
-          }
+          { useNativeDriver: true }
         )}
         scrollEventThrottle={16}
-        // List header
         ListHeaderComponent={
           <View style={styles.listHeader}>
             <Text style={styles.listHeaderTitle}>
@@ -581,7 +580,104 @@ export default function ReportListScreen() {
       </Animated.View>
 
       {/* Main content */}
-      <View style={styles.content}>{renderContent()}</View>
+      <View style={styles.content}>
+        {loading && !refreshing ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4B5563" />
+            <Text style={styles.loadingText}>Loading reports...</Text>
+          </View>
+        ) : processedReports.length === 0 ? (
+          <EmptyState
+            icon={
+              <MaterialCommunityIcons
+                name="clipboard-text-outline"
+                size={64}
+                color="#94A3B8"
+              />
+            }
+            title="No reports found"
+            subtitle={
+              searchQuery || activeFilter !== "all"
+                ? "Try changing your filters"
+                : "You haven't reported any potholes yet"
+            }
+            buttonLabel="Create New Report"
+            onButtonPress={navigateToAddReport}
+          />
+        ) : (
+          <AnimatedFlashList
+            data={processedReports}
+            renderItem={({ item, index }) => (
+              <Swipeable
+                ref={(ref) => {
+                  if (ref && item.id) {
+                    swipeableRefs.current.set(item.id, ref);
+                  }
+                }}
+                renderRightActions={() => renderRightActions(item.id || "")}
+                onSwipeableOpen={() => {
+                  // Close other open swipeables
+                  swipeableRefs.current.forEach((swipeable, id) => {
+                    if (id !== item.id) {
+                      swipeable?.close();
+                    }
+                  });
+                }}
+              >
+                <MotiView
+                  from={{ opacity: 0, translateX: -20 }}
+                  animate={{ opacity: 1, translateX: 0 }}
+                  transition={{
+                    type: "timing",
+                    duration: 300,
+                    delay: Math.min(index * 30, 300), // Cap the delay to prevent too much staggering
+                  }}
+                >
+                  <ReportItem
+                    report={item}
+                    index={index}
+                    onPress={() => navigateToReportDetails(item.id || "")}
+                    onReportsChange={setReports}
+                    reports={reports}
+                  />
+                </MotiView>
+              </Swipeable>
+            )}
+            estimatedItemSize={200}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                colors={["#4B5563"]}
+                tintColor="#4B5563"
+                progressBackgroundColor="#FFFFFF"
+              />
+            }
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: true }
+            )}
+            scrollEventThrottle={16}
+            ListHeaderComponent={
+              <View style={styles.listHeader}>
+                <Text style={styles.listHeaderTitle}>
+                  {processedReports.length}{" "}
+                  {processedReports.length === 1 ? "Report" : "Reports"}
+                </Text>
+                <Text style={styles.listHeaderSubtitle}>
+                  {activeFilter !== "all"
+                    ? `Filtered by ${activeFilter.replace("_", " ")}`
+                    : searchQuery
+                    ? "Search results"
+                    : "All your reports"}
+                </Text>
+              </View>
+            }
+          />
+        )}
+      </View>
 
       {/* FAB for adding new report */}
       <FAB
@@ -816,5 +912,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
     marginTop: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#4B5563",
   },
 });

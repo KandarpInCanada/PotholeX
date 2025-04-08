@@ -126,13 +126,13 @@ export default function MapScreen() {
     Animated.parallel([
       Animated.timing(searchBarAnimation, {
         toValue: 1,
-        duration: 500,
+        duration: 400,
         useNativeDriver: true,
       }),
       Animated.timing(fabAnimation, {
         toValue: 1,
-        duration: 500,
-        delay: 300,
+        duration: 400,
+        delay: 200,
         useNativeDriver: true,
       }),
     ]).start();
@@ -496,9 +496,12 @@ export default function MapScreen() {
   };
 
   // Navigate to report details
-  const navigateToReportDetails = (reportId: string) => {
-    router.push(`/dashboard/report-details/${reportId}`);
-  };
+  const navigateToReportDetailsCallback = useCallback(
+    (reportId: string) => {
+      router.push(`/dashboard/report-details/${reportId}`);
+    },
+    [router]
+  );
 
   // Filter potholes based on active filters
   const filteredPotholes = useMemo(() => {
@@ -539,7 +542,10 @@ export default function MapScreen() {
           longitude: pothole.longitude,
         }}
         pinColor={getPotholeMarkerColor(pothole.severity)}
-        onCalloutPress={() => pothole.id && navigateToReportDetails(pothole.id)}
+        onCalloutPress={() =>
+          pothole.id && navigateToReportDetailsCallback(pothole.id)
+        }
+        tracksViewChanges={false} // Add this to improve performance
       >
         <View style={styles.customMarker}>
           <View
@@ -575,7 +581,7 @@ export default function MapScreen() {
         </Callout>
       </Marker>
     ));
-  }, [filteredPotholes, viewMode]);
+  }, [filteredPotholes, viewMode, navigateToReportDetailsCallback]);
 
   // Search bar animation styles
   const searchBarAnimatedStyle = {
@@ -725,7 +731,7 @@ export default function MapScreen() {
           <MotiView
             from={{ opacity: 0, translateY: 20 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "timing", duration: 500, delay: 200 }}
+            transition={{ type: "timing", duration: 300, delay: 200 }}
           >
             <TouchableOpacity
               style={styles.mapControlButton}
@@ -738,7 +744,7 @@ export default function MapScreen() {
           <MotiView
             from={{ opacity: 0, translateY: 20 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "timing", duration: 500, delay: 300 }}
+            transition={{ type: "timing", duration: 300, delay: 300 }}
           >
             <TouchableOpacity
               style={styles.mapControlButton}
@@ -761,7 +767,7 @@ export default function MapScreen() {
           <MotiView
             from={{ opacity: 0, translateY: 20 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "timing", duration: 500, delay: 400 }}
+            transition={{ type: "timing", duration: 300, delay: 400 }}
           >
             <TouchableOpacity
               style={styles.mapControlButton}
@@ -780,7 +786,7 @@ export default function MapScreen() {
           <MotiView
             from={{ opacity: 0, translateY: 20 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "timing", duration: 500, delay: 500 }}
+            transition={{ type: "timing", duration: 300, delay: 500 }}
           >
             <TouchableOpacity
               style={styles.mapControlButton}
@@ -825,6 +831,7 @@ export default function MapScreen() {
             from={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ type: "timing", duration: 300 }}
             style={styles.legendContainer}
           >
             <BlurView intensity={80} tint="light" style={styles.legendBlur}>
@@ -879,7 +886,7 @@ export default function MapScreen() {
           <MotiView
             from={{ opacity: 0, translateY: 20 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "spring", damping: 15 }}
+            transition={{ type: "timing", duration: 300 }}
             style={styles.errorContainer}
           >
             <MaterialIcons name="error-outline" size={20} color="#FFFFFF" />

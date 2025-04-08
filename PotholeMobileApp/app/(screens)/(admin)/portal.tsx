@@ -20,6 +20,14 @@ import { useAuth } from "../../../context/auth-context";
 import { PieChart } from "react-native-chart-kit";
 import { ReportStatus, SeverityLevel } from "../../../lib/supabase";
 import { LinearGradient } from "expo-linear-gradient";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSequence,
+  withDelay,
+  Easing,
+} from "react-native-reanimated";
 
 // Define the screen width for responsive charts
 const screenWidth = Dimensions.get("window").width - 32; // Full width minus padding
@@ -74,8 +82,44 @@ export default function AdminPortal() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Animation values
+  const headerOpacity = useSharedValue(0);
+  const headerTranslateY = useSharedValue(-20);
+  const chartOpacity = useSharedValue(0);
+  const chartScale = useSharedValue(0.95);
+  const actionsOpacity = useSharedValue(0);
+  const actionsTranslateY = useSharedValue(20);
+
   useEffect(() => {
     fetchDashboardData();
+
+    // Start animations
+    headerOpacity.value = withTiming(1, {
+      duration: 600,
+      easing: Easing.out(Easing.cubic),
+    });
+    headerTranslateY.value = withTiming(0, {
+      duration: 600,
+      easing: Easing.out(Easing.cubic),
+    });
+
+    chartOpacity.value = withDelay(
+      300,
+      withTiming(1, { duration: 800, easing: Easing.out(Easing.cubic) })
+    );
+    chartScale.value = withDelay(
+      300,
+      withTiming(1, { duration: 800, easing: Easing.out(Easing.cubic) })
+    );
+
+    actionsOpacity.value = withDelay(
+      600,
+      withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) })
+    );
+    actionsTranslateY.value = withDelay(
+      600,
+      withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) })
+    );
   }, []);
 
   const fetchDashboardData = async () => {
@@ -131,6 +175,16 @@ export default function AdminPortal() {
         reportsBySeverity,
         reportsPerDay,
         userGrowth,
+      });
+
+      // Animate charts when data is loaded
+      chartOpacity.value = withTiming(1, {
+        duration: 800,
+        easing: Easing.out(Easing.cubic),
+      });
+      chartScale.value = withTiming(1, {
+        duration: 800,
+        easing: Easing.out(Easing.cubic),
       });
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -241,12 +295,67 @@ export default function AdminPortal() {
     useShadowColorFromDataset: false,
   };
 
-  if (loading) {
+  // Animated styles
+  const headerAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: headerOpacity.value,
+      transform: [{ translateY: headerTranslateY.value }],
+    };
+  });
+
+  const chartAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: chartOpacity.value,
+      transform: [{ scale: chartScale.value }],
+    };
+  });
+
+  const actionsAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: actionsOpacity.value,
+      transform: [{ translateY: actionsTranslateY.value }],
+    };
+  });
+
+  // Loading animation for refresh
+  const handleRefresh = () => {
+    setRefreshing(true);
+
+    // Reset animations
+    chartOpacity.value = 0;
+    chartScale.value = 0.95;
+
+    // Animate loading
+    chartOpacity.value = withTiming(1, {
+      duration: 800,
+      easing: Easing.out(Easing.cubic),
+    });
+    chartScale.value = withTiming(1, {
+      duration: 800,
+      easing: Easing.out(Easing.cubic),
+    });
+
+    fetchDashboardData();
+  };
+
+  if (loading && !refreshing) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loadingText}>Loading dashboard data...</Text>
+          <MotiView
+            from={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", damping: 15 }}
+          >
+            <ActivityIndicator size="large" color="#3B82F6" />
+          </MotiView>
+          <MotiView
+            from={{ opacity: 0, translateY: 10 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: "timing", duration: 500, delay: 200 }}
+          >
+            <Text style={styles.loadingText}>Loading dashboard data...</Text>
+          </MotiView>
         </View>
       </SafeAreaView>
     );
@@ -260,19 +369,14 @@ export default function AdminPortal() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={fetchDashboardData}
+            onRefresh={handleRefresh}
             colors={["#3B82F6"]}
             tintColor="#3B82F6"
           />
         }
       >
         {/* Combined Header Section */}
-        <MotiView
-          from={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: "timing", duration: 500 }}
-          style={styles.welcomeSection}
-        >
+        <Animated.View style={[styles.welcomeSection, headerAnimatedStyle]}>
           <LinearGradient
             colors={["#374151", "#1F2937"]}
             start={{ x: 0, y: 0 }}
@@ -288,139 +392,159 @@ export default function AdminPortal() {
               </View>
             </View>
           </LinearGradient>
-        </MotiView>
+        </Animated.View>
 
         {/* Reports by Status Pie Chart */}
-        <Card style={styles.chartCard} mode="elevated">
-          <View style={{ overflow: "hidden", borderRadius: 16 }}>
-            <Card.Title
-              title="Reports by Status"
-              titleStyle={styles.cardTitle}
-              left={() => (
-                <MaterialCommunityIcons
-                  name="chart-pie"
-                  size={24}
-                  color="#3B82F6"
-                />
-              )}
-            />
-            <Divider style={styles.cardDivider} />
-            <Card.Content style={styles.cardContent}>
-              <View style={styles.chartContainer}>
-                {stats.totalReports > 0 ? (
-                  <PieChart
-                    data={statusChartData}
-                    width={screenWidth - 32}
-                    height={220}
-                    chartConfig={chartConfig}
-                    accessor="population"
-                    backgroundColor="transparent"
-                    paddingLeft="15"
-                    absolute
+        <Animated.View style={[chartAnimatedStyle]}>
+          <Card style={styles.chartCard} mode="elevated">
+            <View style={{ overflow: "hidden", borderRadius: 16 }}>
+              <Card.Title
+                title="Reports by Status"
+                titleStyle={styles.cardTitle}
+                left={() => (
+                  <MaterialCommunityIcons
+                    name="chart-pie"
+                    size={24}
+                    color="#3B82F6"
                   />
-                ) : (
-                  <View style={styles.noDataContainer}>
-                    <MaterialCommunityIcons
-                      name="chart-pie"
-                      size={48}
-                      color="#CBD5E1"
-                    />
-                    <Text style={styles.noDataText}>
-                      No report data available
-                    </Text>
-                  </View>
                 )}
-              </View>
-            </Card.Content>
-          </View>
-        </Card>
+              />
+              <Divider style={styles.cardDivider} />
+              <Card.Content style={styles.cardContent}>
+                <View style={styles.chartContainer}>
+                  {stats.totalReports > 0 ? (
+                    <PieChart
+                      data={statusChartData}
+                      width={screenWidth - 32}
+                      height={220}
+                      chartConfig={chartConfig}
+                      accessor="population"
+                      backgroundColor="transparent"
+                      paddingLeft="15"
+                      absolute
+                    />
+                  ) : (
+                    <View style={styles.noDataContainer}>
+                      <MaterialCommunityIcons
+                        name="chart-pie"
+                        size={48}
+                        color="#CBD5E1"
+                      />
+                      <Text style={styles.noDataText}>
+                        No report data available
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </Card.Content>
+            </View>
+          </Card>
+        </Animated.View>
 
         {/* Reports by Severity Pie Chart */}
-        <Card style={styles.chartCard} mode="elevated">
-          <View style={{ overflow: "hidden", borderRadius: 16 }}>
-            <Card.Title
-              title="Reports by Severity"
-              titleStyle={styles.cardTitle}
-              left={() => (
-                <MaterialCommunityIcons
-                  name="alert-circle-outline"
-                  size={24}
-                  color="#3B82F6"
-                />
-              )}
-            />
-            <Divider style={styles.cardDivider} />
-            <Card.Content style={styles.cardContent}>
-              <View style={styles.chartContainer}>
-                {stats.totalReports > 0 ? (
-                  <PieChart
-                    data={severityChartData}
-                    width={screenWidth - 32}
-                    height={220}
-                    chartConfig={chartConfig}
-                    accessor="population"
-                    backgroundColor="transparent"
-                    paddingLeft="15"
-                    absolute
+        <Animated.View style={[chartAnimatedStyle]}>
+          <Card style={styles.chartCard} mode="elevated">
+            <View style={{ overflow: "hidden", borderRadius: 16 }}>
+              <Card.Title
+                title="Reports by Severity"
+                titleStyle={styles.cardTitle}
+                left={() => (
+                  <MaterialCommunityIcons
+                    name="alert-circle-outline"
+                    size={24}
+                    color="#3B82F6"
                   />
-                ) : (
-                  <View style={styles.noDataContainer}>
-                    <MaterialCommunityIcons
-                      name="chart-pie"
-                      size={48}
-                      color="#CBD5E1"
-                    />
-                    <Text style={styles.noDataText}>
-                      No severity data available
-                    </Text>
-                  </View>
                 )}
-              </View>
-            </Card.Content>
-          </View>
-        </Card>
+              />
+              <Divider style={styles.cardDivider} />
+              <Card.Content style={styles.cardContent}>
+                <View style={styles.chartContainer}>
+                  {stats.totalReports > 0 ? (
+                    <PieChart
+                      data={severityChartData}
+                      width={screenWidth - 32}
+                      height={220}
+                      chartConfig={chartConfig}
+                      accessor="population"
+                      backgroundColor="transparent"
+                      paddingLeft="15"
+                      absolute
+                    />
+                  ) : (
+                    <View style={styles.noDataContainer}>
+                      <MaterialCommunityIcons
+                        name="chart-pie"
+                        size={48}
+                        color="#CBD5E1"
+                      />
+                      <Text style={styles.noDataText}>
+                        No severity data available
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </Card.Content>
+            </View>
+          </Card>
+        </Animated.View>
 
         {/* Quick Actions */}
-        <Card style={styles.actionsCard} mode="elevated">
-          <View style={{ overflow: "hidden", borderRadius: 16 }}>
-            <Card.Title
-              title="Quick Actions"
-              titleStyle={styles.cardTitle}
-              left={() => (
-                <MaterialCommunityIcons
-                  name="lightning-bolt"
-                  size={24}
-                  color="#3B82F6"
-                />
-              )}
-            />
-            <Divider style={styles.cardDivider} />
-            <Card.Content style={styles.cardContent}>
-              <View style={styles.actionButtonsContainer}>
-                <Button
-                  mode="contained"
-                  icon="clipboard-list"
-                  onPress={() => router.push("/(screens)/(admin)/report-list")}
-                  style={styles.actionButton}
-                  contentStyle={styles.actionButtonContent}
-                  buttonColor="#3B82F6"
-                >
-                  Manage Reports
-                </Button>
-                <Button
-                  mode="contained"
-                  icon="account-group"
-                  onPress={() => router.push("/(screens)/(admin)/users")}
-                  style={styles.actionButton}
-                  contentStyle={styles.actionButtonContent}
-                  buttonColor="#8B5CF6"
-                >
-                  Manage Users
-                </Button>
-              </View>
-            </Card.Content>
-          </View>
-        </Card>
+        <Animated.View style={[actionsAnimatedStyle]}>
+          <Card style={styles.actionsCard} mode="elevated">
+            <View style={{ overflow: "hidden", borderRadius: 16 }}>
+              <Card.Title
+                title="Quick Actions"
+                titleStyle={styles.cardTitle}
+                left={() => (
+                  <MaterialCommunityIcons
+                    name="lightning-bolt"
+                    size={24}
+                    color="#3B82F6"
+                  />
+                )}
+              />
+              <Divider style={styles.cardDivider} />
+              <Card.Content style={styles.cardContent}>
+                <View style={styles.actionButtonsContainer}>
+                  <Button
+                    mode="contained"
+                    icon="clipboard-list"
+                    onPress={() => {
+                      // Add button press animation
+                      actionsTranslateY.value = withSequence(
+                        withTiming(-5, { duration: 100 }),
+                        withTiming(0, { duration: 100 })
+                      );
+                      router.push("/(screens)/(admin)/report-list");
+                    }}
+                    style={styles.actionButton}
+                    contentStyle={styles.actionButtonContent}
+                    buttonColor="#3B82F6"
+                  >
+                    Manage Reports
+                  </Button>
+                  <Button
+                    mode="contained"
+                    icon="account-group"
+                    onPress={() => {
+                      // Add button press animation
+                      actionsTranslateY.value = withSequence(
+                        withTiming(-5, { duration: 100 }),
+                        withTiming(0, { duration: 100 })
+                      );
+                      router.push("/(screens)/(admin)/users");
+                    }}
+                    style={styles.actionButton}
+                    contentStyle={styles.actionButtonContent}
+                    buttonColor="#8B5CF6"
+                  >
+                    Manage Users
+                  </Button>
+                </View>
+              </Card.Content>
+            </View>
+          </Card>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -7,8 +7,8 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   Pressable,
+  Image,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotiView } from "moti";
@@ -18,6 +18,7 @@ import {
   ReportStatus,
   SeverityLevel,
 } from "../../../../lib/supabase";
+import { memo } from "react";
 
 interface ReportCardProps {
   item: PotholeReport;
@@ -94,8 +95,8 @@ const ReportCard: React.FC<ReportCardProps> = ({
       animate={{ opacity: 1, translateY: 0 }}
       transition={{
         type: "timing",
-        duration: 500,
-        delay: index * 100,
+        duration: 300,
+        delay: Math.min(index * 50, 300), // Cap the delay to prevent too much staggering
       }}
     >
       <Pressable
@@ -106,7 +107,10 @@ const ReportCard: React.FC<ReportCardProps> = ({
       >
         <MotiView
           animate={{ scale: pressed ? 0.98 : 1 }}
-          transition={{ type: "timing", duration: 100 }}
+          transition={{
+            type: "timing",
+            duration: 100,
+          }}
         >
           {/* Card Header */}
           <View style={styles.cardHeader}>
@@ -141,11 +145,7 @@ const ReportCard: React.FC<ReportCardProps> = ({
           {/* Image */}
           {item?.images && item.images.length > 0 && (
             <View style={styles.imageContainer}>
-              <Image
-                source={{ uri: item.images[0] }}
-                style={styles.image}
-                defaultSource={require("../../../assets/placeholder-image.svg")}
-              />
+              <Image source={{ uri: item.images[0] }} style={styles.image} />
 
               {/* Category Badge */}
               <View style={styles.categoryBadge}>
@@ -488,4 +488,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ReportCard;
+export default memo(ReportCard, (prevProps, nextProps) => {
+  // Only re-render if the item ID changes or if the index changes significantly
+  return (
+    prevProps.item.id === nextProps.item.id &&
+    Math.abs(prevProps.index - nextProps.index) < 5
+  );
+});

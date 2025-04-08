@@ -1,6 +1,6 @@
 // components/reports/ReportItem.tsx
 import type React from "react";
-import { View, Text, StyleSheet, Image, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, Image } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -13,6 +13,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
+import { memo } from "react";
 
 interface ReportItemProps {
   report: PotholeReport;
@@ -55,7 +56,7 @@ const ReportItem: React.FC<ReportItemProps> = ({
   // Animation values
   const scale = useSharedValue(1);
 
-  // Animated styles
+  // Animated styles with optimized configuration
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: scale.value }],
@@ -72,11 +73,11 @@ const ReportItem: React.FC<ReportItemProps> = ({
   };
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.98, { damping: 10 });
+    scale.value = withSpring(0.98, { damping: 15, stiffness: 200 });
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 10 });
+    scale.value = withSpring(1, { damping: 15, stiffness: 200 });
   };
 
   return (
@@ -191,11 +192,7 @@ const ReportImage: React.FC<{ images?: string[] }> = ({ images }) => {
   if (images && images.length > 0) {
     return (
       <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: images[0] }}
-          style={styles.reportImage}
-          defaultSource={require("../../../assets/placeholder-image.svg")}
-        />
+        <Image source={{ uri: images[0] }} style={styles.reportImage} />
       </View>
     );
   }
@@ -308,4 +305,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ReportItem;
+export default memo(ReportItem, (prevProps, nextProps) => {
+  // Only re-render if the report ID changes
+  return prevProps.report.id === nextProps.report.id;
+});

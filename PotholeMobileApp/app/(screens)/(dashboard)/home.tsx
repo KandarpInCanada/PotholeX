@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   StyleSheet,
@@ -27,6 +26,10 @@ import ReportCard from "../../components/dashboard-components/home/report-card";
 import EmptyState from "../../components/dashboard-components/home/empty-state";
 import LoadingState from "../../components/dashboard-components/home/loading-state";
 import { countUnreadNotifications } from "../../../lib/notifications";
+import React from "react";
+
+// Replace FlatList with FlashList
+import { FlashList } from "@shopify/flash-list";
 
 // Define category types for filtering
 const CATEGORIES = [
@@ -201,7 +204,7 @@ const HomeScreen: React.FC = () => {
       <MotiView
         from={{ opacity: 0, translateY: -20 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 500 }}
+        transition={{ type: "timing", duration: 300 }}
         exit={{ opacity: 0, translateY: -20 }}
       >
         <Card style={styles.welcomeBanner}>
@@ -266,7 +269,7 @@ const HomeScreen: React.FC = () => {
 
       {/* Category filters */}
       <View style={styles.filterButtonsContainer}>
-        <ScrollableCategories
+        <MemoizedScrollableCategories
           categories={CATEGORIES}
           activeCategory={activeCategory}
           onSelectCategory={setActiveCategory}
@@ -297,9 +300,8 @@ const HomeScreen: React.FC = () => {
           }
         />
       ) : (
-        <FlatList
+        <FlashList
           data={filteredReports}
-          keyExtractor={(item) => item.id || Math.random().toString()}
           renderItem={({ item, index }) => (
             <ReportCard
               item={item}
@@ -322,9 +324,7 @@ const HomeScreen: React.FC = () => {
               titleColor="#64748B"
             />
           }
-          initialNumToRender={5}
-          maxToRenderPerBatch={10}
-          windowSize={10}
+          estimatedItemSize={200}
           ListHeaderComponent={
             <Text style={styles.sectionTitle}>
               {activeCategory === "all"
@@ -392,6 +392,9 @@ const ScrollableCategories = ({
     />
   );
 };
+
+// Add this function to memoize the ScrollableCategories component
+const MemoizedScrollableCategories = React.memo(ScrollableCategories);
 
 // Styles for the home screen component
 const styles = StyleSheet.create({

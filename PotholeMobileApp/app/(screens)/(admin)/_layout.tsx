@@ -1,5 +1,6 @@
 "use client";
 
+// Update the tab navigation animations to be smoother
 import { StyleSheet, View, Dimensions } from "react-native";
 import { Tabs } from "expo-router";
 import { useAuth } from "../../../context/auth-context";
@@ -7,7 +8,12 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Platform, StatusBar } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NotificationBadge from "../../components/admin-components/notification-badge";
 
@@ -27,10 +33,24 @@ export default function AdminLayout() {
     Array(4).fill(false)
   );
 
+  // Animation values for tab transitions
+  const tabBarOpacity = useSharedValue(0);
+  const tabBarTranslateY = useSharedValue(20);
+
   // Redirect non-admin users away from admin screens
   useEffect(() => {
     if (!isAdmin) {
       router.replace("/(screens)/(auth)/login");
+    } else {
+      // Animate tab bar entrance when admin is confirmed
+      tabBarOpacity.value = withTiming(1, {
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+      });
+      tabBarTranslateY.value = withTiming(0, {
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+      });
     }
   }, [isAdmin, router]);
 
@@ -58,141 +78,159 @@ export default function AdminLayout() {
     }
   }, [currentRouteName]);
 
+  // Animated styles for tab bar
+  const tabBarAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: tabBarOpacity.value,
+      transform: [{ translateY: tabBarTranslateY.value }],
+    };
+  });
+
   // Admin-specific tab navigation
   return (
-    <Tabs
-      screenOptions={({ route }) => {
-        return {
-          tabBarIcon: ({ focused, color, size }) => {
-            // Define the icon name based on the route and focused state
-            let iconName: any; // Use 'any' type to bypass TypeScript checking for dynamic icon names
-            if (route.name === "portal") {
-              iconName = focused ? "shield" : "shield-outline";
-            } else if (route.name === "report-list") {
-              iconName = focused ? "document-text" : "document-text-outline";
-            } else if (route.name === "users") {
-              iconName = focused ? "people" : "people-outline";
-            } else if (route.name === "profile-settings") {
-              iconName = focused ? "settings" : "settings-outline";
-            } else if (route.name === "admin-notifications") {
-              // Changed from "notifications" to "admin-notifications"
-              iconName = focused ? "notifications" : "notifications-outline";
-            } else {
-              iconName = focused ? "alert-circle" : "alert-circle-outline"; // Default icon
-            }
+    <>
+      <Animated.View style={[styles.tabBarContainer, tabBarAnimatedStyle]}>
+        <Tabs
+          screenOptions={({ route }) => {
+            return {
+              tabBarIcon: ({ focused, color, size }) => {
+                // Define the icon name based on the route and focused state
+                let iconName: any; // Use 'any' type to bypass TypeScript checking for dynamic icon names
+                if (route.name === "portal") {
+                  iconName = focused ? "shield" : "shield-outline";
+                } else if (route.name === "report-list") {
+                  iconName = focused
+                    ? "document-text"
+                    : "document-text-outline";
+                } else if (route.name === "users") {
+                  iconName = focused ? "people" : "people-outline";
+                } else if (route.name === "profile-settings") {
+                  iconName = focused ? "settings" : "settings-outline";
+                } else if (route.name === "admin-notifications") {
+                  // Changed from "notifications" to "admin-notifications"
+                  iconName = focused
+                    ? "notifications"
+                    : "notifications-outline";
+                } else {
+                  iconName = focused ? "alert-circle" : "alert-circle-outline"; // Default icon
+                }
 
-            // For notifications tab, include badge
-            return (
-              <View style={{ position: "relative" }}>
-                <Ionicons name={iconName} size={size} color={color} />
-                {route.name === "admin-notifications" && (
-                  <NotificationBadge isAdmin={true} />
-                )}
-              </View>
-            );
-          },
-          tabBarStyle: [
-            styles.tabBar,
-            { paddingBottom: insets.bottom > 0 ? insets.bottom : 10 },
-            Platform.OS === "ios" ? styles.iosTabBar : styles.androidTabBar,
-          ],
-          tabBarItemStyle: styles.tabBarItem,
-          tabBarActiveTintColor: "#3B82F6",
-          tabBarInactiveTintColor: "#64748B",
-          tabBarLabelStyle: styles.tabBarLabel,
-          headerShown: false,
-          tabBarBackground: () => (
-            <View style={styles.tabBarBackground}>
-              <View style={styles.tabBarBackgroundInner} />
-            </View>
-          ),
-          tabBarButton: (props) => {
-            const { onPress, children, accessibilityState } = props;
-            const isActive = accessibilityState?.selected;
-            const routeName = route.name;
-            const index = [
-              "portal",
-              "report-list",
-              "users",
-              "profile-settings",
-            ].indexOf(routeName);
+                // For notifications tab, include badge
+                return (
+                  <View style={{ position: "relative" }}>
+                    <Ionicons name={iconName} size={size} color={color} />
+                    {route.name === "admin-notifications" && (
+                      <NotificationBadge isAdmin={true} />
+                    )}
+                  </View>
+                );
+              },
+              tabBarStyle: [
+                styles.tabBar,
+                { paddingBottom: insets.bottom > 0 ? insets.bottom : 10 },
+                Platform.OS === "ios" ? styles.iosTabBar : styles.androidTabBar,
+              ],
+              tabBarItemStyle: styles.tabBarItem,
+              tabBarActiveTintColor: "#3B82F6",
+              tabBarInactiveTintColor: "#64748B",
+              tabBarLabelStyle: styles.tabBarLabel,
+              headerShown: false,
+              tabBarBackground: () => (
+                <View style={styles.tabBarBackground}>
+                  <View style={styles.tabBarBackgroundInner} />
+                </View>
+              ),
+              tabBarButton: (props) => {
+                const { onPress, children, accessibilityState } = props;
+                const isActive = accessibilityState?.selected;
+                const routeName = route.name;
+                const index = [
+                  "portal",
+                  "report-list",
+                  "users",
+                  "profile-settings",
+                ].indexOf(routeName);
 
-            return (
-              <Animated.View
-                style={[styles.tabButton, isActive && styles.activeTabButton]}
-              >
-                <Animated.View
-                  style={[
-                    styles.tabButtonInner,
-                    isActive && styles.activeTabButtonInner,
-                  ]}
-                >
+                return (
                   <Animated.View
                     style={[
-                      styles.tabButtonContent,
-                      isActive && {
-                        backgroundColor: "rgba(59, 130, 246, 0.1)",
-                      },
+                      styles.tabButton,
+                      isActive && styles.activeTabButton,
                     ]}
                   >
                     <Animated.View
                       style={[
-                        styles.tabButtonWrapper,
-                        { opacity: isActive ? 1 : 0.8 },
+                        styles.tabButtonInner,
+                        isActive && styles.activeTabButtonInner,
                       ]}
-                      onTouchEnd={onPress}
                     >
-                      {children}
+                      <Animated.View
+                        style={[
+                          styles.tabButtonContent,
+                          isActive && {
+                            backgroundColor: "rgba(59, 130, 246, 0.1)",
+                          },
+                        ]}
+                      >
+                        <Animated.View
+                          style={[
+                            styles.tabButtonWrapper,
+                            { opacity: isActive ? 1 : 0.8 },
+                          ]}
+                          onTouchEnd={onPress}
+                        >
+                          {children}
+                        </Animated.View>
+                      </Animated.View>
                     </Animated.View>
                   </Animated.View>
-                </Animated.View>
-              </Animated.View>
-            );
-          },
-        };
-      }}
-    >
-      <Tabs.Screen
-        name="portal"
-        options={{
-          title: "Dashboard",
-        }}
-      />
-      <Tabs.Screen
-        name="report-list"
-        options={{
-          title: "Reports",
-        }}
-      />
-      <Tabs.Screen
-        name="users"
-        options={{
-          title: "Users",
-        }}
-      />
-      <Tabs.Screen
-        name="admin-notifications" // Changed from "notifications" to "admin-notifications"
-        options={{
-          title: "Notifications",
-        }}
-      />
-      <Tabs.Screen
-        name="profile-settings"
-        options={{
-          title: "Settings",
-        }}
-      />
-      {/* Remove the duplicate notifications screen */}
-
-      {/* Hide any other screens from the tab bar */}
-
-      {/* Hide the original separate screens */}
-    </Tabs>
+                );
+              },
+              // Add smooth animation for tab transitions
+            };
+          }}
+        >
+          <Tabs.Screen
+            name="portal"
+            options={{
+              title: "Dashboard",
+            }}
+          />
+          <Tabs.Screen
+            name="report-list"
+            options={{
+              title: "Reports",
+            }}
+          />
+          <Tabs.Screen
+            name="users"
+            options={{
+              title: "Users",
+            }}
+          />
+          <Tabs.Screen
+            name="admin-notifications" // Changed from "notifications" to "admin-notifications"
+            options={{
+              title: "Notifications",
+            }}
+          />
+          <Tabs.Screen
+            name="profile-settings"
+            options={{
+              title: "Settings",
+            }}
+          />
+        </Tabs>
+      </Animated.View>
+    </>
   );
 }
 
 // Enhanced styles for a more modern tab bar
 const styles = StyleSheet.create({
+  tabBarContainer: {
+    flex: 1,
+  },
   tabBar: {
     backgroundColor: "transparent",
     borderTopWidth: 0,

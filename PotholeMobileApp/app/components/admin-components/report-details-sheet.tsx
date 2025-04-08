@@ -48,13 +48,17 @@ const ReportDetailsSheet = forwardRef<ReportDetailsSheetRef, {}>((_, ref) => {
         useNativeDriver: true,
         tension: 50,
         friction: 10,
+        velocity: 3,
+        overshootClamping: false,
       }).start();
     },
     close: () => {
-      Animated.timing(slideAnim, {
+      Animated.spring(slideAnim, {
         toValue: height,
-        duration: 300,
         useNativeDriver: true,
+        tension: 65,
+        friction: 12,
+        velocity: 8,
       }).start(() => {
         setVisible(false);
         setReport(null);
@@ -81,10 +85,12 @@ const ReportDetailsSheet = forwardRef<ReportDetailsSheetRef, {}>((_, ref) => {
   };
 
   const handleClose = () => {
-    Animated.timing(slideAnim, {
+    Animated.spring(slideAnim, {
       toValue: height,
-      duration: 300,
       useNativeDriver: true,
+      tension: 65,
+      friction: 12,
+      velocity: 8,
     }).start(() => {
       setVisible(false);
       setReport(null);

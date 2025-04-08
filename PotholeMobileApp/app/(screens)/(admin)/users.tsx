@@ -1,14 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Avatar,
@@ -29,6 +22,7 @@ import {
 } from "../../services/admin-service";
 import { useAuth } from "../../../context/auth-context";
 import { MotiView } from "moti";
+import { FlashList } from "@shopify/flash-list";
 
 interface User {
   id: string;
@@ -145,12 +139,18 @@ export default function UsersScreen() {
     }
   };
 
-  // Update the renderUserItem function to better handle emails and avatars
+  // Update the renderUserItem function to add staggered animations
   const renderUserItem = ({ item, index }: { item: User; index: number }) => (
     <MotiView
-      from={{ opacity: 0, translateY: 10 }}
+      from={{ opacity: 0, translateY: 20 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "timing", duration: 300, delay: index * 50 }}
+      transition={{
+        type: "spring",
+        delay: index * 70, // Staggered animation based on index
+        damping: 15,
+        mass: 0.9,
+        stiffness: 100,
+      }}
     >
       <Card style={styles.userCard} mode="elevated">
         <View style={{ overflow: "hidden", borderRadius: 12 }}>
@@ -189,7 +189,12 @@ export default function UsersScreen() {
 
             <View style={styles.userActions}>
               {item.is_admin && (
-                <View style={styles.adminChip}>
+                <MotiView
+                  from={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", damping: 12 }}
+                  style={styles.adminChip}
+                >
                   <MaterialCommunityIcons
                     name="shield-check"
                     size={16}
@@ -197,7 +202,7 @@ export default function UsersScreen() {
                     style={{ marginRight: 4 }}
                   />
                   <Text style={styles.adminChipText}>Admin</Text>
-                </View>
+                </MotiView>
               )}
 
               <TouchableOpacity
@@ -206,6 +211,7 @@ export default function UsersScreen() {
                   item.is_admin && styles.revokeButton,
                 ]}
                 onPress={() => handleToggleAdmin(item)}
+                activeOpacity={0.7}
               >
                 <MaterialCommunityIcons
                   name={item.is_admin ? "shield-off" : "shield"}
@@ -261,11 +267,12 @@ export default function UsersScreen() {
         </LinearGradient>
       </View>
 
-      <FlatList
+      <FlashList
         data={filteredUsers}
         renderItem={renderUserItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
+        estimatedItemSize={150}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <MaterialCommunityIcons

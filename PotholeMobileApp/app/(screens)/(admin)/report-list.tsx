@@ -7,7 +7,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   Alert,
   RefreshControl,
@@ -38,6 +37,9 @@ import { EXPO_PUBLIC_SUPABASE_SECRET_KEY } from "@env";
 import { LinearGradient } from "expo-linear-gradient";
 // First, import the notification function at the top with the other imports
 import { notifyUserAboutStatusChange } from "../../../lib/notifications";
+
+// Replace FlatList with FlashList
+import { FlashList } from "@shopify/flash-list";
 
 export default function AdminReportList() {
   const router = useRouter();
@@ -324,11 +326,25 @@ export default function AdminReportList() {
     </View>
   );
 
-  const renderReportItem = ({ item }: { item: PotholeReport }) => (
+  // Enhance animations in the report list screen
+  // Update the renderReportItem function to add staggered animations
+  const renderReportItem = ({
+    item,
+    index,
+  }: {
+    item: PotholeReport;
+    index: number;
+  }) => (
     <MotiView
-      from={{ opacity: 0, translateY: 10 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "timing", duration: 300 }}
+      from={{ opacity: 0, translateX: -20 }}
+      animate={{ opacity: 1, translateX: 0 }}
+      transition={{
+        type: "spring",
+        delay: index * 50, // Staggered animation based on index
+        damping: 15,
+        mass: 0.8,
+        stiffness: 100,
+      }}
     >
       <Card style={styles.reportCard} mode="elevated">
         <View style={{ overflow: "hidden", borderRadius: 12 }}>
@@ -346,6 +362,7 @@ export default function AdminReportList() {
                 <TouchableOpacity
                   style={styles.actionButton}
                   onPress={() => handleEditReport(item)}
+                  activeOpacity={0.7}
                 >
                   <MaterialCommunityIcons
                     name="pencil"
@@ -356,6 +373,7 @@ export default function AdminReportList() {
                 <TouchableOpacity
                   style={styles.actionButton}
                   onPress={() => handleDeleteReport(item)}
+                  activeOpacity={0.7}
                 >
                   <MaterialCommunityIcons
                     name="delete"
@@ -556,7 +574,7 @@ export default function AdminReportList() {
           <Text style={styles.loadingText}>Loading reports...</Text>
         </View>
       ) : (
-        <FlatList
+        <FlashList
           data={filteredReports}
           renderItem={renderReportItem}
           keyExtractor={(item) => item.id || Math.random().toString()}
@@ -568,6 +586,7 @@ export default function AdminReportList() {
               colors={["#3B82F6"]}
             />
           }
+          estimatedItemSize={200}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <MaterialCommunityIcons

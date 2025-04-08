@@ -5,7 +5,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   RefreshControl,
   Alert,
@@ -27,6 +26,8 @@ import ReportDetailsSheet, {
 // First, import the necessary components for swipe gestures
 import { Swipeable } from "react-native-gesture-handler";
 import { supabase } from "../../../lib/supabase";
+// Replace FlatList with FlashList
+import { FlashList } from "@shopify/flash-list";
 
 interface Notification {
   id: string;
@@ -133,24 +134,42 @@ export default function AdminNotificationsScreen() {
     // Render right actions (delete button) when swiped
     const renderRightActions = () => {
       return (
-        <TouchableOpacity
+        <MotiView
+          from={{ opacity: 0, translateX: 50 }}
+          animate={{ opacity: 1, translateX: 0 }}
+          transition={{ type: "spring", damping: 20 }}
           style={styles.deleteAction}
-          onPress={() => {
-            handleDelete(item.id);
-            swipeableRefs.current.get(item.id)?.close(); // Close the swipeable after deletion
-          }}
         >
-          <MaterialCommunityIcons name="delete" size={24} color="#FFFFFF" />
-          <Text style={styles.deleteActionText}>Delete</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              handleDelete(item.id);
+              swipeableRefs.current.get(item.id)?.close(); // Close the swipeable after deletion
+            }}
+            style={{
+              width: "100%",
+              height: "100%",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <MaterialCommunityIcons name="delete" size={24} color="#FFFFFF" />
+            <Text style={styles.deleteActionText}>Delete</Text>
+          </TouchableOpacity>
+        </MotiView>
       );
     };
 
     return (
       <MotiView
-        from={{ opacity: 0, translateY: 10 }}
+        from={{ opacity: 0, translateY: 20 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 300, delay: index * 50 }}
+        transition={{
+          type: "spring",
+          damping: 15,
+          delay: index * 60,
+          mass: 0.8,
+          stiffness: 100,
+        }}
       >
         <Swipeable
           ref={(ref) => {
@@ -180,6 +199,7 @@ export default function AdminNotificationsScreen() {
                 : styles.unreadNotification,
             ]}
             onPress={() => handleNotificationPress(item)}
+            activeOpacity={0.7}
           >
             <View style={styles.notificationIcon}>
               <MaterialCommunityIcons
@@ -187,7 +207,14 @@ export default function AdminNotificationsScreen() {
                 size={28}
                 color={item.is_read ? "#64748B" : "#3B82F6"}
               />
-              {!item.is_read && <View style={styles.unreadDot} />}
+              {!item.is_read && (
+                <MotiView
+                  from={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", damping: 10 }}
+                  style={styles.unreadDot}
+                />
+              )}
             </View>
 
             <View style={styles.notificationContent}>
@@ -229,7 +256,7 @@ export default function AdminNotificationsScreen() {
       </LinearGradient>
 
       {/* Notification List */}
-      <FlatList
+      <FlashList
         data={notifications}
         renderItem={renderNotificationItem}
         keyExtractor={(item) => item.id}
@@ -242,6 +269,7 @@ export default function AdminNotificationsScreen() {
             colors={["#3B82F6"]}
           />
         }
+        estimatedItemSize={100}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <MaterialCommunityIcons

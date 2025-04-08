@@ -40,7 +40,12 @@ export default function NotificationBadge({ isAdmin }: NotificationBadgeProps) {
     <MotiView
       from={{ opacity: 0, scale: 0.5 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: "spring", damping: 15 }}
+      transition={{
+        type: "spring",
+        damping: 12,
+        stiffness: 120,
+        mass: 0.8,
+      }}
       style={styles.badge}
     >
       <Text style={styles.badgeText}>{count > 99 ? "99+" : count}</Text>
