@@ -8,6 +8,7 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -23,6 +24,9 @@ import { useAuth } from "../../../context/auth-context";
 import ReportDetailsSheet, {
   type ReportDetailsSheetRef,
 } from "../../components/admin-components/report-details-sheet";
+// First, import the necessary components for swipe gestures
+import { Swipeable } from "react-native-gesture-handler";
+import { supabase } from "../../../lib/supabase";
 
 interface Notification {
   id: string;
@@ -42,6 +46,7 @@ export default function AdminNotificationsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const reportDetailsRef = useRef<ReportDetailsSheetRef>(null);
+  const swipeableRefs = useRef<Map<string, Swipeable>>(new Map()); // Store swipeable refs
 
   const fetchNotifications = useCallback(async () => {
     if (!isAdmin) {
@@ -98,50 +103,111 @@ export default function AdminNotificationsScreen() {
     return date.toLocaleString();
   };
 
+  // Update the renderNotificationItem function to include swipe functionality
   const renderNotificationItem = ({
     item,
     index,
   }: {
     item: Notification;
     index: number;
-  }) => (
-    <MotiView
-      from={{ opacity: 0, translateY: 10 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "timing", duration: 300, delay: index * 50 }}
-    >
-      <TouchableOpacity
-        style={[
-          styles.notificationItem,
-          item.is_read ? styles.readNotification : styles.unreadNotification,
-        ]}
-        onPress={() => handleNotificationPress(item)}
+  }) => {
+    // Function to handle notification deletion
+    const handleDelete = async (notificationId: string) => {
+      try {
+        // Delete the notification from the database
+        const { error } = await supabase
+          .from("notifications")
+          .delete()
+          .eq("id", notificationId);
+
+        if (error) throw error;
+
+        // Update local state to remove the deleted notification
+        setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      } catch (error) {
+        console.error("Error deleting notification:", error);
+        Alert.alert("Error", "Failed to delete notification");
+      }
+    };
+
+    // Render right actions (delete button) when swiped
+    const renderRightActions = () => {
+      return (
+        <TouchableOpacity
+          style={styles.deleteAction}
+          onPress={() => {
+            handleDelete(item.id);
+            swipeableRefs.current.get(item.id)?.close(); // Close the swipeable after deletion
+          }}
+        >
+          <MaterialCommunityIcons name="delete" size={24} color="#FFFFFF" />
+          <Text style={styles.deleteActionText}>Delete</Text>
+        </TouchableOpacity>
+      );
+    };
+
+    return (
+      <MotiView
+        from={{ opacity: 0, translateY: 10 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: "timing", duration: 300, delay: index * 50 }}
       >
-        <View style={styles.notificationIcon}>
-          <MaterialCommunityIcons
-            name="alert-circle"
-            size={28}
-            color={item.is_read ? "#64748B" : "#3B82F6"}
-          />
-          {!item.is_read && <View style={styles.unreadDot} />}
-        </View>
+        <Swipeable
+          ref={(ref) => {
+            if (ref) {
+              swipeableRefs.current.set(item.id, ref);
+            } else {
+              swipeableRefs.current.delete(item.id);
+            }
+          }}
+          renderRightActions={renderRightActions}
+          rightThreshold={40}
+          overshootRight={false}
+          onSwipeableOpen={() => {
+            // Close other open items when this one is opened
+            swipeableRefs.current.forEach((ref, id) => {
+              if (id !== item.id) {
+                ref.close();
+              }
+            });
+          }}
+        >
+          <TouchableOpacity
+            style={[
+              styles.notificationItem,
+              item.is_read
+                ? styles.readNotification
+                : styles.unreadNotification,
+            ]}
+            onPress={() => handleNotificationPress(item)}
+          >
+            <View style={styles.notificationIcon}>
+              <MaterialCommunityIcons
+                name="alert-circle"
+                size={28}
+                color={item.is_read ? "#64748B" : "#3B82F6"}
+              />
+              {!item.is_read && <View style={styles.unreadDot} />}
+            </View>
 
-        <View style={styles.notificationContent}>
-          <Text style={styles.notificationTitle}>{item.title}</Text>
-          <Text style={styles.notificationMessage}>{item.message}</Text>
-          <Text style={styles.notificationDate}>
-            {formatDate(item.created_at)}
-          </Text>
-        </View>
+            <View style={styles.notificationContent}>
+              <Text style={styles.notificationTitle}>{item.title}</Text>
+              <Text style={styles.notificationMessage}>{item.message}</Text>
+              <Text style={styles.notificationDate}>
+                {formatDate(item.created_at)}
+              </Text>
+            </View>
 
-        <MaterialCommunityIcons
-          name="chevron-right"
-          size={24}
-          color="#94A3B8"
-        />
-      </TouchableOpacity>
-    </MotiView>
-  );
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={24}
+              color="#94A3B8"
+            />
+          </TouchableOpacity>
+        </Swipeable>
+      </MotiView>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -202,6 +268,7 @@ export default function AdminNotificationsScreen() {
   );
 }
 
+// Add these styles at the end of the styles object
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -305,5 +372,19 @@ const styles = StyleSheet.create({
     color: "#64748B",
     textAlign: "center",
     marginTop: 8,
+  },
+  deleteAction: {
+    backgroundColor: "#EF4444",
+    justifyContent: "center",
+    alignItems: "center",
+    width: 100,
+    height: "100%",
+    flexDirection: "column",
+  },
+  deleteActionText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
+    marginTop: 4,
   },
 });
