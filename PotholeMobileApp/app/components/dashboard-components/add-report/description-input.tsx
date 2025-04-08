@@ -1,6 +1,9 @@
+"use client";
+
 import type React from "react";
 import { View, StyleSheet } from "react-native";
 import { TextInput, HelperText } from "react-native-paper";
+import { useTheme } from "../../../../context/theme-context";
 
 interface DescriptionInputProps {
   value: string;
@@ -13,6 +16,8 @@ const DescriptionInput: React.FC<DescriptionInputProps> = ({
   onChangeText,
   error,
 }) => {
+  const { theme, isDarkMode } = useTheme();
+
   return (
     <View>
       <TextInput
@@ -22,21 +27,47 @@ const DescriptionInput: React.FC<DescriptionInputProps> = ({
         onChangeText={onChangeText}
         multiline
         numberOfLines={4}
-        style={styles.input}
+        style={[styles.input, { backgroundColor: theme.colors.surface }]}
         outlineStyle={styles.inputOutline}
-        outlineColor={error ? "#DC2626" : "#E2E8F0"}
-        activeOutlineColor="#0284c7"
+        outlineColor={error ? theme.colors.error : theme.colors.outline}
+        activeOutlineColor={theme.colors.primary}
         error={!!error}
-        left={<TextInput.Icon icon="text-box-outline" color="#64748B" />}
+        left={
+          <TextInput.Icon
+            icon="text-box-outline"
+            color={theme.colors.primary}
+          />
+        }
         maxLength={500}
         autoCapitalize="sentences"
+        theme={{
+          colors: {
+            text: theme.colors.text,
+            placeholder: theme.colors.placeholder,
+            disabled: isDarkMode
+              ? theme.colors.textSecondary
+              : theme.colors.onSurfaceVariant,
+            onSurfaceVariant: theme.colors.onSurfaceVariant,
+            background: theme.colors.surface,
+            primary: theme.colors.primary,
+            error: theme.colors.error,
+          },
+        }}
       />
       {error ? (
-        <HelperText type="error" visible={true} style={styles.errorText}>
+        <HelperText
+          type="error"
+          visible={true}
+          style={[styles.errorText, { color: theme.colors.error }]}
+        >
           {error}
         </HelperText>
       ) : (
-        <HelperText type="info" visible={true} style={styles.helperText}>
+        <HelperText
+          type="info"
+          visible={true}
+          style={[styles.helperText, { color: theme.colors.textSecondary }]}
+        >
           Minimum 10 characters. {value.length}/500 characters used.
         </HelperText>
       )}
@@ -46,7 +77,6 @@ const DescriptionInput: React.FC<DescriptionInputProps> = ({
 
 const styles = StyleSheet.create({
   input: {
-    backgroundColor: "#FFFFFF",
     fontSize: 15,
     minHeight: 120,
   },
@@ -54,12 +84,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   errorText: {
-    color: "#DC2626",
     fontSize: 12,
     marginTop: 4,
   },
   helperText: {
-    color: "#64748B",
     fontSize: 12,
     marginTop: 4,
   },

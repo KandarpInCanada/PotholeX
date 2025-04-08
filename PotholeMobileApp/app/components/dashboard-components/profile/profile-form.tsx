@@ -1,7 +1,9 @@
+"use client";
+
 import type React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { TextInput } from "react-native-paper";
-import { lightTheme } from "../../../theme";
+import { useTheme } from "../../../../context/theme-context";
 
 type ProfileFormProps = {
   profile: {
@@ -25,83 +27,113 @@ export default function ProfileForm({
   editMode,
   setProfile,
 }: ProfileFormProps) {
-  console.log("ProfileForm received profile:", profile);
+  const { theme, isDarkMode } = useTheme();
+
   return (
     <View style={styles.formContainer}>
-      <Text style={styles.sectionTitle}>Profile Information</Text>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+        Profile Information
+      </Text>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Username</Text>
+        <Text
+          style={[styles.inputLabel, { color: theme.colors.textSecondary }]}
+        >
+          Username
+        </Text>
         <TextInput
           value={profile.username || ""}
           onChangeText={(text) =>
             setProfile((prev) => ({ ...prev, username: text }))
           }
-          style={styles.input}
+          style={[styles.input, { backgroundColor: theme.colors.surface }]}
           disabled={!editMode}
           mode="outlined"
-          outlineColor={lightTheme.colors.outline}
-          activeOutlineColor={lightTheme.colors.primary}
-          left={<TextInput.Icon icon="account" color="#3B82F6" />}
+          outlineColor={theme.colors.outline}
+          activeOutlineColor={theme.colors.primary}
+          left={<TextInput.Icon icon="account" color={theme.colors.primary} />}
           placeholder="Enter username"
           theme={{
             colors: {
-              text: "#0F172A",
-              placeholder: "#64748B",
-              disabled: "#334155",
-              onSurfaceVariant: "#475569",
-              background: "#FFFFFF",
+              text: theme.colors.text,
+              placeholder: theme.colors.placeholder,
+              disabled: isDarkMode
+                ? theme.colors.textSecondary
+                : theme.colors.onSurfaceVariant,
+              onSurfaceVariant: theme.colors.onSurfaceVariant,
+              background: theme.colors.surface,
+              primary: theme.colors.primary,
             },
           }}
         />
       </View>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Full Name</Text>
+        <Text
+          style={[styles.inputLabel, { color: theme.colors.textSecondary }]}
+        >
+          Full Name
+        </Text>
         <TextInput
           value={profile.full_name || ""}
           onChangeText={(text) =>
             setProfile((prev) => ({ ...prev, full_name: text }))
           }
-          style={styles.input}
+          style={[styles.input, { backgroundColor: theme.colors.surface }]}
           disabled={!editMode}
           mode="outlined"
-          outlineColor={lightTheme.colors.outline}
-          activeOutlineColor={lightTheme.colors.primary}
-          left={<TextInput.Icon icon="badge-account" color="#3B82F6" />}
+          outlineColor={theme.colors.outline}
+          activeOutlineColor={theme.colors.primary}
+          left={
+            <TextInput.Icon icon="badge-account" color={theme.colors.primary} />
+          }
           placeholder="Enter full name"
           theme={{
             colors: {
-              text: "#0F172A",
-              placeholder: "#64748B",
-              disabled: "#334155",
-              onSurfaceVariant: "#475569",
-              background: "#FFFFFF",
+              text: theme.colors.text,
+              placeholder: theme.colors.placeholder,
+              disabled: isDarkMode
+                ? theme.colors.textSecondary
+                : theme.colors.onSurfaceVariant,
+              onSurfaceVariant: theme.colors.onSurfaceVariant,
+              background: theme.colors.surface,
+              primary: theme.colors.primary,
             },
           }}
         />
       </View>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Email</Text>
+        <Text
+          style={[styles.inputLabel, { color: theme.colors.textSecondary }]}
+        >
+          Email
+        </Text>
         <TextInput
           value={profile.email || ""}
-          style={styles.input}
+          style={[styles.input, { backgroundColor: theme.colors.surface }]}
           disabled={true}
           mode="outlined"
-          outlineColor={lightTheme.colors.outline}
-          left={<TextInput.Icon icon="email" color="#3B82F6" />}
+          outlineColor={theme.colors.outline}
+          left={<TextInput.Icon icon="email" color={theme.colors.primary} />}
           theme={{
             colors: {
-              text: "#0F172A",
-              placeholder: "#64748B",
-              disabled: "#334155",
-              onSurfaceVariant: "#475569",
-              background: "#FFFFFF",
+              text: theme.colors.text,
+              placeholder: theme.colors.placeholder,
+              disabled: isDarkMode
+                ? theme.colors.textSecondary
+                : theme.colors.onSurfaceVariant,
+              onSurfaceVariant: theme.colors.onSurfaceVariant,
+              background: theme.colors.surface,
+              primary: theme.colors.primary,
             },
           }}
         />
-        <Text style={styles.helperText}>Email cannot be changed</Text>
+        <Text
+          style={[styles.helperText, { color: theme.colors.textSecondary }]}
+        >
+          Email cannot be changed
+        </Text>
       </View>
     </View>
   );
@@ -114,7 +146,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: lightTheme.colors.text,
     marginBottom: 16,
   },
   inputContainer: {
@@ -122,17 +153,14 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    color: "#475569",
     fontWeight: "500",
     marginBottom: 8,
   },
   input: {
-    backgroundColor: lightTheme.colors.background,
-    color: "#1E293B",
+    fontSize: 16,
   },
   helperText: {
     fontSize: 12,
-    color: "#64748B",
     marginTop: 4,
     marginLeft: 8,
   },

@@ -417,6 +417,7 @@ const styles = StyleSheet.create({
     color: "#334155",
     marginLeft: 8,
     flex: 1,
+    fontWeight: "400",
   },
   divider: {
     height: 1,
@@ -433,6 +434,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     color: "#334155",
+    fontWeight: "400",
   },
   reporterContainer: {
     flexDirection: "row",

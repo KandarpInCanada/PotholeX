@@ -14,8 +14,18 @@ import { registerForPushNotificationsAsync } from "../lib/notifications";
 // Update the RootLayoutInner component to handle auth state changes more reliably
 function RootLayoutInner() {
   const { user, loading, isAdmin } = useAuth();
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   const router = useRouter();
+
+  // Update StatusBar based on theme
+  useEffect(() => {
+    StatusBar.setBarStyle(isDarkMode ? "light-content" : "dark-content");
+    if (Platform.OS === "android") {
+      StatusBar.setBackgroundColor(
+        isDarkMode ? theme.colors.background : "#FFFFFF"
+      );
+    }
+  }, [isDarkMode, theme]);
 
   // Effect to handle navigation based on auth state
   useEffect(() => {
@@ -79,10 +89,6 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <StatusBar
-          barStyle="dark-content"
-          backgroundColor={Platform.OS === "android" ? "#FFFFFF" : undefined}
-        />
         <GestureHandlerRootView style={{ flex: 1 }}>
           <InnerApp />
         </GestureHandlerRootView>

@@ -1,6 +1,8 @@
+"use client";
+
 import { StyleSheet } from "react-native";
 import { TextInput } from "react-native-paper";
-import { lightTheme } from "../../../app/theme";
+import { useTheme } from "../../../context/theme-context";
 
 interface AuthInputProps {
   label: string;
@@ -23,6 +25,8 @@ const AuthInput = ({
   autoCapitalize = "none",
   icon,
 }: AuthInputProps) => {
+  const { theme, isDarkMode } = useTheme();
+
   return (
     <TextInput
       label={label}
@@ -32,25 +36,22 @@ const AuthInput = ({
       secureTextEntry={secureTextEntry}
       keyboardType={keyboardType}
       autoCapitalize={autoCapitalize}
-      style={styles.input}
-      left={<TextInput.Icon icon={icon} color="#4285F4" />}
+      style={[styles.input, { backgroundColor: theme.colors.surface }]}
+      left={<TextInput.Icon icon={icon} color={theme.colors.primary} />}
       right={
         toggleSecureEntry && secureTextEntry !== undefined ? (
           <TextInput.Icon
             icon={secureTextEntry ? "eye-off" : "eye"}
-            color="#4285F4"
+            color={theme.colors.primary}
             onPress={toggleSecureEntry}
           />
         ) : null
       }
       theme={{
         colors: {
-          primary: "#4285F4",
-          text: "#0F172A",
-          placeholder: "#64748B",
-          background: "transparent",
-          onSurfaceVariant: "#475569",
-          disabled: "#334155",
+          primary: theme.colors.primary,
+          onSurfaceVariant: theme.colors.onSurfaceVariant,
+          background: theme.colors.surface,
         },
       }}
     />
@@ -60,7 +61,6 @@ const AuthInput = ({
 const styles = StyleSheet.create({
   input: {
     marginBottom: 16,
-    backgroundColor: lightTheme.colors.surface,
     height: 56,
     fontSize: 16,
     borderRadius: 12,

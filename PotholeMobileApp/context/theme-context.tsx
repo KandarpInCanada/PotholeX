@@ -3,11 +3,11 @@
 import type React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 import { useColorScheme } from "react-native";
-import { lightTheme, darkTheme } from "../app/theme";
+import { lightTheme, darkTheme, type CustomTheme } from "../app/theme";
 
-// Define the theme context type
+// Define the theme context type using our CustomTheme
 type ThemeContextType = {
-  theme: typeof lightTheme;
+  theme: CustomTheme;
   isDarkMode: boolean;
   toggleTheme: () => void;
 };
