@@ -91,3 +91,7 @@ const darkTheme = {
 
 export { lightTheme, darkTheme }
 
+export default {
+  lightTheme,
+  darkTheme,
+}

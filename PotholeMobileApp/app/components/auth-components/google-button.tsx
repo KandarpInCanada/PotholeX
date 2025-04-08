@@ -14,7 +14,7 @@ interface GoogleButtonProps {
   loading?: boolean;
 }
 
-export const GoogleButton: React.FC<GoogleButtonProps> = ({
+const GoogleButton: React.FC<GoogleButtonProps> = ({
   onPress,
   disabled = false,
   loading = false,
@@ -77,3 +77,5 @@ const styles = StyleSheet.create({
     color: "#1F2937",
   },
 });
+
+export default GoogleButton;

@@ -5,16 +5,16 @@ import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { Portal } from "react-native-paper";
 import { useAuth } from "../../../context/auth-context";
-import { useFormState } from "../../hooks/use-form-state";
-import { AuthContainer } from "../../components/auth-components/auth-container";
-import { AuthHeader } from "../../components/auth-components/auth-header";
-import { AuthForm } from "../../components/auth-components/auth-form";
-import { AuthInput } from "../../components/auth-components/auth-input";
+import useFormState from "../../hooks/use-form-state";
+import AuthContainer from "../../components/auth-components/auth-container";
+import AuthHeader from "../../components/auth-components/auth-header";
+import AuthForm from "../../components/auth-components/auth-form";
+import AuthInput from "../../components/auth-components/auth-input";
 import AuthButton from "../../components/auth-components/auth-button";
-import { AuthDivider } from "../../components/auth-components/auth-divider";
-import { GoogleButton } from "../../components/auth-components/google-button";
-import { AuthFooter } from "../../components/auth-components/auth-footer";
-import { AuthDialog } from "../../components/auth-components/auth-dialog";
+import AuthDivider from "../../components/auth-components/auth-divider";
+import GoogleButton from "../../components/auth-components/google-button";
+import AuthFooter from "../../components/auth-components/auth-footer";
+import AuthDialog from "../../components/auth-components/auth-dialog";
 import NewRadarLoader from "../../components/auth-components/radar-loader";
 import { checkAdminStatus } from "../../services/admin-service"; // Import directly
 import { supabase } from "../../../lib/supabase"; // Import supabase
@@ -187,7 +187,7 @@ const LoginScreen = () => {
       <AuthFooter
         text="Don't have an account?"
         linkText="Sign up"
-        onPress={() => router.replace("/register")}
+        onPress={() => router.push("(screens)/(auth)/register")}
       />
 
       {/* Error dialog portal for displaying authentication errors */}

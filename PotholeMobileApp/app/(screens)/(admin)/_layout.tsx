@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Platform, StatusBar } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import NotificationBadge from "../../components/admin-components/notification-badge";
 
 const { width } = Dimensions.get("window");
 
@@ -73,11 +74,22 @@ export default function AdminLayout() {
               iconName = focused ? "people" : "people-outline";
             } else if (route.name === "profile-settings") {
               iconName = focused ? "settings" : "settings-outline";
+            } else if (route.name === "admin-notifications") {
+              // Changed from "notifications" to "admin-notifications"
+              iconName = focused ? "notifications" : "notifications-outline";
             } else {
               iconName = focused ? "alert-circle" : "alert-circle-outline"; // Default icon
             }
 
-            return <Ionicons name={iconName} size={size} color={color} />;
+            // For notifications tab, include badge
+            return (
+              <View style={{ position: "relative" }}>
+                <Ionicons name={iconName} size={size} color={color} />
+                {route.name === "admin-notifications" && (
+                  <NotificationBadge isAdmin={true} />
+                )}
+              </View>
+            );
           },
           tabBarStyle: [
             styles.tabBar,
@@ -159,34 +171,22 @@ export default function AdminLayout() {
         }}
       />
       <Tabs.Screen
+        name="admin-notifications" // Changed from "notifications" to "admin-notifications"
+        options={{
+          title: "Notifications",
+        }}
+      />
+      <Tabs.Screen
         name="profile-settings"
         options={{
           title: "Settings",
         }}
       />
-      {/* Add notifications screen but hide it from tab bar */}
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: "Notifications",
-          href: null, // This prevents the tab from being accessible via the tab bar
-        }}
-      />
+      {/* Remove the duplicate notifications screen */}
+
       {/* Hide any other screens from the tab bar */}
 
       {/* Hide the original separate screens */}
-      <Tabs.Screen
-        name="profile"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          href: null,
-        }}
-      />
     </Tabs>
   );
 }

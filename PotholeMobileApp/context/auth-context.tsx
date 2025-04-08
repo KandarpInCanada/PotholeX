@@ -10,6 +10,11 @@ import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 // Add isAdmin state and checkAdminStatus import
 import { checkAdminStatus } from "../app/services/admin-service";
+/* Add the following imports at the top */
+import {
+  registerForPushNotificationsAsync,
+  savePushToken,
+} from "../lib/notifications";
 
 // Add isAdmin to the AuthContextType
 type AuthContextType = {
@@ -19,6 +24,7 @@ type AuthContextType = {
   googleAuthLoading: boolean;
   googleError: string | null;
   isAdmin: boolean;
+  expoPushToken: string | null; // Add this line
   signUp: (
     email: string,
     password: string,
@@ -33,6 +39,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/* Update the AuthProvider component to register for push notifications */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -43,6 +50,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [googleError, setGoogleError] = useState<string | null>(null);
   // In the AuthProvider component, add isAdmin state
   const [isAdmin, setIsAdmin] = useState(false);
+  // Add new state for push token
+  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
 
   // Handle deep links for auth redirects
   useEffect(() => {
@@ -142,6 +151,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     checkUserAdminStatus();
+  }, [user]);
+
+  // Add new useEffect for push notification registration
+  useEffect(() => {
+    const registerForPushNotifications = async () => {
+      if (user) {
+        try {
+          const token = await registerForPushNotificationsAsync();
+          if (token) {
+            setExpoPushToken(token);
+            await savePushToken(user.id, token);
+          }
+        } catch (error) {
+          console.error("Error registering for push notifications:", error);
+        }
+      }
+    };
+
+    registerForPushNotifications();
   }, [user]);
 
   // Improve the signIn function to check admin status after successful login
@@ -309,7 +337,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Add isAdmin to the context value
+  // Add expoPushToken to the context value
   return (
     <AuthContext.Provider
       value={{
@@ -319,6 +347,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         googleAuthLoading,
         googleError,
         isAdmin,
+        expoPushToken,
         signUp,
         signIn,
         signInWithGoogle,

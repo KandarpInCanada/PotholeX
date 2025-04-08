@@ -1,6 +1,7 @@
 import { supabase, type PotholeReport, ReportStatus, type Profile, SeverityLevel } from "../../lib/supabase"
 import * as FileSystem from "expo-file-system"
-import { SUPABASE_URL, SUPABASE_ANON_KEY, STORAGE_BUCKET_NAME } from "../../config/env";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, STORAGE_BUCKET_NAME } from "../../config/env"
+import { notifyAdminsAboutNewReport } from "../../lib/notifications"
 
 // Get user profile
 export const getUserProfile = async (): Promise<(Profile & { id: string; email: string }) | null> => {
@@ -44,6 +45,8 @@ export const saveReport = async (
       road_condition: report.road_condition || "Dry",
       status: ReportStatus.SUBMITTED,
     }
+
+    // First save the report
     const { data, error } = await supabase.from("pothole_reports").insert(reportData).select("*")
     if (error) {
       console.error("Supabase insert error:", error)
@@ -52,6 +55,24 @@ export const saveReport = async (
         error: "Failed to create report. Please try again.",
       }
     }
+
+    // Then try to send notification, but don't let it affect the report submission result
+    if (data && data.length > 0) {
+      const savedReport = data[0]
+      // Use setTimeout to make this non-blocking
+      setTimeout(() => {
+        try {
+          notifyAdminsAboutNewReport(savedReport.id, {
+            location: savedReport.location || "Unknown location",
+            severity: savedReport.severity,
+            category: savedReport.category,
+          }).catch((err) => console.error("Notification error (caught):", err))
+        } catch (notificationError) {
+          console.error("Error sending notification:", notificationError)
+        }
+      }, 0)
+    }
+
     return { success: true, data: data?.[0] }
   } catch (error: any) {
     console.error("Error in saveReport:", error)
@@ -79,7 +100,6 @@ export const uploadReportImages = async (images: string[], reportId: string): Pr
         const fileExt = uri.split(".").pop()?.toLowerCase() || "jpg"
         const fileName = `${reportId}_${i}.${fileExt}`
         const filePath = `reports/${reportId}/${fileName}`
-        // For debugging
         console.log(`File exists: ${fileInfo.exists}, size: ${fileInfo.size}, uri: ${uri}`)
         // Create a FormData object (more reliable than blob for React Native)
         const formData = new FormData()
@@ -211,3 +231,13 @@ export const deleteReport = async (reportId: string): Promise<boolean> => {
   }
 }
 
+export default {
+  getUserProfile,
+  saveReport,
+  uploadReportImages,
+  getAllReports,
+  getUserReports,
+  getReportById,
+  likeReport,
+  deleteReport,
+}

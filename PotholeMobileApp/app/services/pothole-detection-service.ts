@@ -84,3 +84,7 @@ export const checkApiHealth = async (): Promise<boolean> => {
   }
 }
 
+export default {
+  detectPothole,
+  checkApiHealth,
+}

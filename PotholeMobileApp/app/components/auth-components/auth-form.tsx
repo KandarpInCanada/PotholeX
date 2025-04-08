@@ -6,7 +6,7 @@ interface AuthFormProps {
   children: React.ReactNode;
 }
 
-export const AuthForm = ({ children }: AuthFormProps) => {
+const AuthForm = ({ children }: AuthFormProps) => {
   return (
     <MotiView
       from={{ opacity: 0, translateY: 20 }}
@@ -29,3 +29,5 @@ const styles = StyleSheet.create({
     maxWidth: 360,
   },
 });
+
+export default AuthForm;

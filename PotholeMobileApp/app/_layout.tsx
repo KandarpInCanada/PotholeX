@@ -2,13 +2,14 @@
 
 // Update the StatusBar component to ensure it matches the header background color
 import { Stack } from "expo-router";
-import { View, ActivityIndicator, StatusBar } from "react-native";
+import { View, ActivityIndicator, StatusBar, Platform } from "react-native";
 import { AuthProvider, useAuth } from "../context/auth-context";
 import { Provider as PaperProvider } from "react-native-paper";
 import { ThemeProvider, useTheme } from "../context/theme-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
+import { registerForPushNotificationsAsync } from "../lib/notifications";
 
 // Update the RootLayoutInner component to handle auth state changes more reliably
 function RootLayoutInner() {
@@ -63,10 +64,25 @@ function RootLayoutInner() {
 
 // Wrap the entire app with AuthProvider and ThemeProvider
 export default function RootLayout() {
+  useEffect(() => {
+    // Register for push notifications when the app starts
+    const registerForNotifications = async () => {
+      try {
+        await registerForPushNotificationsAsync();
+      } catch (error) {
+        console.error("Error registering for push notifications:", error);
+      }
+    };
+
+    registerForNotifications();
+  }, []);
   return (
     <AuthProvider>
       <ThemeProvider>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor={Platform.OS === "android" ? "#FFFFFF" : undefined}
+        />
         <GestureHandlerRootView style={{ flex: 1 }}>
           <InnerApp />
         </GestureHandlerRootView>

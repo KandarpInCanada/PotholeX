@@ -24,3 +24,8 @@ export const STATUS_ICONS: Record<ReportStatus, IconName> = {
   [ReportStatus.REJECTED]: "close-circle",
 }
 
+export default {
+  SEVERITY_COLORS,
+  STATUS_COLORS,
+  STATUS_ICONS,
+}

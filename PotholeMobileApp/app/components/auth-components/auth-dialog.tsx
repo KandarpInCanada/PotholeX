@@ -10,7 +10,7 @@ interface AuthDialogProps {
   buttonText?: string;
 }
 
-export const AuthDialog = ({
+const AuthDialog = ({
   visible,
   onDismiss,
   title,
@@ -50,3 +50,5 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 });
+
+export default AuthDialog;

@@ -67,3 +67,8 @@ export const revokeAdminPrivileges = async (userId: string, serviceKey?: string)
   }
 }
 
+export default {
+  checkAdminStatus,
+  grantAdminPrivileges,
+  revokeAdminPrivileges,
+}

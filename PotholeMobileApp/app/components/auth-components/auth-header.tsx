@@ -10,7 +10,7 @@ interface AuthHeaderProps {
   icon?: React.ReactNode;
 }
 
-export const AuthHeader = ({ title, subtitle, icon }: AuthHeaderProps) => {
+const AuthHeader = ({ title, subtitle, icon }: AuthHeaderProps) => {
   return (
     <MotiView
       from={{ opacity: 0, scale: 0.9 }}
@@ -50,3 +50,5 @@ const styles = StyleSheet.create({
     maxWidth: 280,
   },
 });
+
+export default AuthHeader;

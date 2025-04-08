@@ -13,7 +13,7 @@ interface AuthInputProps {
   icon: string;
 }
 
-export const AuthInput = ({
+const AuthInput = ({
   label,
   value,
   onChangeText,
@@ -66,3 +66,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
 });
+
+export default AuthInput;

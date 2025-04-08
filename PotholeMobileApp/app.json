@@ -3,6 +3,7 @@
       "name": "PotholeX",
       "slug": "potholex",
       "version": "1.0.0",
+      "projectId": "81aa287b-9181-4ab6-a423-666bb996cdfd",
       "orientation": "portrait",
       "updates": {
         "fallbackToCacheTimeout": 0

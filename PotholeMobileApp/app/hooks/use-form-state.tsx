@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 
 export function useFormState<T extends Record<string, string>>(
@@ -36,3 +38,6 @@ export function useFormState<T extends Record<string, string>>(
     initSecureTextEntry,
   };
 }
+
+// Export as default for backward compatibility
+export default useFormState;

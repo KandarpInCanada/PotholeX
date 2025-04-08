@@ -135,3 +135,8 @@ export const uploadProfileAvatar = async (uri: string, userId: string): Promise<
   }
 }
 
+export default {
+  getUserProfile,
+  updateUserProfile,
+  uploadProfileAvatar,
+}

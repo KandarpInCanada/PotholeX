@@ -9,7 +9,7 @@ interface AuthFooterProps {
   onPress: () => void;
 }
 
-export const AuthFooter = ({ text, linkText, onPress }: AuthFooterProps) => {
+const AuthFooter = ({ text, linkText, onPress }: AuthFooterProps) => {
   return (
     <MotiView
       from={{ opacity: 0 }}
@@ -50,3 +50,5 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
+export default AuthFooter;

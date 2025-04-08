@@ -15,7 +15,7 @@ interface AuthContainerProps {
   children: React.ReactNode;
 }
 
-export const AuthBackground = () => {
+const AuthBackground = () => {
   return (
     <View style={StyleSheet.absoluteFillObject}>
       <BackgroundPattern />
@@ -33,7 +33,7 @@ export const AuthBackground = () => {
   );
 };
 
-export const AuthContainer = ({ children }: AuthContainerProps) => {
+const AuthContainer = ({ children }: AuthContainerProps) => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -59,3 +59,6 @@ const styles = StyleSheet.create({
     padding: 24,
   },
 });
+
+export { AuthBackground };
+export default AuthContainer;

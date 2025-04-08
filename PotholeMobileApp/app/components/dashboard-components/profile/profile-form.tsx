@@ -25,9 +25,7 @@ export default function ProfileForm({
   editMode,
   setProfile,
 }: ProfileFormProps) {
-  // Add console log to debug the profile data
   console.log("ProfileForm received profile:", profile);
-
   return (
     <View style={styles.formContainer}>
       <Text style={styles.sectionTitle}>Profile Information</Text>

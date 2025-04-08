@@ -21,7 +21,7 @@ export const BackgroundPattern = () => (
   </Svg>
 );
 
-export const AuthBackground = ({ children }: { children: React.ReactNode }) => {
+const AuthBackground = ({ children }: { children: React.ReactNode }) => {
   return (
     <View style={StyleSheet.absoluteFillObject}>
       <BackgroundPattern />
@@ -39,3 +39,5 @@ export const AuthBackground = ({ children }: { children: React.ReactNode }) => {
     </View>
   );
 };
+
+export default AuthBackground;
