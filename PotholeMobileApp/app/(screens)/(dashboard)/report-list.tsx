@@ -24,6 +24,10 @@ import ReportItem from "../../components/dashboard-components/report-list/report
 import EmptyState from "../../components/dashboard-components/report-list/empty-state";
 import { LinearGradient } from "expo-linear-gradient";
 import { FlashList } from "@shopify/flash-list";
+// Add this import at the top of the file with the other imports
+import ReportDetailsSheet, {
+  type ReportDetailsSheetRef,
+} from "../../components/dashboard-components/report-details-sheet";
 
 const { width } = Dimensions.get("window");
 
@@ -62,6 +66,8 @@ export default function ReportListScreen() {
 
   // Refs
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
+  // Add this inside the ReportListScreen function, after other state declarations:
+  const reportDetailsRef = useRef<ReportDetailsSheetRef>(null);
 
   // Memoized callback to fetch user reports
   const fetchReports = useCallback(async () => {
@@ -133,8 +139,11 @@ export default function ReportListScreen() {
   };
 
   // Navigate to report details
+  // Modify the navigateToReportDetails function:
   const navigateToReportDetails = (reportId: string) => {
-    router.push(`/dashboard/report-details/${reportId}`);
+    if (reportId) {
+      reportDetailsRef.current?.open(reportId);
+    }
   };
 
   // Handle swipe actions
@@ -715,6 +724,8 @@ export default function ReportListScreen() {
           />
         ))}
       </Menu>
+      {/* Add this at the end of the return statement, right before the closing tag of SafeAreaView: */}
+      <ReportDetailsSheet ref={reportDetailsRef} />
     </SafeAreaView>
   );
 }
@@ -837,7 +848,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
-    paddingBottom: 100,
+    paddingBottom: 100, // Increase this value to ensure content isn't hidden behind the tab bar
   },
   listHeader: {
     marginBottom: 16,

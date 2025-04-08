@@ -236,6 +236,7 @@ const styles = StyleSheet.create({
     elevation: 0,
     height: Platform.OS === "ios" ? 85 : 70,
     paddingTop: 5,
+    zIndex: 1000, // Set a specific z-index that's lower than the report details sheet
   },
   iosTabBar: {
     shadowColor: "#000000",

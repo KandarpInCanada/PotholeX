@@ -38,6 +38,9 @@ import type {
   ReportStatus,
 } from "../../../lib/supabase";
 import { useRouter } from "expo-router";
+import ReportDetailsSheet, {
+  type ReportDetailsSheetRef,
+} from "../../components/dashboard-components/report-details-sheet";
 
 // Define types
 interface LocationType {
@@ -100,6 +103,7 @@ export default function MapScreen() {
   const mapRef = useRef<MapView | null>(null);
   const searchBarAnimation = useRef(new Animated.Value(0)).current;
   const fabAnimation = useRef(new Animated.Value(0)).current;
+  const reportDetailsRef = useRef<ReportDetailsSheetRef>(null);
 
   // Destructure state for convenience
   const {
@@ -543,7 +547,7 @@ export default function MapScreen() {
         }}
         pinColor={getPotholeMarkerColor(pothole.severity)}
         onCalloutPress={() =>
-          pothole.id && navigateToReportDetailsCallback(pothole.id)
+          pothole.id && reportDetailsRef.current?.open(pothole.id)
         }
         tracksViewChanges={false} // Add this to improve performance
       >
@@ -559,22 +563,30 @@ export default function MapScreen() {
         </View>
         <Callout tooltip>
           <View style={styles.callout}>
-            <Text style={styles.calloutTitle}>{pothole.category}</Text>
+            <Text style={styles.calloutTitle}>
+              {pothole.category || "Unknown"}
+            </Text>
             <Text style={styles.calloutDescription} numberOfLines={2}>
-              {pothole.description}
+              {pothole.description
+                ? pothole.description.length > 60
+                  ? pothole.description.substring(0, 60) + "..."
+                  : pothole.description
+                : "No description provided"}
             </Text>
             <View style={styles.calloutFooter}>
-              <Chip
-                style={[
-                  styles.calloutChip,
-                  {
-                    backgroundColor: getPotholeMarkerColor(pothole.severity),
-                  },
-                ]}
-                textStyle={styles.calloutChipText}
-              >
-                {pothole.severity}
-              </Chip>
+              <View style={styles.calloutChipContainer}>
+                <Chip
+                  style={[
+                    styles.calloutChip,
+                    {
+                      backgroundColor: getPotholeMarkerColor(pothole.severity),
+                    },
+                  ]}
+                  textStyle={styles.calloutChipText}
+                >
+                  {pothole.severity}
+                </Chip>
+              </View>
               <Text style={styles.calloutTapText}>Tap for details</Text>
             </View>
           </View>
@@ -609,6 +621,7 @@ export default function MapScreen() {
     ],
   };
 
+  // Add a higher z-index to the ReportDetailsSheet reference
   return (
     <SafeAreaView style={styles.safeArea} edges={["right", "left"]}>
       <View style={styles.container}>
@@ -1091,6 +1104,8 @@ export default function MapScreen() {
             </Dialog.Actions>
           </Dialog>
         </Portal>
+        {/* Make sure the ReportDetailsSheet is the last element in the return statement */}
+        <ReportDetailsSheet ref={reportDetailsRef} />
       </View>
     </SafeAreaView>
   );
@@ -1228,7 +1243,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   callout: {
-    width: 200,
+    width: 220,
     backgroundColor: "white",
     borderRadius: 12,
     padding: 12,
@@ -1246,27 +1261,41 @@ const styles = StyleSheet.create({
   },
   calloutDescription: {
     fontSize: 14,
-    marginBottom: 8,
+    marginBottom: 10,
     color: "#64748B",
+    lineHeight: 18,
   },
   calloutFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginTop: 4,
+  },
+  calloutChipContainer: {
+    flex: 1,
+    marginRight: 8,
   },
   calloutChip: {
-    height: 24,
+    height: 28,
     paddingHorizontal: 8,
+    alignSelf: "flex-start",
+    justifyContent: "center", // Add this to center text vertically
+    alignItems: "center", // Add this to center content
   },
   calloutChipText: {
     fontSize: 12,
     color: "white",
     fontWeight: "bold",
+    textAlign: "center", // Add this to center text horizontally
+    textAlignVertical: "center", // Add this for Android vertical alignment
+    includeFontPadding: false, // Remove extra padding around text
+    lineHeight: 12, // Match to fontSize for better vertical centering
   },
   calloutTapText: {
     fontSize: 12,
     color: "#64748B",
     fontStyle: "italic",
+    textAlign: "right",
   },
   filterDialog: {
     backgroundColor: "white",

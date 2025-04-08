@@ -170,63 +170,76 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     }
   }, [locationPermission, onLocationChange, fetchAddress]);
 
+  const renderMapContent = () => {
+    if (loading) {
+      return (
+        <View style={styles.loadingMapContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text style={styles.loadingText}>Fetching your location...</Text>
+        </View>
+      );
+    }
+
+    return (
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+        onPress={handleMapPress}
+        onMapReady={() => {
+          console.log("Map is ready");
+          setMapReady(true);
+        }}
+        showsUserLocation={locationPermission}
+        showsMyLocationButton={false}
+        initialRegion={{
+          ...currentLocation,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        }}
+      >
+        {selectedLocation && (
+          <Marker
+            coordinate={selectedLocation}
+            draggable
+            onDragEnd={(e) => {
+              const newLocation = e.nativeEvent.coordinate;
+              console.log("Marker dragged to:", newLocation);
+              setSelectedLocation(newLocation);
+              onLocationChange(newLocation);
+              fetchAddress(newLocation);
+            }}
+          >
+            <Callout>
+              <View style={styles.callout}>
+                <Text style={styles.calloutText}>{displayAddress}</Text>
+              </View>
+            </Callout>
+          </Marker>
+        )}
+      </MapView>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#007BFF" />
-        </View>
-      )}
-
       <Text style={styles.address} numberOfLines={2}>
         {displayAddress || "Tap on map to select location"}
       </Text>
 
       <View style={styles.mapContainer}>
-        <MapView
-          ref={mapRef}
-          style={styles.map}
-          provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-          onPress={handleMapPress}
-          onMapReady={() => {
-            console.log("Map is ready");
-            setMapReady(true);
-          }}
-          showsUserLocation={locationPermission}
-          showsMyLocationButton={false}
-          initialRegion={{
-            ...currentLocation,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          }}
-        >
-          {selectedLocation && (
-            <Marker
-              coordinate={selectedLocation}
-              draggable
-              onDragEnd={(e) => {
-                const newLocation = e.nativeEvent.coordinate;
-                console.log("Marker dragged to:", newLocation);
-                setSelectedLocation(newLocation);
-                onLocationChange(newLocation);
-                fetchAddress(newLocation);
-              }}
-            >
-              <Callout>
-                <View style={styles.callout}>
-                  <Text style={styles.calloutText}>{displayAddress}</Text>
-                </View>
-              </Callout>
-            </Marker>
-          )}
-        </MapView>
+        {renderMapContent()}
 
         <TouchableOpacity
-          style={styles.recenterButton}
+          style={[styles.recenterButton, loading && styles.disabledButton]}
           onPress={handleRecenter}
-          disabled={!locationPermission}
+          disabled={!locationPermission || loading}
         >
-          <MaterialIcons name="my-location" size={24} color="#007BFF" />
+          <MaterialIcons
+            name="my-location"
+            size={24}
+            color={loading ? "#CBD5E1" : "#007BFF"}
+          />
         </TouchableOpacity>
       </View>
 
@@ -306,6 +319,22 @@ const styles = StyleSheet.create({
     margin: 16,
     marginTop: 8,
     fontSize: 12,
+  },
+  loadingMapContainer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#F9FAFB",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 12,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: "#4B5563",
+    fontWeight: "500",
+  },
+  disabledButton: {
+    backgroundColor: "#F1F5F9",
   },
 });
 

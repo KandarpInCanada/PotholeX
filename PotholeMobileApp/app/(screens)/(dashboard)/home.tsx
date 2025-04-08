@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   StyleSheet,
   FlatList,
@@ -31,6 +31,11 @@ import React from "react";
 // Replace FlatList with FlashList
 import { FlashList } from "@shopify/flash-list";
 
+// Add this import at the top of the file with the other imports
+import ReportDetailsSheet, {
+  type ReportDetailsSheetRef,
+} from "../../components/dashboard-components/report-details-sheet";
+
 // Define category types for filtering
 const CATEGORIES = [
   { id: "all", label: "All", icon: "view-dashboard-outline" },
@@ -52,6 +57,9 @@ const HomeScreen: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showWelcome, setShowWelcome] = useState(true);
+
+  // Add this inside the HomeScreen function, after other state declarations:
+  const reportDetailsRef = useRef<ReportDetailsSheetRef>(null);
 
   // Fetch user profile
   const fetchUserProfile = useCallback(async () => {
@@ -196,6 +204,11 @@ const HomeScreen: React.FC = () => {
     }
   };
 
+  // Modify the handleReportPress function or create it if it doesn't exist:
+  const handleReportPress = (reportId: string) => {
+    reportDetailsRef.current?.open(reportId);
+  };
+
   // Render the welcome banner
   const renderWelcomeBanner = () => {
     if (!showWelcome || !userProfile) return null;
@@ -303,13 +316,12 @@ const HomeScreen: React.FC = () => {
         <FlashList
           data={filteredReports}
           renderItem={({ item, index }) => (
+            // Change the onPress handler in the ReportCard component:
             <ReportCard
               item={item}
               index={index}
               onLike={handleLike}
-              onPress={() =>
-                router.push(`/dashboard/report-details/${item.id}`)
-              }
+              onPress={() => handleReportPress(item.id || "")}
             />
           )}
           contentContainerStyle={styles.listContainer}
@@ -344,6 +356,8 @@ const HomeScreen: React.FC = () => {
         color="#FFFFFF"
         onPress={() => router.push("(screens)/(dashboard)/add-report")}
       />
+      {/* Add this at the end of the return statement, right before the closing tag of SafeAreaView: */}
+      <ReportDetailsSheet ref={reportDetailsRef} />
     </SafeAreaView>
   );
 };
@@ -544,7 +558,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
-    paddingBottom: 100,
+    paddingBottom: 100, // Increase this value to ensure content isn't hidden behind the tab bar
   },
   fab: {
     position: "absolute",

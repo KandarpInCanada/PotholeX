@@ -532,7 +532,7 @@ export default function AddReportScreen() {
                       loading={loading}
                       disabled={loading}
                       onPress={submitReport}
-                      icon="send"
+                      icon={loading ? "loading" : "send"}
                     >
                       {loading ? "Submitting..." : "Submit Report"}
                     </Button>
