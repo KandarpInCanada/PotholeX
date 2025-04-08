@@ -131,6 +131,7 @@ export default function ProfileHeader({
               style={styles.editActionButton}
               loading={updating}
               disabled={updating}
+              buttonColor="#374151"
             >
               Save
             </Button>

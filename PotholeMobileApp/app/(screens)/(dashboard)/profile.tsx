@@ -347,13 +347,37 @@ export default function UserProfileScreen() {
               )}
             </View>
 
-            <TouchableOpacity
-              style={styles.editProfileButton}
-              onPress={() => setEditMode(true)}
-              disabled={editMode}
-            >
-              <Text style={styles.editProfileButtonText}>Edit Profile</Text>
-            </TouchableOpacity>
+            {!editMode ? (
+              <TouchableOpacity
+                style={styles.editProfileButton}
+                onPress={() => setEditMode(true)}
+              >
+                <Text style={styles.editProfileButtonText}>Edit Profile</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.editModeButtons}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => {
+                    setEditMode(false);
+                    fetchUserProfile(); // Reset to original values
+                  }}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.saveButton}
+                  onPress={handleUpdateProfile}
+                  disabled={updating}
+                >
+                  {updating ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.saveButtonText}>Save</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
           </LinearGradient>
 
           <Divider style={styles.divider} />
@@ -596,30 +620,7 @@ export default function UserProfileScreen() {
           </Card>
 
           {/* Edit Mode Buttons */}
-          {editMode && (
-            <View style={styles.editModeButtons}>
-              <Button
-                mode="outlined"
-                onPress={() => {
-                  setEditMode(false);
-                  fetchUserProfile(); // Reset to original values
-                }}
-                style={[styles.editActionButton, styles.cancelButton]}
-              >
-                Cancel
-              </Button>
-              <Button
-                mode="contained"
-                onPress={handleUpdateProfile}
-                style={styles.editActionButton}
-                loading={updating}
-                disabled={updating}
-                buttonColor="#374151"
-              >
-                Save
-              </Button>
-            </View>
-          )}
+          {/* ProfileHeader component with edit mode buttons */}
 
           {/* Logout Button */}
           <Button
@@ -794,17 +795,36 @@ const styles = StyleSheet.create({
   },
   editModeButtons: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "space-between",
     width: "100%",
-    gap: 16,
     marginTop: 16,
-  },
-  editActionButton: {
-    flex: 1,
-    borderRadius: 24, // Updated for curved edges
+    gap: 12,
   },
   cancelButton: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderWidth: 1,
     borderColor: "#E2E8F0",
+  },
+  cancelButtonText: {
+    color: "#3B82F6",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: "#374151",
+    borderRadius: 24,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  saveButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    fontSize: 16,
   },
   logoutButton: {
     marginTop: 8,

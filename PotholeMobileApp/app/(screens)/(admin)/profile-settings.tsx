@@ -252,12 +252,37 @@ export default function AdminProfileSettings() {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={styles.editProfileButton}
-              onPress={() => setEditMode(true)}
-            >
-              <Text style={styles.editProfileButtonText}>Edit Profile</Text>
-            </TouchableOpacity>
+            {!editMode ? (
+              <TouchableOpacity
+                style={styles.editProfileButton}
+                onPress={() => setEditMode(true)}
+              >
+                <Text style={styles.editProfileButtonText}>Edit Profile</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.editModeButtons}>
+                <Button
+                  mode="outlined"
+                  onPress={() => {
+                    setEditMode(false);
+                    fetchUserProfile(); // Reset to original values
+                  }}
+                  style={[styles.editActionButton, styles.cancelButton]}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={handleUpdateProfile}
+                  style={styles.editActionButton}
+                  loading={updating}
+                  disabled={updating}
+                  buttonColor="#374151"
+                >
+                  Save
+                </Button>
+              </View>
+            )}
           </LinearGradient>
 
           <Divider style={styles.divider} />
@@ -745,5 +770,19 @@ const styles = StyleSheet.create({
   apiInput: {
     marginTop: 8,
     backgroundColor: "#FFFFFF",
+  },
+  editModeButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    gap: 16,
+    marginTop: 16,
+  },
+  editActionButton: {
+    flex: 1,
+    borderRadius: 24,
+  },
+  cancelButton: {
+    borderColor: "#E2E8F0",
   },
 });
