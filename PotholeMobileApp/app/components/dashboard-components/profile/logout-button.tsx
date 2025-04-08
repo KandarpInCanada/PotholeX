@@ -77,7 +77,7 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
 
 const styles = StyleSheet.create({
   logoutButton: {
-    marginBottom: 24,
+    marginBottom: 40, // Increased from 24 to 40 for more space
     borderColor: lightTheme.colors.error,
     borderWidth: 1.5,
     borderRadius: 24,

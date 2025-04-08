@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 100, // Increase this value to ensure content isn't hidden behind the tab bar
+    paddingBottom: 140, // Increased from 100 to 140 to ensure logout button is visible
   },
   profileHeader: {
     borderRadius: 16,
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: 8,
-    marginBottom: 24,
+    marginBottom: 40, // Increased from 24 to 40 for more space
     borderColor: "#EF4444",
     borderWidth: 1.5,
   },

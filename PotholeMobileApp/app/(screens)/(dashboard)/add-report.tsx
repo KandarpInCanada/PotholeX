@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
   headerBanner: {
     paddingVertical: 16,
     paddingHorizontal: 16,
-    borderRadius: 24, // Updated for more curved edges
+    borderRadius: 24,
     margin: 16,
     marginBottom: 8,
   },
@@ -580,6 +580,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     padding: 16,
+    paddingBottom: 140, // Increased from original value to ensure content is visible above tab bar
   },
   content: {
     paddingBottom: 16,
@@ -596,7 +597,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   actionButtons: {
-    marginBottom: 24,
+    marginBottom: 40, // Increased from original value to provide more space at the bottom
   },
   submitButtonContainer: {
     width: "100%",

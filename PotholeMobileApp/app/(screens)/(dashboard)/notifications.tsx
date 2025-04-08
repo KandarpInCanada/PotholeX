@@ -5,6 +5,7 @@ import {
   View,
   Text,
   StyleSheet,
+  FlatList,
   TouchableOpacity,
   RefreshControl,
   Alert,
@@ -23,7 +24,6 @@ import { MotiView } from "moti";
 import { useAuth } from "../../../context/auth-context";
 import { Swipeable } from "react-native-gesture-handler";
 import { supabase } from "../../../lib/supabase";
-import { FlashList } from "@shopify/flash-list";
 
 interface Notification {
   id: string;
@@ -248,7 +248,7 @@ export default function NotificationsScreen() {
       </LinearGradient>
 
       {/* Notification List */}
-      <FlashList
+      <FlatList
         data={notifications}
         renderItem={renderNotificationItem}
         keyExtractor={(item) => item.id}
@@ -261,7 +261,6 @@ export default function NotificationsScreen() {
             colors={["#3B82F6"]}
           />
         }
-        estimatedItemSize={100}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <MaterialCommunityIcons
