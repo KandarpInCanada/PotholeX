@@ -388,18 +388,25 @@ export default function AddReportScreen() {
           transition={{ type: "spring", damping: 15 }}
           style={styles.successContent}
         >
-          <View style={styles.successIconContainer}>
-            <MaterialCommunityIcons
-              name="check-circle"
-              size={80}
-              color="#10B981"
-            />
-          </View>
-          <Text style={styles.successTitle}>Report Submitted!</Text>
-          <Text style={styles.successMessage}>
-            Thank you for reporting this pothole. Your contribution helps make
-            roads safer.
-          </Text>
+          <LinearGradient
+            colors={["#374151", "#1F2937"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.successGradient}
+          >
+            <View style={styles.successIconContainer}>
+              <MaterialCommunityIcons
+                name="check-circle"
+                size={80}
+                color="#10B981"
+              />
+            </View>
+            <Text style={styles.successTitle}>Report Submitted!</Text>
+            <Text style={styles.successMessage}>
+              Thank you for reporting this pothole. Your contribution helps make
+              roads safer.
+            </Text>
+          </LinearGradient>
         </MotiView>
       </View>
     );
@@ -634,35 +641,41 @@ const styles = StyleSheet.create({
   },
   successOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
   },
   successContent: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24, // Updated for more curved edges
-    padding: 24,
-    alignItems: "center",
-    width: "80%",
+    width: "85%",
+    borderRadius: 24,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 20,
-    elevation: 5,
+    elevation: 10,
+  },
+  successGradient: {
+    padding: 24,
+    alignItems: "center",
+    borderRadius: 24,
   },
   successIconContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 50,
+    padding: 10,
     marginBottom: 16,
   },
   successTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#0F172A",
-    marginBottom: 8,
+    color: "#FFFFFF",
+    marginBottom: 12,
   },
   successMessage: {
     fontSize: 16,
-    color: "#64748B",
+    color: "#E5E7EB",
     textAlign: "center",
     lineHeight: 24,
   },
