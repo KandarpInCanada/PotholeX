@@ -58,7 +58,7 @@ function RootLayoutInner() {
       {!user ? (
         // Not logged in - show onboarding and auth screens
         <>
-          <Stack.Screen name="(screens)/(onboarding)/get-started" />
+          <Stack.Screen name="(screens)/(onboarding)/lottie-splash" />
           <Stack.Screen name="(screens)/(auth)" />
         </>
       ) : isAdmin ? (
