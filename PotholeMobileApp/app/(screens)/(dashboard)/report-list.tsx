@@ -124,7 +124,17 @@ export default function ReportListScreen() {
 
   // Handle status filter changes
   const handleFilter = (filter: ReportStatus | "all") => {
-    setActiveFilter(filter);
+    // Don't update state if the filter is already active
+    if (activeFilter === filter) return;
+
+    // Set loading state to true to show loading indicator
+    setLoading(true);
+
+    // Use setTimeout to make the filter change non-blocking
+    setTimeout(() => {
+      setActiveFilter(filter);
+      setLoading(false);
+    }, 10);
   };
 
   // Handle sort option selection
@@ -164,32 +174,39 @@ export default function ReportListScreen() {
 
   // Memoized filtered and sorted reports for performance optimization
   const processedReports = useMemo(() => {
-    let filtered = reports;
+    let filtered = [...reports];
 
-    // Apply status filter
+    // Apply status filter - optimize by checking if filter is "all" first
     if (activeFilter !== "all") {
       filtered = filtered.filter((report) => report.status === activeFilter);
     }
 
-    // Apply search filter across location, description, and category
+    // Apply search filter only if there's a search query
     if (searchQuery.trim() !== "") {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (report) =>
           report.location?.toLowerCase().includes(query) ||
+          false ||
           report.description?.toLowerCase().includes(query) ||
-          report.category?.toLowerCase().includes(query)
+          false ||
+          report.category?.toLowerCase().includes(query) ||
+          false
       );
     }
 
-    // Apply sorting
+    // Apply sorting - optimize by checking the most common case first
+    if (activeSort === "newest") {
+      return filtered.sort(
+        (a, b) =>
+          new Date(b.created_at || "").getTime() -
+          new Date(a.created_at || "").getTime()
+      );
+    }
+
+    // Handle other sort options
     return [...filtered].sort((a, b) => {
       switch (activeSort) {
-        case "newest":
-          return (
-            new Date(b.created_at || "").getTime() -
-            new Date(a.created_at || "").getTime()
-          );
         case "oldest":
           return (
             new Date(a.created_at || "").getTime() -
@@ -302,7 +319,7 @@ export default function ReportListScreen() {
       return (
         <EmptyState
           icon={<ActivityIndicator size="large" color="#4B5563" />}
-          title="Loading your reports..."
+          title="Loading reports..."
           subtitle=""
           buttonLabel=""
           onButtonPress={() => {}}
@@ -327,8 +344,6 @@ export default function ReportListScreen() {
               ? "Try changing your filters"
               : "You haven't reported any potholes yet"
           }
-          buttonLabel="Create New Report"
-          onButtonPress={navigateToAddReport}
         />
       );
     }
@@ -409,6 +424,130 @@ export default function ReportListScreen() {
     );
   };
 
+  // Add this function to ensure the filter buttons remain interactive even when loading
+  const renderFilterBar = () => {
+    return (
+      <Animated.View
+        style={[styles.filterBarContainer, filterBarAnimatedStyle]}
+      >
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterBar}
+        >
+          <TouchableOpacity
+            style={[
+              styles.filterChip,
+              activeFilter === "all" && styles.activeFilterChip,
+            ]}
+            onPress={() => handleFilter("all")}
+            activeOpacity={0.7}
+            disabled={false} // Ensure it's never disabled
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                activeFilter === "all" && styles.activeFilterChipText,
+              ]}
+            >
+              All ({statusCounts.all})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterChip,
+              activeFilter === ReportStatus.SUBMITTED &&
+                styles.activeFilterChip,
+              activeFilter === ReportStatus.SUBMITTED && {
+                backgroundColor: "#64748B",
+              },
+            ]}
+            onPress={() => handleFilter(ReportStatus.SUBMITTED)}
+            activeOpacity={0.7}
+            disabled={false} // Ensure it's never disabled
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                activeFilter === ReportStatus.SUBMITTED &&
+                  styles.activeFilterChipText,
+              ]}
+            >
+              Submitted ({statusCounts.submitted})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterChip,
+              activeFilter === ReportStatus.IN_PROGRESS &&
+                styles.activeFilterChip,
+              activeFilter === ReportStatus.IN_PROGRESS && {
+                backgroundColor: "#4B5563",
+              },
+            ]}
+            onPress={() => handleFilter(ReportStatus.IN_PROGRESS)}
+            activeOpacity={0.7}
+            disabled={false} // Ensure it's never disabled
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                activeFilter === ReportStatus.IN_PROGRESS &&
+                  styles.activeFilterChipText,
+              ]}
+            >
+              In Progress ({statusCounts.in_progress})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterChip,
+              activeFilter === ReportStatus.FIXED && styles.activeFilterChip,
+              activeFilter === ReportStatus.FIXED && {
+                backgroundColor: "#10B981",
+              },
+            ]}
+            onPress={() => handleFilter(ReportStatus.FIXED)}
+            activeOpacity={0.7}
+            disabled={false} // Ensure it's never disabled
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                activeFilter === ReportStatus.FIXED &&
+                  styles.activeFilterChipText,
+              ]}
+            >
+              Fixed ({statusCounts.fixed})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterChip,
+              activeFilter === ReportStatus.REJECTED && styles.activeFilterChip,
+              activeFilter === ReportStatus.REJECTED && {
+                backgroundColor: "#6B7280",
+              },
+            ]}
+            onPress={() => handleFilter(ReportStatus.REJECTED)}
+            activeOpacity={0.7}
+            disabled={false} // Ensure it's never disabled
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                activeFilter === ReportStatus.REJECTED &&
+                  styles.activeFilterChipText,
+              ]}
+            >
+              Rejected ({statusCounts.rejected})
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </Animated.View>
+    );
+  };
+
   // Main component render
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -479,114 +618,7 @@ export default function ReportListScreen() {
       </View>
 
       {/* Filter bar */}
-      <Animated.View
-        style={[styles.filterBarContainer, filterBarAnimatedStyle]}
-      >
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterBar}
-        >
-          <TouchableOpacity
-            style={[
-              styles.filterChip,
-              activeFilter === "all" && styles.activeFilterChip,
-            ]}
-            onPress={() => handleFilter("all")}
-          >
-            <Text
-              style={[
-                styles.filterChipText,
-                activeFilter === "all" && styles.activeFilterChipText,
-              ]}
-            >
-              All ({statusCounts.all})
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.filterChip,
-              activeFilter === ReportStatus.SUBMITTED &&
-                styles.activeFilterChip,
-              activeFilter === ReportStatus.SUBMITTED && {
-                backgroundColor: "#64748B",
-              },
-            ]}
-            onPress={() => handleFilter(ReportStatus.SUBMITTED)}
-          >
-            <Text
-              style={[
-                styles.filterChipText,
-                activeFilter === ReportStatus.SUBMITTED &&
-                  styles.activeFilterChipText,
-              ]}
-            >
-              Submitted ({statusCounts.submitted})
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.filterChip,
-              activeFilter === ReportStatus.IN_PROGRESS &&
-                styles.activeFilterChip,
-              activeFilter === ReportStatus.IN_PROGRESS && {
-                backgroundColor: "#4B5563",
-              },
-            ]}
-            onPress={() => handleFilter(ReportStatus.IN_PROGRESS)}
-          >
-            <Text
-              style={[
-                styles.filterChipText,
-                activeFilter === ReportStatus.IN_PROGRESS &&
-                  styles.activeFilterChipText,
-              ]}
-            >
-              In Progress ({statusCounts.in_progress})
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.filterChip,
-              activeFilter === ReportStatus.FIXED && styles.activeFilterChip,
-              activeFilter === ReportStatus.FIXED && {
-                backgroundColor: "#10B981",
-              },
-            ]}
-            onPress={() => handleFilter(ReportStatus.FIXED)}
-          >
-            <Text
-              style={[
-                styles.filterChipText,
-                activeFilter === ReportStatus.FIXED &&
-                  styles.activeFilterChipText,
-              ]}
-            >
-              Fixed ({statusCounts.fixed})
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.filterChip,
-              activeFilter === ReportStatus.REJECTED && styles.activeFilterChip,
-              activeFilter === ReportStatus.REJECTED && {
-                backgroundColor: "#6B7280",
-              },
-            ]}
-            onPress={() => handleFilter(ReportStatus.REJECTED)}
-          >
-            <Text
-              style={[
-                styles.filterChipText,
-                activeFilter === ReportStatus.REJECTED &&
-                  styles.activeFilterChipText,
-              ]}
-            >
-              Rejected ({statusCounts.rejected})
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </Animated.View>
+      {renderFilterBar()}
 
       {/* Main content */}
       <View style={styles.content}>
@@ -610,8 +642,6 @@ export default function ReportListScreen() {
                 ? "Try changing your filters"
                 : "You haven't reported any potholes yet"
             }
-            buttonLabel="Create New Report"
-            onButtonPress={navigateToAddReport}
           />
         ) : (
           <AnimatedFlashList
