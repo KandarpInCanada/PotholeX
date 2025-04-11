@@ -217,7 +217,14 @@ const HomeScreen: React.FC = () => {
 
   // Modify the handleReportPress function or create it if it doesn't exist:
   const handleReportPress = (reportId: string) => {
-    reportDetailsRef.current?.open(reportId);
+    if (reportDetailsRef.current) {
+      reportDetailsRef.current.open(reportId);
+    }
+
+    // Also emit an event with the reportId for other components to listen to
+    if (global.reportDetailsEvents) {
+      global.reportDetailsEvents.emit("openReportDetails", reportId);
+    }
   };
 
   // Render the welcome banner

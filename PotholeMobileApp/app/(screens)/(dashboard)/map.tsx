@@ -19,7 +19,6 @@ import MapView, {
   type Region,
   Callout,
   PROVIDER_GOOGLE,
-  Heatmap,
 } from "react-native-maps";
 import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -41,6 +40,9 @@ import { useRouter } from "expo-router";
 import ReportDetailsSheet, {
   type ReportDetailsSheetRef,
 } from "../../components/dashboard-components/report-details-sheet";
+// Add this import at the top with the other imports
+import { useFocusEffect } from "expo-router";
+import { supabase } from "../../../lib/supabase";
 
 // Define types
 interface LocationType {
@@ -140,6 +142,49 @@ export default function MapScreen() {
         useNativeDriver: true,
       }),
     ]).start();
+  }, []);
+
+  // Add this code after the other useEffect hooks, around line 55 (after the initial useEffect)
+  // This ensures data is refreshed whenever the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      console.log("Map screen focused, refreshing data...");
+      initMapData();
+      return () => {
+        console.log("Map screen blurred");
+      };
+    }, [])
+  );
+
+  // Add this effect for real-time updates with Supabase, around line 65
+  useEffect(() => {
+    // Set up Supabase real-time subscription for pothole reports
+    const subscription = supabase
+      .channel("public:pothole_reports")
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // Listen for all events (insert, update, delete)
+          schema: "public",
+          table: "pothole_reports",
+        },
+        (payload) => {
+          console.log("Pothole report changed:", payload);
+          // Refresh reports when changes occur
+          getAllReports().then((reports) => {
+            setState((prev) => ({
+              ...prev,
+              potholes: reports,
+            }));
+          });
+        }
+      )
+      .subscribe();
+
+    // Clean up subscription when component unmounts
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Initialize map with location and pothole data
@@ -666,16 +711,42 @@ export default function MapScreen() {
           {renderPotholeMarkers()}
 
           {viewMode === "heatmap" && heatmapPoints.length > 0 && (
-            <Heatmap
-              points={heatmapPoints}
-              radius={20}
-              opacity={0.7}
-              gradient={{
-                colors: ["#14B8A6", "#F59E0B", "#F43F5E"], // Teal, Amber, Rose from our theme
-                startPoints: [0.2, 0.5, 0.8],
-                colorMapSize: 256,
-              }}
-            />
+            <>
+              {/* Custom heatmap implementation using markers */}
+              {heatmapPoints.map((point, index) => (
+                <Marker
+                  key={`heatpoint-${index}`}
+                  coordinate={{
+                    latitude: point.latitude,
+                    longitude: point.longitude,
+                  }}
+                  opacity={point.weight || 0.5}
+                  pinColor={
+                    point.weight && point.weight > 0.7
+                      ? "#F43F5E"
+                      : point.weight > 0.4
+                      ? "#F59E0B"
+                      : "#14B8A6"
+                  }
+                >
+                  <View
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor:
+                        point.weight && point.weight > 0.7
+                          ? "rgba(244, 63, 94, 0.6)"
+                          : point.weight > 0.4
+                          ? "rgba(245, 158, 11, 0.6)"
+                          : "rgba(20, 184, 166, 0.6)",
+                      borderWidth: 1,
+                      borderColor: "rgba(255, 255, 255, 0.5)",
+                    }}
+                  />
+                </Marker>
+              ))}
+            </>
           )}
 
           {routeCoordinates.length > 0 && (

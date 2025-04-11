@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useImperativeHandle, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -49,6 +49,40 @@ const ReportDetailsSheet = forwardRef<ReportDetailsSheetRef, {}>((_, ref) => {
 
   // Photo gallery state
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+
+  // Update the ReportDetailsSheet to listen for events
+  // Add this inside the component, after the state declarations:
+
+  useEffect(() => {
+    // Listen for events to open the report details sheet
+    const handleOpenReportDetails = (reportId: string) => {
+      fetchReportDetails(reportId);
+      setVisible(true);
+      backgroundOpacity.value = withTiming(1, { duration: 300 });
+      translateY.value = withSpring(0, {
+        damping: 20,
+        stiffness: 90,
+      });
+    };
+
+    // Add event listener
+    if (global.reportDetailsEvents) {
+      global.reportDetailsEvents.on(
+        "openReportDetails",
+        handleOpenReportDetails
+      );
+    }
+
+    // Clean up event listener
+    return () => {
+      if (global.reportDetailsEvents) {
+        global.reportDetailsEvents.off(
+          "openReportDetails",
+          handleOpenReportDetails
+        );
+      }
+    };
+  }, []);
 
   useImperativeHandle(ref, () => ({
     open: (reportId: string) => {

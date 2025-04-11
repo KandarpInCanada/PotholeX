@@ -144,17 +144,23 @@ export default function NotificationsScreen() {
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
 
-      // Open report details if there's a report_id
+      // If there's a report_id, emit an event to open the report details
       if (notification.report_id) {
-        // Try to access the report details ref from the window object
-        // @ts-ignore - We're using a module-level variable to access the ref
-        const reportDetailsRef = window._reportDetailsRef;
+        if (global.reportDetailsEvents) {
+          // Try to open via event first
+          global.reportDetailsEvents.emit(
+            "openReportDetails",
+            notification.report_id
+          );
 
-        if (reportDetailsRef && reportDetailsRef.current) {
-          // Open the report details sheet with the report ID
-          reportDetailsRef.current.open(notification.report_id);
+          // Set a timeout to check if the event was handled
+          setTimeout(() => {
+            // If we're still on the notifications screen after a short delay,
+            // fall back to navigation
+            router.push(`/dashboard/report-details/${notification.report_id}`);
+          }, 300);
         } else {
-          // Fallback to navigation if the ref isn't available
+          // Fall back to navigation if event emitter isn't available
           router.push(`/dashboard/report-details/${notification.report_id}`);
         }
       }
