@@ -1,3 +1,12 @@
+/**
+ * Lottie Splash Screen Component
+ *
+ * This component displays an animated splash screen using Lottie animation.
+ * It includes a fallback timer to ensure navigation continues even if the
+ * animation fails to complete or trigger the callback.
+ *
+ * The animation is loaded from the splash-screen.json file in the assets folder.
+ */
 "use client";
 
 import type React from "react";
@@ -11,9 +20,15 @@ interface LottieSplashProps {
 }
 
 const LottieSplash: React.FC<LottieSplashProps> = ({ onAnimationFinish }) => {
+  // Reference to the Lottie animation component
   const animationRef = useRef<LottieView>(null);
 
   useEffect(() => {
+    // Play the animation when component mounts
+    if (animationRef.current) {
+      animationRef.current.play();
+    }
+
     // Ensure animation plays and callback is triggered even if animation fails
     const timer = setTimeout(() => {
       if (onAnimationFinish) {

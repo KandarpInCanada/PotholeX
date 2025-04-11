@@ -1,7 +1,28 @@
+/**
+ * Root Layout Component
+ *
+ * This component serves as the root layout for the entire application.
+ * It wraps the app with necessary providers and handles authentication state,
+ * navigation based on auth status, and app initialization.
+ *
+ * Key responsibilities:
+ * - Providing auth context
+ * - Providing theme context
+ * - Handling navigation based on authentication state
+ * - Managing session timeouts
+ * - Registering for push notifications
+ * - Showing splash screen on every app launch
+ */
 "use client";
 
 import { Slot } from "expo-router";
-import { View, ActivityIndicator, StatusBar, Platform } from "react-native";
+import {
+  View,
+  ActivityIndicator,
+  StatusBar,
+  Platform,
+  AppState,
+} from "react-native";
 import { AuthProvider, useAuth } from "../context/auth-context";
 import { Provider as PaperProvider } from "react-native-paper";
 import { ThemeProvider, useTheme } from "../context/theme-context";
@@ -10,6 +31,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { registerForPushNotificationsAsync } from "../lib/notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import LottieSplash from "./(screens)/(onboarding)/lottie-splash";
 
 // Update the RootLayoutInner component to handle auth state changes more reliably
 function RootLayoutInner() {
@@ -27,6 +49,33 @@ function RootLayoutInner() {
     isAdmin: false,
   });
   const { user, loading, isAdmin, signOut } = useAuth(); // Moved useAuth here
+
+  // Add state for splash screen
+  const [showSplash, setShowSplash] = useState(true);
+  const appState = useRef(AppState.currentState);
+
+  // Handle app state changes to show splash when app comes to foreground
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      // When app comes from background to active state, show splash
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
+        setShowSplash(true);
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  // Handle splash screen completion
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+  };
 
   useEffect(() => {
     setAuthState({ user, loading, isAdmin });
@@ -80,16 +129,16 @@ function RootLayoutInner() {
 
   // Effect to handle navigation based on auth state
   useEffect(() => {
-    if (!authState.loading) {
+    if (!authState.loading && !showSplash) {
       // Reset the navigation flag when auth state changes
       navigationPerformedRef.current = false;
     }
-  }, [authState.loading]);
+  }, [authState.loading, showSplash]);
 
   // Separate effect for navigation to avoid race conditions
   useEffect(() => {
     const handleNavigation = async () => {
-      if (!authState.loading) {
+      if (!authState.loading && !showSplash) {
         navigationPerformedRef.current = true;
         console.log(
           "Navigation state: user=",
@@ -112,8 +161,20 @@ function RootLayoutInner() {
     };
 
     handleNavigation();
-  }, [authState.user, authState.isAdmin, authState.loading, router]);
+  }, [
+    authState.user,
+    authState.isAdmin,
+    authState.loading,
+    router,
+    showSplash,
+  ]);
 
+  // Show splash screen
+  if (showSplash) {
+    return <LottieSplash onAnimationFinish={handleSplashFinish} />;
+  }
+
+  // Show loading indicator while auth is being determined
   if (authState.loading) {
     return (
       <View
