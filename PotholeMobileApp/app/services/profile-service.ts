@@ -14,49 +14,50 @@ export const getUserProfile = async (): Promise<(Profile & { email: string }) | 
     }
 
     // First check if profile exists
-    const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+    const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id)
 
     if (error) {
-      if (error.code === "PGRST116") {
-        // Profile doesn't exist, create a new one with default values
-        const username = user.email?.split("@")[0] || "user"
-        const fullName = user.user_metadata?.name || username
-
-        const newProfile = {
-          id: user.id,
-          username: username,
-          full_name: fullName,
-          avatar_url: user.user_metadata?.avatar_url || "",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-
-        console.log("Creating new profile:", newProfile)
-
-        const { error: insertError } = await supabase.from("profiles").insert(newProfile)
-
-        if (insertError) {
-          console.error("Error creating profile:", insertError)
-          return null
-        }
-
-        return { ...newProfile, email: user.email || "" }
-      }
       console.error("Error fetching profile:", error)
       return null
     }
 
-    // Ensure we have default values for username and full_name if they're null or empty
-    const profile = {
-      ...data,
-      username: data.username || user.email?.split("@")[0] || "user",
-      full_name: data.full_name || user.user_metadata?.name || data.username || "User",
-      email: user.email || "",
+    // If no profile exists, create a new one
+    if (!data || data.length === 0) {
+      const username = user.email?.split("@")[0] || "user"
+      const fullName = user.user_metadata?.name || username
+
+      const newProfile = {
+        id: user.id,
+        username: username,
+        full_name: fullName,
+        avatar_url: user.user_metadata?.avatar_url || "",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+
+      console.log("Creating new profile:", newProfile)
+
+      // Try to create the profile using RPC instead of direct insert
+      // This can bypass RLS if you have a server function set up
+      const { error: insertError } = await supabase.rpc("create_user_profile", newProfile)
+
+      if (insertError) {
+        console.error("Error creating profile:", insertError)
+        // Fall back to returning what we have even if we couldn't save it
+        return { ...newProfile, email: user.email || "" }
+      }
+
+      return { ...newProfile, email: user.email || "" }
     }
 
-    console.log("Fetched profile:", profile)
-
-    return profile
+    // Profile exists, return it
+    const profile = data[0]
+    return {
+      ...profile,
+      username: profile.username || user.email?.split("@")[0] || "user",
+      full_name: profile.full_name || user.user_metadata?.name || profile.username || "User",
+      email: user.email || "",
+    }
   } catch (error) {
     console.error("Unexpected error in getUserProfile:", error)
     return null

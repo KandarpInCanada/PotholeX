@@ -2,24 +2,17 @@
 import type React from "react";
 import type { ReactNode } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Button } from "react-native-paper";
 import { MotiView } from "moti";
 
 interface EmptyStateProps {
   icon: ReactNode;
   title: string;
   subtitle: string;
-  buttonLabel: string;
-  onButtonPress: () => void;
+  buttonLabel?: string;
+  onButtonPress?: () => void;
 }
 
-const EmptyState: React.FC<EmptyStateProps> = ({
-  icon,
-  title,
-  subtitle,
-  buttonLabel,
-  onButtonPress,
-}) => {
+const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, subtitle }) => {
   return (
     <MotiView
       from={{ opacity: 0, scale: 0.9 }}
@@ -30,17 +23,6 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       <View style={styles.iconContainer}>{icon}</View>
       <Text style={styles.title}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-      {buttonLabel ? (
-        <Button
-          mode="contained"
-          style={styles.button}
-          contentStyle={styles.buttonContent}
-          onPress={onButtonPress}
-          icon="plus"
-        >
-          {buttonLabel}
-        </Button>
-      ) : null}
     </MotiView>
   );
 };
@@ -51,6 +33,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
+    // Add marginTop to push the content up from the bottom half
+    marginTop: -100,
   },
   iconContainer: {
     marginBottom: 16,
@@ -74,15 +58,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 24,
     lineHeight: 22,
-  },
-  button: {
-    backgroundColor: "#0284c7",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-  },
-  buttonContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
   },
 });
 

@@ -8,15 +8,12 @@ import { AppState } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-// Add isAdmin state and checkAdminStatus import
 import { checkAdminStatus } from "../app/services/admin-service";
-/* Add the following imports at the top */
 import {
   registerForPushNotificationsAsync,
   savePushToken,
 } from "../lib/notifications";
 
-// Add isAdmin to the AuthContextType
 type AuthContextType = {
   user: User | null;
   session: Session | null;
@@ -24,7 +21,7 @@ type AuthContextType = {
   googleAuthLoading: boolean;
   googleError: string | null;
   isAdmin: boolean;
-  expoPushToken: string | null; // Add this line
+  expoPushToken: string | null;
   signUp: (
     email: string,
     password: string,
@@ -39,7 +36,6 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/* Update the AuthProvider component to register for push notifications */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -48,39 +44,126 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
   const [googleAuthLoading, setGoogleAuthLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
-  // In the AuthProvider component, add isAdmin state
   const [isAdmin, setIsAdmin] = useState(false);
-  // Add new state for push token
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
+  const [authEventHandled, setAuthEventHandled] = useState(false);
+
+  // Parse hash fragment from URL
+  const parseHashFragment = (url: string) => {
+    try {
+      const hashIndex = url.indexOf("#");
+      if (hashIndex === -1) return null;
+
+      const fragment = url.substring(hashIndex + 1);
+      const params = new URLSearchParams(fragment);
+
+      const result: Record<string, string> = {};
+      for (const [key, value] of params.entries()) {
+        result[key] = value;
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error parsing hash fragment:", error);
+      return null;
+    }
+  };
 
   // Handle deep links for auth redirects
   useEffect(() => {
     const handleDeepLink = async (event: { url: string }) => {
       console.log("Deep link received:", event.url);
-      if (event.url.includes("auth/callback")) {
-        // Extract the auth code and state from the URL
-        const params = new URL(event.url).searchParams;
-        const code = params.get("code");
-        const state = params.get("state");
 
-        if (code && state) {
-          try {
+      // Prevent handling the same auth event multiple times
+      if (authEventHandled) {
+        console.log("Auth event already handled, skipping");
+        return;
+      }
+
+      if (event.url.includes("auth/callback")) {
+        setAuthEventHandled(true);
+        console.log("Processing auth callback URL:", event.url);
+
+        try {
+          // First try to extract code from query params
+          const urlObj = new URL(event.url);
+          const code = urlObj.searchParams.get("code");
+
+          if (code) {
+            console.log(
+              "Auth code found in query params, exchanging for session"
+            );
             // Exchange the code for a session
             const { data, error } = await supabase.auth.exchangeCodeForSession(
               code
             );
+
             if (error) {
               console.error("Error exchanging code for session:", error);
               setGoogleError(error.message);
             } else {
-              console.log("Successfully authenticated with Google");
+              console.log("Successfully authenticated with code");
+              if (data.session) {
+                setSession(data.session);
+                setUser(data.session.user);
+
+                // Check admin status
+                if (data.session.user) {
+                  const adminStatus = await checkAdminStatus(
+                    data.session.user.id
+                  );
+                  setIsAdmin(adminStatus);
+                }
+              }
             }
-          } catch (err) {
-            console.error("Error in OAuth callback:", err);
-            setGoogleError("Failed to complete authentication");
-          } finally {
-            setGoogleAuthLoading(false);
           }
+          // If no code in query params, check for access_token in hash fragment
+          else if (event.url.includes("#")) {
+            console.log("No code found, checking for hash fragment");
+            const hashParams = parseHashFragment(event.url);
+
+            if (hashParams && hashParams.access_token) {
+              console.log("Access token found in hash fragment");
+
+              // Set the session directly with the token
+              const { data, error } = await supabase.auth.setSession({
+                access_token: hashParams.access_token,
+                refresh_token: hashParams.refresh_token || "",
+              });
+
+              if (error) {
+                console.error("Error setting session from hash:", error);
+                setGoogleError(error.message);
+              } else {
+                console.log("Successfully set session from hash fragment");
+                if (data.session) {
+                  setSession(data.session);
+                  setUser(data.session.user);
+
+                  // Check admin status
+                  if (data.session.user) {
+                    const adminStatus = await checkAdminStatus(
+                      data.session.user.id
+                    );
+                    setIsAdmin(adminStatus);
+                  }
+                }
+              }
+            } else {
+              console.error("No access token found in hash fragment");
+              setGoogleError("Authentication failed: No access token");
+            }
+          } else {
+            console.error("No auth code or access token found in URL");
+            setGoogleError("Authentication failed: No authentication data");
+          }
+        } catch (err) {
+          console.error("Error processing auth callback:", err);
+          setGoogleError("Failed to complete authentication");
+        } finally {
+          setGoogleAuthLoading(false);
+          // Reset the flag after a delay to allow for future auth attempts
+          setTimeout(() => setAuthEventHandled(false), 5000);
         }
       }
     };
@@ -91,6 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     // Check if app was opened via a deep link
     Linking.getInitialURL().then((url) => {
       if (url) {
+        console.log("App opened with initial URL:", url);
         handleDeepLink({ url });
       }
     });
@@ -98,7 +182,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       subscription.remove();
     };
-  }, []);
+  }, [authEventHandled]);
 
   useEffect(() => {
     // Set up a listener for app state changes to handle token refresh
@@ -112,6 +196,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Get the initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log(
+        "Initial session check:",
+        session ? "Session exists" : "No session"
+      );
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -121,6 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const {
       data: { subscription: authSubscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth state changed, event:", _event);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -210,11 +299,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     metadata?: { [key: string]: any }
   ) => {
     try {
+      // Get the URL for your app's scheme
+      const redirectUrl = Linking.createURL("auth/callback");
+      console.log("Sign up redirect URL:", redirectUrl);
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: metadata,
+          emailRedirectTo: redirectUrl,
         },
       });
       return { error };
@@ -227,17 +321,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       setGoogleError(null);
       setGoogleAuthLoading(true);
+      setAuthEventHandled(false);
 
       // Get the URL for your app's scheme
       const redirectUrl = Linking.createURL("auth/callback");
 
-      console.log("Redirect URL:", redirectUrl);
+      // Log the redirect URL for debugging
+      console.log("Google auth redirect URL:", redirectUrl);
 
       // Start the OAuth flow
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: redirectUrl,
+          skipBrowserRedirect: false,
         },
       });
 
@@ -255,22 +352,112 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
 
-      console.log("Opening browser for OAuth...");
+      console.log("Opening browser for OAuth with URL:", data.url);
 
       // Open the browser for authentication
       const result = await WebBrowser.openAuthSessionAsync(
         data.url,
-        redirectUrl
+        redirectUrl,
+        {
+          showInRecents: true,
+          createTask: true,
+        }
       );
 
+      console.log("WebBrowser result:", result.type);
+
       if (result.type === "success") {
-        console.log("Auth session completed successfully");
-        // The deep link handler will process the result
+        console.log(
+          "Auth session completed successfully with URL:",
+          result.url
+        );
+
+        // Manually handle the URL if the deep link handler doesn't catch it
+        if (result.url) {
+          try {
+            // First check for code in query params
+            const urlObj = new URL(result.url);
+            const code = urlObj.searchParams.get("code");
+
+            if (code) {
+              console.log("Processing auth code from WebBrowser result");
+              const { data, error } =
+                await supabase.auth.exchangeCodeForSession(code);
+
+              if (error) {
+                console.error("Error exchanging code for session:", error);
+                setGoogleError(error.message);
+              } else {
+                console.log(
+                  "Successfully authenticated with Google via WebBrowser result"
+                );
+                setSession(data.session);
+                setUser(data.session?.user ?? null);
+
+                // Check admin status
+                if (data.session?.user) {
+                  const adminStatus = await checkAdminStatus(
+                    data.session.user.id
+                  );
+                  setIsAdmin(adminStatus);
+                }
+              }
+            }
+            // If no code, check for hash fragment with access_token
+            else if (result.url.includes("#")) {
+              console.log(
+                "No code found in WebBrowser result, checking hash fragment"
+              );
+              const hashParams = parseHashFragment(result.url);
+
+              if (hashParams && hashParams.access_token) {
+                console.log("Access token found in hash fragment");
+
+                // Set the session directly with the token
+                const { data, error } = await supabase.auth.setSession({
+                  access_token: hashParams.access_token,
+                  refresh_token: hashParams.refresh_token || "",
+                });
+
+                if (error) {
+                  console.error("Error setting session from hash:", error);
+                  setGoogleError(error.message);
+                } else {
+                  console.log("Successfully set session from hash fragment");
+                  if (data.session) {
+                    setSession(data.session);
+                    setUser(data.session.user);
+
+                    // Check admin status
+                    if (data.session.user) {
+                      const adminStatus = await checkAdminStatus(
+                        data.session.user.id
+                      );
+                      setIsAdmin(adminStatus);
+                    }
+                  }
+                }
+              } else {
+                console.error("No access token found in hash fragment");
+                setGoogleError("Authentication failed: No access token");
+              }
+            } else {
+              console.error(
+                "No auth code or access token found in WebBrowser result URL"
+              );
+              setGoogleError("Authentication failed: No authentication data");
+            }
+          } catch (error) {
+            console.error("Error processing WebBrowser result:", error);
+            setGoogleError("Failed to process authentication result");
+          }
+        }
       } else {
         console.log("Auth session was dismissed", result.type);
         setGoogleError("Authentication was cancelled");
-        setGoogleAuthLoading(false);
       }
+
+      setGoogleAuthLoading(false);
     } catch (error) {
       console.error("Google auth error:", error);
       setGoogleError("Failed to authenticate with Google");
@@ -311,8 +498,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const resetPassword = async (email: string) => {
     try {
+      const redirectUrl = Linking.createURL("auth/reset-password");
+      console.log("Reset password redirect URL:", redirectUrl);
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: Linking.createURL("auth/reset-password"),
+        redirectTo: redirectUrl,
       });
       return { error };
     } catch (error) {
@@ -353,7 +543,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         signInWithGoogle,
         signOut,
         resetPassword,
-        refreshAdminStatus, // Add this new function
+        refreshAdminStatus,
       }}
     >
       {children}

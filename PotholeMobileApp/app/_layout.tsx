@@ -8,7 +8,7 @@ import { Provider as PaperProvider } from "react-native-paper";
 import { ThemeProvider, useTheme } from "../context/theme-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { registerForPushNotificationsAsync } from "../lib/notifications";
 
 // Update the RootLayoutInner component to handle auth state changes more reliably
@@ -16,6 +16,7 @@ function RootLayoutInner() {
   const { user, loading, isAdmin } = useAuth();
   const { theme, isDarkMode } = useTheme();
   const router = useRouter();
+  const navigationPerformedRef = useRef(false);
 
   // Update StatusBar based on theme
   useEffect(() => {
@@ -30,12 +31,37 @@ function RootLayoutInner() {
   // Effect to handle navigation based on auth state
   useEffect(() => {
     if (!loading) {
-      if (!user) {
-        router.replace("/(screens)/(auth)/login");
-      } else if (isAdmin) {
-        router.replace("/(screens)/(admin)/portal");
-      }
+      // Reset the navigation flag when auth state changes
+      navigationPerformedRef.current = false;
     }
+  }, [loading]);
+
+  // Separate effect for navigation to avoid race conditions
+  useEffect(() => {
+    const handleNavigation = async () => {
+      if (!loading && !navigationPerformedRef.current) {
+        navigationPerformedRef.current = true;
+        console.log(
+          "Navigation state: user=",
+          user ? "logged in" : "logged out",
+          "isAdmin=",
+          isAdmin
+        );
+
+        if (!user) {
+          console.log("Navigating to login screen");
+          router.replace("/(screens)/(auth)/login");
+        } else if (isAdmin) {
+          console.log("Navigating to admin portal");
+          router.replace("/(screens)/(admin)/portal");
+        } else {
+          console.log("Navigating to user dashboard");
+          router.replace("/(screens)/(dashboard)/home");
+        }
+      }
+    };
+
+    handleNavigation();
   }, [user, isAdmin, loading, router]);
 
   if (loading) {

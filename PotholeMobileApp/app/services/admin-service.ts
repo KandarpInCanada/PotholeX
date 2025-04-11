@@ -8,15 +8,16 @@ import { supabase, createAdminClient } from "../../lib/supabase"
 export const checkAdminStatus = async (userId: string): Promise<boolean> => {
   try {
     console.log("Checking admin status for user:", userId)
-    const { data, error } = await supabase.from("profiles").select("is_admin").eq("id", userId).single()
+    const { data, error } = await supabase.from("profiles").select("is_admin").eq("id", userId)
 
     if (error) {
       console.error("Error in checkAdminStatus query:", error)
       throw error
     }
 
+    // Check if any data was returned and if the first row has is_admin set to true
     console.log("Admin status data:", data)
-    return data?.is_admin || false
+    return data && data.length > 0 && data[0]?.is_admin === true
   } catch (error) {
     console.error("Error checking admin status:", error)
     return false

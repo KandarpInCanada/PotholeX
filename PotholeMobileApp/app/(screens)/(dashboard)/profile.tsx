@@ -174,28 +174,21 @@ export default function UserProfileScreen() {
     );
   };
 
-  // Update the performLogout function to ensure it properly completes and redirects
+  // Update the performLogout function to avoid double navigation
   const performLogout = async () => {
     try {
       setLoggingOut(true);
       console.log("Logging out...");
 
       // Clear all app data
-      await Promise.all([
-        signOut(),
-        AsyncStorage.removeItem("hasSeenOnboarding"),
-        // Add any other app data that should be cleared on logout
-        AsyncStorage.removeItem("userSettings"),
-        AsyncStorage.removeItem("recentReports"),
-      ]);
+      await signOut();
 
-      console.log("Logout successful");
+      // Keep the loading state active to prevent double navigation
+      // The auth state change in _layout.tsx will handle the navigation
+      console.log("Logout successful, waiting for auth state to update");
 
-      // Force navigation to login screen after a short delay
-      setTimeout(() => {
-        setLoggingOut(false); // Make sure to reset the loading state
-        router.replace("/(screens)/(auth)/login");
-      }, 500);
+      // We'll keep the loading state active but won't navigate manually
+      // This prevents the double navigation issue
     } catch (error) {
       setLoggingOut(false);
       console.error("Error during logout:", error);

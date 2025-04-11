@@ -1,10 +1,9 @@
 "use client";
 
 import type React from "react";
-import { Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Text, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotiView } from "moti";
-import { useRouter } from "expo-router";
 
 interface EmptyStateProps {
   message: string;
@@ -12,8 +11,6 @@ interface EmptyStateProps {
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({ message, subMessage }) => {
-  const router = useRouter();
-
   return (
     <MotiView
       from={{ opacity: 0, scale: 0.9 }}
@@ -28,14 +25,6 @@ const EmptyState: React.FC<EmptyStateProps> = ({ message, subMessage }) => {
       />
       <Text style={styles.emptyText}>{message}</Text>
       <Text style={styles.emptySubtext}>{subMessage}</Text>
-
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => router.push("(screens)/(dashboard)/add-report")}
-      >
-        <MaterialCommunityIcons name="plus" size={20} color="#FFFFFF" />
-        <Text style={styles.addButtonText}>Add New Report</Text>
-      </TouchableOpacity>
     </MotiView>
   );
 };
@@ -46,6 +35,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
+    // Add marginTop to push the content up from the bottom half
+    marginTop: -100,
   },
   emptyText: {
     fontSize: 18,
@@ -59,20 +50,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 8,
     marginBottom: 24,
-  },
-  addButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#0284c7",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    marginTop: 16,
-  },
-  addButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    marginLeft: 8,
   },
 });
 
