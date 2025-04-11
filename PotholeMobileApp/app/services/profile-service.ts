@@ -1,5 +1,6 @@
 import { supabase, type Profile } from "../../lib/supabase"
 import { EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY } from "@env"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 // Get user profile
 export const getUserProfile = async (): Promise<(Profile & { email: string }) | null> => {
   try {
@@ -8,56 +9,79 @@ export const getUserProfile = async (): Promise<(Profile & { email: string }) | 
       error: authError,
     } = await supabase.auth.getUser()
 
-    if (authError || !user) {
+    if (authError) {
       console.error("Auth error:", authError)
+
+      // If there's an auth error, clear any stale session data
+      try {
+        await supabase.auth.signOut()
+        await AsyncStorage.removeItem("supabase.auth.token")
+        console.log("Cleared stale session data due to auth error")
+      } catch (clearError) {
+        console.error("Error clearing session data:", clearError)
+      }
+
+      return null
+    }
+
+    if (!user) {
+      console.log("No user found in session")
       return null
     }
 
     // First check if profile exists
-    const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id)
+    const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single()
 
     if (error) {
-      console.error("Error fetching profile:", error)
-      return null
-    }
+      if (error.code === "PGRST116") {
+        // Profile doesn't exist, create a new one with default values
+        const username = user.email?.split("@")[0] || "user"
+        const fullName = user.user_metadata?.name || username
 
-    // If no profile exists, create a new one
-    if (!data || data.length === 0) {
-      const username = user.email?.split("@")[0] || "user"
-      const fullName = user.user_metadata?.name || username
+        const newProfile = {
+          id: user.id,
+          username: username,
+          full_name: fullName,
+          avatar_url: user.user_metadata?.avatar_url || "",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
 
-      const newProfile = {
-        id: user.id,
-        username: username,
-        full_name: fullName,
-        avatar_url: user.user_metadata?.avatar_url || "",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
+        console.log("Creating new profile:", newProfile)
 
-      console.log("Creating new profile:", newProfile)
+        const { error: insertError } = await supabase.from("profiles").insert(newProfile)
 
-      // Try to create the profile using RPC instead of direct insert
-      // This can bypass RLS if you have a server function set up
-      const { error: insertError } = await supabase.rpc("create_user_profile", newProfile)
+        if (insertError) {
+          console.error("Error creating profile:", insertError)
+          return null
+        }
 
-      if (insertError) {
-        console.error("Error creating profile:", insertError)
-        // Fall back to returning what we have even if we couldn't save it
         return { ...newProfile, email: user.email || "" }
       }
 
-      return { ...newProfile, email: user.email || "" }
+      console.error("Error fetching profile:", error)
+
+      // If we get a foreign key violation or other database error related to user not existing
+      if (error.code === "23503" || error.message?.includes("foreign key constraint")) {
+        console.error("User does not exist in auth system but has a token. Signing out.")
+        await supabase.auth.signOut()
+        return null
+      }
+
+      return null
     }
 
-    // Profile exists, return it
-    const profile = data[0]
-    return {
-      ...profile,
-      username: profile.username || user.email?.split("@")[0] || "user",
-      full_name: profile.full_name || user.user_metadata?.name || profile.username || "User",
+    // Ensure we have default values for username and full_name if they're null or empty
+    const profile = {
+      ...data,
+      username: data.username || user.email?.split("@")[0] || "user",
+      full_name: data.full_name || user.user_metadata?.name || data.username || "User",
       email: user.email || "",
     }
+
+    console.log("Fetched profile:", profile)
+
+    return profile
   } catch (error) {
     console.error("Unexpected error in getUserProfile:", error)
     return null

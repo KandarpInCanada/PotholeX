@@ -1,5 +1,5 @@
 // Configure the API URL - replace with your actual server URL
-const API_URL = "http://192.168.2.54:5000" // Update this with your server address
+const API_URL = "http://192.168.2.54:5001" // Update this with your server address
 const CONFIDENCE_THRESHOLD = 0.5 // Minimum confidence to consider a valid pothole
 
 export interface PotholeDetection {

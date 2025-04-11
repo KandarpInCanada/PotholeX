@@ -72,20 +72,45 @@ export async function registerForPushNotificationsAsync() {
   return token
 }
 
-/**
- * Save the push notification token to the user's profile
- * @param userId User ID
- * @param token Expo push token
- */
+// Improve error handling in savePushToken function
 export async function savePushToken(userId: string, token: string) {
   try {
-    if (!userId || !token) return
+    if (!userId || !token) {
+      console.log("Missing userId or token, cannot save push token")
+      return
+    }
 
+    // First check if the user exists in the profiles table
+    const { data: userExists, error: userCheckError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", userId)
+      .single()
+
+    if (userCheckError) {
+      if (userCheckError.code === "PGRST116") {
+        console.log("User does not exist in profiles table, cannot save push token")
+        return
+      }
+      console.error("Error checking user existence:", userCheckError)
+      return
+    }
+
+    if (!userExists) {
+      console.log("User does not exist in profiles table, cannot save push token")
+      return
+    }
+
+    // Now it's safe to save the token
     const { error } = await supabase
       .from("push_tokens")
       .upsert({ user_id: userId, token, updated_at: new Date().toISOString() }, { onConflict: "user_id" })
 
-    if (error) throw error
+    if (error) {
+      console.error("Error saving push token:", error)
+      return
+    }
+
     console.log("Push token saved successfully")
   } catch (error) {
     console.error("Error saving push token:", error)

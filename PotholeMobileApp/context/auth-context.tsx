@@ -184,6 +184,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [authEventHandled]);
 
+  // Improve the auth state change handler to better handle errors
   useEffect(() => {
     // Set up a listener for app state changes to handle token refresh
     const subscription = AppState.addEventListener("change", (state) => {
@@ -195,11 +196,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     // Get the initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
       console.log(
         "Initial session check:",
         session ? "Session exists" : "No session"
       );
+
+      if (error) {
+        console.error("Session error:", error);
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -208,8 +218,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     // Set up a listener for auth state changes
     const {
       data: { subscription: authSubscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("Auth state changed, event:", _event);
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed, event:", event);
+
+      if (event === "TOKEN_REFRESHED" && !session) {
+        console.log("Token refresh failed, signing out");
+        await signOut();
+        return;
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -219,6 +236,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       subscription.remove();
       authSubscription.unsubscribe();
+    };
+  }, []);
+
+  // Add a new useEffect to handle app state changes and properly sign out when the app is closed
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: string) => {
+      // When app moves to background or inactive state
+      if (nextAppState === "background" || nextAppState === "inactive") {
+        console.log("App moving to background, cleaning up session...");
+
+        // Store a timestamp to track how long the app has been in background
+        await AsyncStorage.setItem(
+          "app_background_time",
+          Date.now().toString()
+        );
+      }
+      // When app comes back to foreground
+      else if (nextAppState === "active") {
+        try {
+          // Check if we have a stored timestamp
+          const backgroundTimeStr = await AsyncStorage.getItem(
+            "app_background_time"
+          );
+          if (backgroundTimeStr) {
+            const backgroundTime = Number.parseInt(backgroundTimeStr);
+            const currentTime = Date.now();
+            const timeInBackground = currentTime - backgroundTime;
+
+            // If app was in background for more than 30 minutes (1800000 ms), sign out
+            if (timeInBackground > 1800000) {
+              console.log("App was in background for too long, signing out...");
+              await signOut();
+            }
+
+            // Clear the timestamp
+            await AsyncStorage.removeItem("app_background_time");
+          }
+        } catch (error) {
+          console.error("Error handling app state change:", error);
+        }
+      }
+    };
+
+    // Subscribe to app state changes
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+
+    return () => {
+      subscription.remove();
     };
   }, []);
 
@@ -465,7 +533,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Update the signOut function in the AuthProvider component to ensure proper navigation
+  // Improve the signOut function to be more thorough
   const signOut = async () => {
     console.log("Signing out user...");
     try {
@@ -474,6 +542,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         "hasSeenOnboarding",
         "userSettings",
         "recentReports",
+        "last_activity_time",
+        "app_background_time",
+        "supabase.auth.token",
         // Add any other keys that should be cleared on logout
       ];
 
@@ -488,10 +559,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(null);
       setSession(null);
       setIsAdmin(false);
+      setAuthEventHandled(false);
 
       console.log("User signed out successfully");
     } catch (error) {
       console.error("Error during sign out:", error);
+
+      // Force reset auth state even if there's an error
+      setUser(null);
+      setSession(null);
+      setIsAdmin(false);
+      setAuthEventHandled(false);
+
       throw error; // Re-throw to handle in the UI
     }
   };

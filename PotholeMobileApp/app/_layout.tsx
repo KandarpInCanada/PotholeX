@@ -1,22 +1,36 @@
 "use client";
 
-// Update the StatusBar component to ensure it matches the header background color
-import { Stack } from "expo-router";
+import { Slot } from "expo-router";
 import { View, ActivityIndicator, StatusBar, Platform } from "react-native";
 import { AuthProvider, useAuth } from "../context/auth-context";
 import { Provider as PaperProvider } from "react-native-paper";
 import { ThemeProvider, useTheme } from "../context/theme-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { registerForPushNotificationsAsync } from "../lib/notifications";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Update the RootLayoutInner component to handle auth state changes more reliably
 function RootLayoutInner() {
-  const { user, loading, isAdmin } = useAuth();
   const { theme, isDarkMode } = useTheme();
   const router = useRouter();
   const navigationPerformedRef = useRef(false);
+  const lastActivityTimeRef = useRef(Date.now());
+  const [authState, setAuthState] = useState<{
+    user: any | null;
+    loading: boolean;
+    isAdmin: boolean;
+  }>({
+    user: null,
+    loading: true,
+    isAdmin: false,
+  });
+  const { user, loading, isAdmin, signOut } = useAuth(); // Moved useAuth here
+
+  useEffect(() => {
+    setAuthState({ user, loading, isAdmin });
+  }, [user, loading, isAdmin]);
 
   // Update StatusBar based on theme
   useEffect(() => {
@@ -28,30 +42,66 @@ function RootLayoutInner() {
     }
   }, [isDarkMode, theme]);
 
+  // Add session activity tracking
+  useEffect(() => {
+    const updateLastActivity = () => {
+      lastActivityTimeRef.current = Date.now();
+      AsyncStorage.setItem(
+        "last_activity_time",
+        lastActivityTimeRef.current.toString()
+      );
+    };
+
+    // Update last activity time when component mounts
+    updateLastActivity();
+
+    // Set up interval to check for session timeout
+    const checkSessionTimeout = async () => {
+      const lastActivityStr = await AsyncStorage.getItem("last_activity_time");
+      if (lastActivityStr) {
+        const lastActivity = Number.parseInt(lastActivityStr);
+        const currentTime = Date.now();
+        const inactiveTime = currentTime - lastActivity;
+
+        // If inactive for more than 1 hour (3600000 ms), sign out
+        if (inactiveTime > 3600000 && authState.user) {
+          console.log("Session timeout due to inactivity, signing out...");
+          await signOut();
+        }
+      }
+    };
+
+    const interval = setInterval(checkSessionTimeout, 60000); // Check every minute
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [authState.user, signOut]);
+
   // Effect to handle navigation based on auth state
   useEffect(() => {
-    if (!loading) {
+    if (!authState.loading) {
       // Reset the navigation flag when auth state changes
       navigationPerformedRef.current = false;
     }
-  }, [loading]);
+  }, [authState.loading]);
 
   // Separate effect for navigation to avoid race conditions
   useEffect(() => {
     const handleNavigation = async () => {
-      if (!loading && !navigationPerformedRef.current) {
+      if (!authState.loading) {
         navigationPerformedRef.current = true;
         console.log(
           "Navigation state: user=",
-          user ? "logged in" : "logged out",
+          authState.user ? "logged in" : "logged out",
           "isAdmin=",
-          isAdmin
+          authState.isAdmin
         );
 
-        if (!user) {
+        if (!authState.user) {
           console.log("Navigating to login screen");
           router.replace("/(screens)/(auth)/login");
-        } else if (isAdmin) {
+        } else if (authState.isAdmin) {
           console.log("Navigating to admin portal");
           router.replace("/(screens)/(admin)/portal");
         } else {
@@ -62,9 +112,9 @@ function RootLayoutInner() {
     };
 
     handleNavigation();
-  }, [user, isAdmin, loading, router]);
+  }, [authState.user, authState.isAdmin, authState.loading, router]);
 
-  if (loading) {
+  if (authState.loading) {
     return (
       <View
         style={{
@@ -79,23 +129,8 @@ function RootLayoutInner() {
     );
   }
 
-  return (
-    <Stack screenOptions={{ headerShown: false, animation: "none" }}>
-      {!user ? (
-        // Not logged in - show onboarding and auth screens
-        <>
-          <Stack.Screen name="(screens)/(onboarding)/lottie-splash" />
-          <Stack.Screen name="(screens)/(auth)" />
-        </>
-      ) : isAdmin ? (
-        // Admin user - ONLY show admin screens
-        <Stack.Screen name="(screens)/(admin)" />
-      ) : (
-        // Regular user - ONLY show dashboard screens
-        <Stack.Screen name="(screens)/(dashboard)" />
-      )}
-    </Stack>
-  );
+  // Use Slot instead of Stack to render children
+  return <Slot />;
 }
 
 // Wrap the entire app with AuthProvider and ThemeProvider
@@ -112,6 +147,7 @@ export default function RootLayout() {
 
     registerForNotifications();
   }, []);
+
   return (
     <AuthProvider>
       <ThemeProvider>
