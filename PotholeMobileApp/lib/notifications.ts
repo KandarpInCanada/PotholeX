@@ -1,13 +1,21 @@
+// Add this file-level documentation at the top of the file after imports
+/**
+ * Notifications Module
+ *
+ * This module handles all notification-related functionality including:
+ * - Push notification registration and token management
+ * - Sending notifications to users and admins
+ * - Storing and retrieving notifications from the database
+ * - Notification status management (read/unread)
+ *
+ * The module integrates with Expo's notification system and Supabase for persistence.
+ */
 import * as Notifications from "expo-notifications"
 import * as Device from "expo-device"
 import { Platform } from "react-native"
 import { supabase } from "./supabase"
 import Constants from "expo-constants"
-
-// Add this at the top of the file after imports
 const isExpoGo = Constants.appOwnership === "expo"
-
-// Configure notification behavior
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -16,39 +24,37 @@ Notifications.setNotificationHandler({
   }),
 })
 
+// Update the registerForPushNotificationsAsync function comment
 /**
  * Registers the device for push notifications and saves the token to the database
- * @returns The Expo push token
+ *
+ * This function:
+ * 1. Checks if running in Expo Go (limited functionality)
+ * 2. Verifies the device is physical (not a simulator)
+ * 3. Requests notification permissions if not already granted
+ * 4. Retrieves and returns the Expo push token
+ * 5. Sets up Android notification channel if on Android
+ *
+ * @returns {Promise<string|null>} The Expo push token or null if registration failed
  */
 export async function registerForPushNotificationsAsync() {
   let token
-
-  // Add a warning for Expo Go users
   if (isExpoGo) {
     console.log(
       "Push notifications have limited functionality in Expo Go. Consider using a development build for full functionality.",
     )
   }
-
-  // Check if the device is physical (not a simulator/emulator)
   if (Device.isDevice) {
-    // Request notification permissions
     const { status: existingStatus } = await Notifications.getPermissionsAsync()
     let finalStatus = existingStatus
-
-    // If we don't have permission yet, ask for it
     if (existingStatus !== "granted") {
       const { status } = await Notifications.requestPermissionsAsync()
       finalStatus = status
     }
-
-    // If we still don't have permission, exit
     if (finalStatus !== "granted") {
       console.log("Failed to get push token for push notification!")
       return null
     }
-
-    // Get the token
     token = (
       await Notifications.getExpoPushTokenAsync({
         projectId: "81aa287b-9181-4ab6-a423-666bb996cdfd", // Using the projectId from app.json
@@ -58,8 +64,6 @@ export async function registerForPushNotificationsAsync() {
   } else {
     console.log("Must use physical device for push notifications")
   }
-
-  // Special handling for Android
   if (Platform.OS === "android") {
     Notifications.setNotificationChannelAsync("default", {
       name: "default",
@@ -68,25 +72,33 @@ export async function registerForPushNotificationsAsync() {
       lightColor: "#FF231F7C",
     })
   }
-
   return token
 }
 
-// Improve error handling in savePushToken function
+// Update the savePushToken function comment
+/**
+ * Saves a user's push notification token to the database
+ *
+ * This function performs validation to ensure:
+ * 1. Both userId and token are provided
+ * 2. The user exists in the profiles table
+ * 3. The token is properly upserted to avoid duplicates
+ *
+ * @param {string} userId - The user's unique identifier
+ * @param {string} token - The Expo push notification token
+ * @returns {Promise<void>}
+ */
 export async function savePushToken(userId: string, token: string) {
   try {
     if (!userId || !token) {
       console.log("Missing userId or token, cannot save push token")
       return
     }
-
-    // First check if the user exists in the profiles table
     const { data: userExists, error: userCheckError } = await supabase
       .from("profiles")
       .select("id")
       .eq("id", userId)
       .single()
-
     if (userCheckError) {
       if (userCheckError.code === "PGRST116") {
         console.log("User does not exist in profiles table, cannot save push token")
@@ -95,29 +107,35 @@ export async function savePushToken(userId: string, token: string) {
       console.error("Error checking user existence:", userCheckError)
       return
     }
-
     if (!userExists) {
       console.log("User does not exist in profiles table, cannot save push token")
       return
     }
-
-    // Now it's safe to save the token
     const { error } = await supabase
       .from("push_tokens")
       .upsert({ user_id: userId, token, updated_at: new Date().toISOString() }, { onConflict: "user_id" })
-
     if (error) {
       console.error("Error saving push token:", error)
       return
     }
-
     console.log("Push token saved successfully")
   } catch (error) {
     console.error("Error saving push token:", error)
   }
 }
 
-// Update the getAdminPushTokens function to avoid using a join that requires a relationship
+// Update the getAdminPushTokens function comment
+/**
+ * Retrieves push notification tokens for all admin users
+ *
+ * This implementation uses a two-step process:
+ * 1. First fetches all admin user IDs from profiles table
+ * 2. Then retrieves push tokens associated with those admin IDs
+ *
+ * This approach avoids complex joins and potential relationship issues.
+ *
+ * @returns {Promise<string[]>} Array of admin push tokens
+ */
 export async function getAdminPushTokens() {
   try {
     // First, get all admin user IDs
@@ -125,21 +143,15 @@ export async function getAdminPushTokens() {
       .from("profiles")
       .select("id")
       .eq("is_admin", true)
-
     if (profilesError) {
       console.error("Error fetching admin profiles:", profilesError)
       return []
     }
-
     if (!adminProfiles || adminProfiles.length === 0) {
       console.log("No admin profiles found")
       return []
     }
-
-    // Extract the admin user IDs
     const adminIds = adminProfiles.map((profile) => profile.id)
-
-    // Then fetch push tokens for those admin users
     const { data: tokenData, error: tokensError } = await supabase
       .from("push_tokens")
       .select("token")
@@ -149,7 +161,6 @@ export async function getAdminPushTokens() {
       console.error("Error fetching push tokens:", tokensError)
       return []
     }
-
     return tokenData?.map((item) => item.token) || []
   } catch (error) {
     console.error("Error fetching admin push tokens:", error)
@@ -157,19 +168,25 @@ export async function getAdminPushTokens() {
   }
 }
 
+// Update the sendPushNotification function comment
 /**
- * Send a push notification to specified tokens
- * @param tokens Array of Expo push tokens
- * @param title Notification title
- * @param body Notification body
- * @param data Additional data to send with the notification
+ * Sends push notifications to specified devices
+ *
+ * Uses Expo's push notification service to deliver notifications to multiple
+ * recipients simultaneously. Each notification includes title, body, and optional
+ * custom data payload.
+ *
+ * @param {string[]} tokens - Array of Expo push tokens to send notifications to
+ * @param {string} title - Notification title
+ * @param {string} body - Notification body text
+ * @param {object} data - Additional data to include with the notification (default: {})
+ * @returns {Promise<object|null>} Response from Expo's push service or null on error
  */
 export async function sendPushNotification(tokens: string[], title: string, body: string, data: object = {}) {
   if (!tokens.length) {
     console.log("No tokens to send notifications to")
     return
   }
-
   const messages = tokens.map((token) => ({
     to: token,
     sound: "default",
@@ -177,9 +194,7 @@ export async function sendPushNotification(tokens: string[], title: string, body
     body,
     data,
   }))
-
   try {
-    // Use Expo's push notification service
     const response = await fetch("https://exp.host/--/api/v2/push/send", {
       method: "POST",
       headers: {
@@ -189,7 +204,6 @@ export async function sendPushNotification(tokens: string[], title: string, body
       },
       body: JSON.stringify(messages),
     })
-
     const result = await response.json()
     console.log("Push notification response:", result)
     return result
@@ -199,10 +213,22 @@ export async function sendPushNotification(tokens: string[], title: string, body
   }
 }
 
-// Update the saveNotification function to be absolutely sure it doesn't use recipient_id
+// Update the saveNotification function comment
+/**
+ * Saves a notification to the database
+ *
+ * Creates a record in the notifications table with appropriate metadata.
+ * This function is designed to work with the specific schema of the notifications table,
+ * carefully avoiding any fields that don't exist in the schema.
+ *
+ * @param {string} reportId - ID of the pothole report this notification relates to
+ * @param {string} title - Notification title
+ * @param {string} message - Notification message content
+ * @param {boolean} forAdmins - Whether this notification is for admin users (default: false)
+ * @returns {Promise<object|null>} The created notification data or null on error
+ */
 export async function saveNotification(reportId: string, title: string, message: string, forAdmins = false) {
   try {
-    // Create an object with only the fields that exist in your database schema
     const notificationData = {
       report_id: reportId,
       title,
@@ -211,11 +237,8 @@ export async function saveNotification(reportId: string, title: string, message:
       is_read: false,
       created_at: new Date().toISOString(),
     }
-
     console.log("Saving notification with data:", notificationData)
-
     const { data, error } = await supabase.from("notifications").insert(notificationData)
-
     if (error) {
       console.error("Error saving notification:", error)
       throw error
@@ -223,12 +246,30 @@ export async function saveNotification(reportId: string, title: string, message:
     return data
   } catch (error) {
     console.error("Error saving notification:", error)
-    // Return null but don't throw so it doesn't break report submission
     return null
   }
 }
 
-// Update the notifyAdminsAboutNewReport function with better error handling
+// Update the notifyAdminsAboutNewReport function comment
+/**
+ * Notifies all admin users about a newly submitted pothole report
+ *
+ * Complete notification workflow that:
+ * 1. Retrieves all admin push tokens
+ * 2. Prepares notification content based on report details
+ * 3. Saves the notification to the database for persistence
+ * 4. Sends push notifications to all admin devices
+ *
+ * The function includes comprehensive error handling to ensure report submission
+ * is not affected by notification failures.
+ *
+ * @param {string} reportId - ID of the newly created report
+ * @param {object} reportDetails - Details about the report
+ * @param {string} reportDetails.location - Location description of the pothole
+ * @param {string} reportDetails.severity - Severity level of the pothole
+ * @param {string} reportDetails.category - Category of the pothole
+ * @returns {Promise<void>}
+ */
 export async function notifyAdminsAboutNewReport(
   reportId: string,
   reportDetails: {
@@ -240,30 +281,22 @@ export async function notifyAdminsAboutNewReport(
   console.log("Starting notification process for report:", reportId)
 
   try {
-    // 1. Get all admin tokens
     const adminTokens = await getAdminPushTokens()
     console.log(`Found ${adminTokens.length} admin tokens`)
-
-    // 2. Prepare notification content
     const title = "New Pothole Report"
     const body = `A new ${reportDetails.severity} pothole was reported at ${reportDetails.location}`
-
-    // 3. Save notification to database - with extra error handling
     try {
       console.log("Attempting to save notification to database")
       await saveNotification(
         reportId,
         title,
         body,
-        true, // For admins only
+        true,
       )
       console.log("Notification saved successfully")
     } catch (saveError) {
       console.error("Failed to save notification to database:", saveError)
-      // Continue with push notification even if database save fails
     }
-
-    // 4. Send push notification to all admin devices
     if (adminTokens.length > 0) {
       try {
         console.log("Sending push notifications to admins")
@@ -278,14 +311,29 @@ export async function notifyAdminsAboutNewReport(
         console.error("Error sending push notifications:", pushError)
       }
     }
-
     console.log("Notification process completed")
   } catch (error) {
     console.error("Error in notifyAdminsAboutNewReport:", error)
-    // Don't rethrow the error to prevent report submission failure
   }
 }
 
+// Update the notifyUserAboutStatusChange function comment
+/**
+ * Notifies a user when their report status has been updated
+ *
+ * Complete notification workflow that:
+ * 1. Retrieves the user's push tokens
+ * 2. Prepares notification content with formatted status
+ * 3. Saves the notification to the database for persistence
+ * 4. Sends push notifications to the user's devices
+ *
+ * @param {string} reportId - ID of the report that was updated
+ * @param {string} userId - ID of the user who submitted the report
+ * @param {string} newStatus - The new status of the report
+ * @param {object} reportDetails - Details about the report
+ * @param {string} reportDetails.location - Location description of the pothole
+ * @returns {Promise<void>}
+ */
 // Add this new function after the notifyAdminsAboutNewReport function
 export async function notifyUserAboutStatusChange(
   reportId: string,
@@ -298,40 +346,30 @@ export async function notifyUserAboutStatusChange(
   console.log(`Starting notification process for status change of report ${reportId} to user ${userId}`)
 
   try {
-    // 1. Get user's push token
     const { data: tokenData, error: tokenError } = await supabase
       .from("push_tokens")
       .select("token")
       .eq("user_id", userId)
-
     if (tokenError) {
       console.error("Error fetching user push token:", tokenError)
       return
     }
-
     const userTokens = tokenData?.map((item) => item.token) || []
     console.log(`Found ${userTokens.length} user tokens`)
-
-    // 2. Prepare notification content
     const title = "Report Status Updated"
     const body = `Your pothole report at ${reportDetails.location} has been updated to: ${formatStatus(newStatus)}`
-
-    // 3. Save notification to database
     try {
       console.log("Saving notification to database")
       await saveNotification(
         reportId,
         title,
         body,
-        false, // Not for admins, for regular user
+        false,
       )
       console.log("Notification saved successfully")
     } catch (saveError) {
       console.error("Failed to save notification to database:", saveError)
-      // Continue with push notification even if database save fails
     }
-
-    // 4. Send push notification to user's devices
     if (userTokens.length > 0) {
       try {
         console.log("Sending push notification to user")
@@ -345,13 +383,22 @@ export async function notifyUserAboutStatusChange(
         console.error("Error sending push notification:", pushError)
       }
     }
-
     console.log("Status change notification process completed")
   } catch (error) {
     console.error("Error in notifyUserAboutStatusChange:", error)
   }
 }
 
+// Update the formatStatus function comment
+/**
+ * Formats a status code into a user-friendly display string
+ *
+ * Converts internal status codes (like "in_progress") to properly capitalized
+ * and formatted strings for display to users (like "In Progress").
+ *
+ * @param {string} status - The internal status code
+ * @returns {string} User-friendly formatted status text
+ */
 // Helper function to format status for user-friendly display
 function formatStatus(status: string): string {
   switch (status) {
@@ -368,6 +415,19 @@ function formatStatus(status: string): string {
   }
 }
 
+// Update the getNotifications function comment
+/**
+ * Retrieves notifications for a user based on their admin status
+ *
+ * Fetches notifications from the database with:
+ * - Filtering based on whether they're for admins or regular users
+ * - Sorting by creation date (newest first)
+ * - Optional limit on the number of notifications returned
+ *
+ * @param {boolean} isAdmin - Whether to fetch admin notifications
+ * @param {number} limit - Maximum number of notifications to retrieve (default: 50)
+ * @returns {Promise<Array>} Array of notification objects
+ */
 /**
  * Get notifications for a user
  * @param isAdmin Whether the user is an admin
@@ -377,16 +437,12 @@ function formatStatus(status: string): string {
 export async function getNotifications(isAdmin: boolean, limit = 50) {
   try {
     let query = supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(limit)
-
-    // If user is admin, get admin notifications, else get regular notifications
     if (isAdmin) {
       query = query.eq("for_admins", true)
     } else {
       query = query.eq("for_admins", false)
     }
-
     const { data, error } = await query
-
     if (error) throw error
     return data
   } catch (error) {
@@ -395,6 +451,16 @@ export async function getNotifications(isAdmin: boolean, limit = 50) {
   }
 }
 
+// Update the markNotificationsAsRead function comment
+/**
+ * Marks multiple notifications as read in a single operation
+ *
+ * Updates the is_read status to true for all specified notification IDs.
+ * This is more efficient than updating notifications individually.
+ *
+ * @param {string[]} notificationIds - Array of notification IDs to mark as read
+ * @returns {Promise<void>}
+ */
 /**
  * Mark notifications as read
  * @param notificationIds Array of notification IDs to mark as read
@@ -402,15 +468,25 @@ export async function getNotifications(isAdmin: boolean, limit = 50) {
 export async function markNotificationsAsRead(notificationIds: string[]) {
   try {
     if (!notificationIds.length) return
-
     const { error } = await supabase.from("notifications").update({ is_read: true }).in("id", notificationIds)
-
     if (error) throw error
   } catch (error) {
     console.error("Error marking notifications as read:", error)
   }
 }
 
+// Update the countUnreadNotifications function comment
+/**
+ * Counts unread notifications for a user based on their admin status
+ *
+ * Performs an optimized count query that:
+ * - Filters by read status (unread only)
+ * - Filters by whether notifications are for admins or regular users
+ * - Returns only the count, not the actual notification data
+ *
+ * @param {boolean} isAdmin - Whether to count admin notifications
+ * @returns {Promise<number>} Count of unread notifications
+ */
 /**
  * Count unread notifications
  * @param isAdmin Whether to count admin notifications
@@ -419,15 +495,12 @@ export async function markNotificationsAsRead(notificationIds: string[]) {
 export async function countUnreadNotifications(isAdmin: boolean) {
   try {
     let query = supabase.from("notifications").select("id", { count: "exact" }).eq("is_read", false)
-
     if (isAdmin) {
       query = query.eq("for_admins", true)
     } else {
       query = query.eq("for_admins", false)
     }
-
     const { count, error } = await query
-
     if (error) throw error
     return count || 0
   } catch (error) {

@@ -1,3 +1,17 @@
+/**
+ * Admin Report List Screen
+ *
+ * This screen allows administrators to view, filter, sort, and manage all pothole reports
+ * in the system. Admins can update report statuses, delete reports, and view detailed information.
+ *
+ * Key features:
+ * - Filtering reports by status and severity
+ * - Sorting reports by date and severity
+ * - Updating report status with notification to users
+ * - Deleting reports with confirmation
+ * - Animated UI elements for better user experience
+ */
+
 "use client";
 
 import type React from "react";
@@ -35,15 +49,12 @@ import {
 import { useAuth } from "../../../context/auth-context";
 import { EXPO_PUBLIC_SUPABASE_SECRET_KEY } from "@env";
 import { LinearGradient } from "expo-linear-gradient";
-// First, import the notification function at the top with the other imports
 import { notifyUserAboutStatusChange } from "../../../lib/notifications";
-
-// Replace FlatList with FlashList
 import { FlashList } from "@shopify/flash-list";
 
 export default function AdminReportList() {
   const router = useRouter();
-  const { user, isAdmin } = useAuth(); // Add useAuth hook
+  const { user, isAdmin } = useAuth();
   const [reports, setReports] = useState<PotholeReport[]>([]);
   const [filteredReports, setFilteredReports] = useState<PotholeReport[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,14 +81,23 @@ export default function AdminReportList() {
   );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+  /**
+   * Fetch reports when component mounts
+   */
   useEffect(() => {
     fetchReports();
   }, []);
 
+  /**
+   * Apply filters when any filter criteria changes
+   */
   useEffect(() => {
     applyFilters();
   }, [reports, searchQuery, statusFilter, severityFilter, sortBy]);
 
+  /**
+   * Fetches all pothole reports from the database with associated user profiles
+   */
   const fetchReports = async () => {
     try {
       setLoading(true);
@@ -103,6 +123,9 @@ export default function AdminReportList() {
     }
   };
 
+  /**
+   * Applies all active filters and sorting to the reports list
+   */
   const applyFilters = useCallback(() => {
     let filtered = [...reports];
 
@@ -155,6 +178,11 @@ export default function AdminReportList() {
     setFilteredReports(filtered);
   }, [reports, searchQuery, statusFilter, severityFilter, sortBy]);
 
+  /**
+   * Converts severity string to numeric value for sorting
+   * @param severity The severity level string
+   * @returns Numeric value representing severity (higher = more severe)
+   */
   const getSeverityValue = (severity?: string) => {
     switch (severity) {
       case SeverityLevel.DANGER:
@@ -168,33 +196,50 @@ export default function AdminReportList() {
     }
   };
 
+  /**
+   * Handles pull-to-refresh functionality
+   */
   const onRefresh = () => {
     setRefreshing(true);
     fetchReports();
   };
 
+  /**
+   * Updates the search query and triggers filtering
+   */
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
 
+  /**
+   * Resets all filters to their default values
+   */
   const clearFilters = () => {
     setStatusFilter(null);
     setSeverityFilter(null);
     setSortBy("newest");
   };
 
+  /**
+   * Opens the edit dialog for a report
+   */
   const handleEditReport = (report: PotholeReport) => {
     setSelectedReport(report);
     setEditedStatus(report.status as ReportStatus);
     setShowEditDialog(true);
   };
 
+  /**
+   * Opens the delete confirmation dialog for a report
+   */
   const handleDeleteReport = (report: PotholeReport) => {
     setSelectedReport(report);
     setShowDeleteDialog(true);
   };
 
-  // Then update the saveReportChanges function to send a notification
+  /**
+   * Saves changes to a report's status and notifies the user
+   */
   const saveReportChanges = async () => {
     if (!selectedReport || !selectedReport.id) {
       console.error("No report selected or report ID is missing");
@@ -282,6 +327,9 @@ export default function AdminReportList() {
     }
   };
 
+  /**
+   * Deletes a report after confirmation
+   */
   const confirmDeleteReport = async () => {
     if (!selectedReport) return;
 
@@ -306,7 +354,9 @@ export default function AdminReportList() {
     }
   };
 
-  // Replace the StatusChip component with this implementation
+  /**
+   * Component to display the status chip with icon and text
+   */
   const StatusChip: React.FC<{ status: ReportStatus }> = ({ status }) => (
     <View
       style={[
@@ -326,8 +376,9 @@ export default function AdminReportList() {
     </View>
   );
 
-  // Enhance animations in the report list screen
-  // Update the renderReportItem function to add staggered animations
+  /**
+   * Renders a report item with animations
+   */
   const renderReportItem = ({
     item,
     index,
@@ -446,6 +497,9 @@ export default function AdminReportList() {
     </MotiView>
   );
 
+  /**
+   * Renders the edit status dialog
+   */
   const renderEditDialog = () => (
     <Portal>
       <Dialog
@@ -784,7 +838,9 @@ export default function AdminReportList() {
   );
 }
 
-// Helper functions
+/**
+ * Helper function to get color for a report status
+ */
 const getStatusColor = (status?: string) => {
   switch (status) {
     case ReportStatus.FIXED:
@@ -798,6 +854,9 @@ const getStatusColor = (status?: string) => {
   }
 };
 
+/**
+ * Helper function to get icon name for a report status
+ */
 const getStatusIcon = (status: string) => {
   switch (status) {
     case ReportStatus.SUBMITTED:
@@ -813,6 +872,9 @@ const getStatusIcon = (status: string) => {
   }
 };
 
+/**
+ * Helper function to get color for a severity level
+ */
 const getSeverityColor = (severity?: string) => {
   switch (severity) {
     case SeverityLevel.DANGER:
@@ -826,11 +888,17 @@ const getSeverityColor = (severity?: string) => {
   }
 };
 
+/**
+ * Helper function to format status text for display
+ */
 const formatStatus = (status?: string) => {
   if (!status) return "Unknown";
   return status.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
 };
 
+/**
+ * Status color mapping for status chips
+ */
 const STATUS_COLORS: { [key in ReportStatus]: string } = {
   [ReportStatus.SUBMITTED]: "#64748B",
   [ReportStatus.IN_PROGRESS]: "#3B82F6",
@@ -838,6 +906,9 @@ const STATUS_COLORS: { [key in ReportStatus]: string } = {
   [ReportStatus.REJECTED]: "#EF4444",
 };
 
+/**
+ * Status icon mapping for status chips
+ */
 const STATUS_ICONS: Record<ReportStatus, string> = {
   [ReportStatus.SUBMITTED]: "clipboard-check-outline",
   [ReportStatus.IN_PROGRESS]: "progress-clock",

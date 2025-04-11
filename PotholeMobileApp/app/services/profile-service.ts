@@ -1,7 +1,32 @@
+/**
+ * Profile Service
+ *
+ * Manages all user profile-related operations including:
+ * - Retrieving user profiles from Supabase
+ * - Creating new profiles for first-time users
+ * - Updating existing user profiles
+ * - Handling profile avatar uploads to Supabase storage
+ *
+ * This service acts as an abstraction layer between the UI components
+ * and the Supabase backend for all profile-related operations.
+ */
+
 import { supabase, type Profile } from "../../lib/supabase"
 import { EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY } from "@env"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-// Get user profile
+
+/**
+ * Retrieves the current user's profile from Supabase
+ *
+ * This function:
+ * 1. Gets the authenticated user from Supabase auth
+ * 2. Handles authentication errors by clearing stale sessions
+ * 3. Fetches the user's profile from the profiles table
+ * 4. Creates a new profile if one doesn't exist
+ * 5. Returns the profile with default values for missing fields
+ *
+ * @returns The user profile with email or null if not authenticated/error
+ */
 export const getUserProfile = async (): Promise<(Profile & { email: string }) | null> => {
   try {
     const {
@@ -12,7 +37,6 @@ export const getUserProfile = async (): Promise<(Profile & { email: string }) | 
     if (authError) {
       console.error("Auth error:", authError)
 
-      // If there's an auth error, clear any stale session data
       try {
         await supabase.auth.signOut()
         await AsyncStorage.removeItem("supabase.auth.token")
@@ -29,12 +53,10 @@ export const getUserProfile = async (): Promise<(Profile & { email: string }) | 
       return null
     }
 
-    // First check if profile exists
     const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single()
 
     if (error) {
       if (error.code === "PGRST116") {
-        // Profile doesn't exist, create a new one with default values
         const username = user.email?.split("@")[0] || "user"
         const fullName = user.user_metadata?.name || username
 
@@ -61,7 +83,6 @@ export const getUserProfile = async (): Promise<(Profile & { email: string }) | 
 
       console.error("Error fetching profile:", error)
 
-      // If we get a foreign key violation or other database error related to user not existing
       if (error.code === "23503" || error.message?.includes("foreign key constraint")) {
         console.error("User does not exist in auth system but has a token. Signing out.")
         await supabase.auth.signOut()
@@ -71,7 +92,6 @@ export const getUserProfile = async (): Promise<(Profile & { email: string }) | 
       return null
     }
 
-    // Ensure we have default values for username and full_name if they're null or empty
     const profile = {
       ...data,
       username: data.username || user.email?.split("@")[0] || "user",
@@ -88,7 +108,12 @@ export const getUserProfile = async (): Promise<(Profile & { email: string }) | 
   }
 }
 
-// Update user profile
+/**
+ * Updates the current user's profile in Supabase
+ *
+ * @param profileData - Partial profile data to update
+ * @returns Boolean indicating success or failure
+ */
 export const updateUserProfile = async (profileData: Partial<Profile>): Promise<boolean> => {
   try {
     const {
@@ -121,7 +146,19 @@ export const updateUserProfile = async (profileData: Partial<Profile>): Promise<
   }
 }
 
-// Upload profile avatar
+/**
+ * Uploads a profile avatar image to Supabase storage
+ *
+ * This function:
+ * 1. Determines the file extension from the URI
+ * 2. Creates a unique file path in the avatars bucket
+ * 3. Uploads the image using FormData (compatible with React Native)
+ * 4. Returns the public URL of the uploaded image
+ *
+ * @param uri - Local URI of the image to upload
+ * @param userId - User ID to associate with the avatar
+ * @returns Public URL of the uploaded avatar or null if upload failed
+ */
 export const uploadProfileAvatar = async (uri: string, userId: string): Promise<string | null> => {
   try {
     const fileExt = uri.split(".").pop()?.toLowerCase() || "jpg"

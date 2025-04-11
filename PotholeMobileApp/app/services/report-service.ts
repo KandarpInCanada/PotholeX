@@ -1,9 +1,26 @@
+/**
+ * Report Service
+ *
+ * Manages all pothole report-related operations including:
+ * - Creating new reports
+ * - Uploading report images to Supabase storage
+ * - Fetching reports (all, user-specific, or by ID)
+ * - Liking and deleting reports
+ *
+ * This service acts as an abstraction layer between the UI components
+ * and the Supabase backend for all report-related operations.
+ */
+
 import { supabase, type PotholeReport, ReportStatus, type Profile, SeverityLevel } from "../../lib/supabase"
 import * as FileSystem from "expo-file-system"
 import { SUPABASE_URL, SUPABASE_ANON_KEY, STORAGE_BUCKET_NAME } from "../../config/env"
 import { notifyAdminsAboutNewReport } from "../../lib/notifications"
 
-// Get user profile
+/**
+ * Retrieves the current user's profile from Supabase
+ *
+ * @returns The user profile with ID and email or null if not authenticated/error
+ */
 export const getUserProfile = async (): Promise<(Profile & { id: string; email: string }) | null> => {
   const {
     data: { user },
@@ -17,7 +34,18 @@ export const getUserProfile = async (): Promise<(Profile & { id: string; email: 
   return { ...data, id: user.id, email: user.email }
 }
 
-// Save report
+/**
+ * Saves a new pothole report to the database
+ *
+ * This function:
+ * 1. Verifies the user is authenticated
+ * 2. Prepares the report data with default values for missing fields
+ * 3. Inserts the report into the database
+ * 4. Sends notifications to admins about the new report (non-blocking)
+ *
+ * @param report - The pothole report data to save
+ * @returns Object containing success status, data (if successful), and error (if failed)
+ */
 export const saveReport = async (
   report: PotholeReport,
 ): Promise<{ success: boolean; data?: PotholeReport; error?: any }> => {
@@ -46,7 +74,6 @@ export const saveReport = async (
       status: ReportStatus.SUBMITTED,
     }
 
-    // First save the report
     const { data, error } = await supabase.from("pothole_reports").insert(reportData).select("*")
     if (error) {
       console.error("Supabase insert error:", error)
@@ -56,10 +83,8 @@ export const saveReport = async (
       }
     }
 
-    // Then try to send notification, but don't let it affect the report submission result
     if (data && data.length > 0) {
       const savedReport = data[0]
-      // Use setTimeout to make this non-blocking
       setTimeout(() => {
         try {
           notifyAdminsAboutNewReport(savedReport.id, {
@@ -83,6 +108,20 @@ export const saveReport = async (
   }
 }
 
+/**
+ * Uploads report images to Supabase storage
+ *
+ * This function:
+ * 1. Processes each image in the provided array
+ * 2. Verifies the file exists on the device
+ * 3. Creates a unique file path for each image
+ * 4. Uploads the image using FormData (compatible with React Native)
+ * 5. Returns an array of public URLs for the uploaded images
+ *
+ * @param images - Array of local image URIs to upload
+ * @param reportId - Report ID to associate with the images
+ * @returns Array of public URLs for the uploaded images
+ */
 export const uploadReportImages = async (images: string[], reportId: string): Promise<string[]> => {
   try {
     const uploadedUrls: string[] = []
@@ -90,18 +129,15 @@ export const uploadReportImages = async (images: string[], reportId: string): Pr
       try {
         const uri = images[i]
         console.log(`Processing image ${i}:`, uri)
-        // Get file info
         const fileInfo = await FileSystem.getInfoAsync(uri)
         if (!fileInfo.exists) {
           console.error(`File does not exist: ${uri}`)
           continue
         }
-        // Get file extension
         const fileExt = uri.split(".").pop()?.toLowerCase() || "jpg"
         const fileName = `${reportId}_${i}.${fileExt}`
         const filePath = `reports/${reportId}/${fileName}`
         console.log(`File exists: ${fileInfo.exists}, size: ${fileInfo.size}, uri: ${uri}`)
-        // Create a FormData object (more reliable than blob for React Native)
         const formData = new FormData()
         formData.append("file", {
           uri: uri,
@@ -137,7 +173,14 @@ export const uploadReportImages = async (images: string[], reportId: string): Pr
   }
 }
 
-// Get all reports
+/**
+ * Retrieves all pothole reports from the database
+ *
+ * Fetches all reports with associated user profile information,
+ * ordered by creation date (newest first).
+ *
+ * @returns Array of pothole reports with profile information
+ */
 export const getAllReports = async (): Promise<PotholeReport[]> => {
   try {
     const { data, error } = await supabase
@@ -160,7 +203,11 @@ export const getAllReports = async (): Promise<PotholeReport[]> => {
   }
 }
 
-// Get user's reports
+/**
+ * Retrieves all reports created by the current user
+ *
+ * @returns Array of pothole reports created by the current user
+ */
 export const getUserReports = async (): Promise<PotholeReport[]> => {
   try {
     const {
@@ -180,7 +227,14 @@ export const getUserReports = async (): Promise<PotholeReport[]> => {
   }
 }
 
-// Get report by ID
+/**
+ * Retrieves a specific pothole report by ID
+ *
+ * Fetches a single report with associated user profile information.
+ *
+ * @param id - The ID of the report to retrieve
+ * @returns The pothole report with profile information or null if not found
+ */
 export const getReportById = async (id: string): Promise<PotholeReport | null> => {
   try {
     const { data, error } = await supabase
@@ -202,7 +256,14 @@ export const getReportById = async (id: string): Promise<PotholeReport | null> =
   }
 }
 
-// Like a report
+/**
+ * Increments the like count for a specific report
+ *
+ * Uses a Supabase RPC function to safely increment the likes counter.
+ *
+ * @param reportId - The ID of the report to like
+ * @returns Boolean indicating success or failure
+ */
 export const likeReport = async (reportId: string): Promise<boolean> => {
   try {
     const { error } = await supabase.rpc("increment_likes", {
@@ -219,7 +280,12 @@ export const likeReport = async (reportId: string): Promise<boolean> => {
   }
 }
 
-// Delete a report
+/**
+ * Deletes a specific pothole report
+ *
+ * @param reportId - The ID of the report to delete
+ * @returns Boolean indicating success or failure
+ */
 export const deleteReport = async (reportId: string): Promise<boolean> => {
   try {
     const { error } = await supabase.from("pothole_reports").delete().eq("id", reportId)

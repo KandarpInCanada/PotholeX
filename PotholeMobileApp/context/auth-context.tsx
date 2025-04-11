@@ -1,3 +1,19 @@
+/**
+ * Authentication Context
+ *
+ * This module provides comprehensive authentication state management for the application.
+ * It handles user authentication, session management, and admin status verification.
+ *
+ * Features:
+ * - Email/password authentication
+ * - Google OAuth integration
+ * - Session persistence and auto-refresh
+ * - Deep link handling for auth redirects
+ * - Admin status verification
+ * - Push notification token management
+ * - Automatic session timeout for security
+ */
+
 "use client";
 
 import type React from "react";
@@ -14,6 +30,10 @@ import {
   savePushToken,
 } from "../lib/notifications";
 
+/**
+ * Authentication context type definition
+ * Provides all authentication-related state and functions
+ */
 type AuthContextType = {
   user: User | null;
   session: Session | null;
@@ -36,6 +56,14 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * AuthProvider component
+ *
+ * Wraps the application to provide authentication context to all child components.
+ * Handles authentication state management, session persistence, and auth-related operations.
+ *
+ * @param {React.ReactNode} children - Child components that will have access to the auth context
+ */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -48,7 +76,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [authEventHandled, setAuthEventHandled] = useState(false);
 
-  // Parse hash fragment from URL
+  /**
+   * Parse hash fragment from URL for token-based authentication
+   *
+   * Extracts authentication tokens from URL hash fragments returned by OAuth providers.
+   *
+   * @param {string} url - The URL containing the hash fragment
+   * @returns {Record<string, string> | null} - Parsed parameters or null if parsing failed
+   */
   const parseHashFragment = (url: string) => {
     try {
       const hashIndex = url.indexOf("#");
@@ -69,12 +104,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Handle deep links for auth redirects
+  /**
+   * Handle deep links for authentication redirects
+   *
+   * This effect sets up listeners for deep links that contain authentication data,
+   * processes the authentication data, and updates the auth state accordingly.
+   */
   useEffect(() => {
     const handleDeepLink = async (event: { url: string }) => {
       console.log("Deep link received:", event.url);
 
-      // Prevent handling the same auth event multiple times
       if (authEventHandled) {
         console.log("Auth event already handled, skipping");
         return;
@@ -85,7 +124,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         console.log("Processing auth callback URL:", event.url);
 
         try {
-          // First try to extract code from query params
           const urlObj = new URL(event.url);
           const code = urlObj.searchParams.get("code");
 
@@ -93,7 +131,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             console.log(
               "Auth code found in query params, exchanging for session"
             );
-            // Exchange the code for a session
             const { data, error } = await supabase.auth.exchangeCodeForSession(
               code
             );
@@ -107,7 +144,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 setSession(data.session);
                 setUser(data.session.user);
 
-                // Check admin status
                 if (data.session.user) {
                   const adminStatus = await checkAdminStatus(
                     data.session.user.id
@@ -116,16 +152,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 }
               }
             }
-          }
-          // If no code in query params, check for access_token in hash fragment
-          else if (event.url.includes("#")) {
+          } else if (event.url.includes("#")) {
             console.log("No code found, checking for hash fragment");
             const hashParams = parseHashFragment(event.url);
 
             if (hashParams && hashParams.access_token) {
               console.log("Access token found in hash fragment");
 
-              // Set the session directly with the token
               const { data, error } = await supabase.auth.setSession({
                 access_token: hashParams.access_token,
                 refresh_token: hashParams.refresh_token || "",
@@ -140,7 +173,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                   setSession(data.session);
                   setUser(data.session.user);
 
-                  // Check admin status
                   if (data.session.user) {
                     const adminStatus = await checkAdminStatus(
                       data.session.user.id
@@ -162,16 +194,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setGoogleError("Failed to complete authentication");
         } finally {
           setGoogleAuthLoading(false);
-          // Reset the flag after a delay to allow for future auth attempts
           setTimeout(() => setAuthEventHandled(false), 5000);
         }
       }
     };
 
-    // Set up deep link listener
     const subscription = Linking.addEventListener("url", handleDeepLink);
 
-    // Check if app was opened via a deep link
     Linking.getInitialURL().then((url) => {
       if (url) {
         console.log("App opened with initial URL:", url);
@@ -184,9 +213,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [authEventHandled]);
 
-  // Improve the auth state change handler to better handle errors
+  /**
+   * Initialize and maintain authentication state
+   *
+   * This effect handles:
+   * - Initial session retrieval
+   * - Token auto-refresh based on app state
+   * - Auth state change subscription
+   */
   useEffect(() => {
-    // Set up a listener for app state changes to handle token refresh
     const subscription = AppState.addEventListener("change", (state) => {
       if (state === "active") {
         supabase.auth.startAutoRefresh();
@@ -195,7 +230,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     });
 
-    // Get the initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       console.log(
         "Initial session check:",
@@ -215,7 +249,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(false);
     });
 
-    // Set up a listener for auth state changes
     const {
       data: { subscription: authSubscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -232,30 +265,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(false);
     });
 
-    // Clean up subscriptions
     return () => {
       subscription.remove();
       authSubscription.unsubscribe();
     };
   }, []);
 
-  // Add a new useEffect to handle app state changes and properly sign out when the app is closed
+  /**
+   * Handle app state changes for security
+   *
+   * This effect implements a security feature that automatically signs out
+   * the user if the app has been in the background for too long (30 minutes).
+   */
   useEffect(() => {
     const handleAppStateChange = async (nextAppState: string) => {
-      // When app moves to background or inactive state
       if (nextAppState === "background" || nextAppState === "inactive") {
         console.log("App moving to background, cleaning up session...");
-
-        // Store a timestamp to track how long the app has been in background
         await AsyncStorage.setItem(
           "app_background_time",
           Date.now().toString()
         );
-      }
-      // When app comes back to foreground
-      else if (nextAppState === "active") {
+      } else if (nextAppState === "active") {
         try {
-          // Check if we have a stored timestamp
           const backgroundTimeStr = await AsyncStorage.getItem(
             "app_background_time"
           );
@@ -264,13 +295,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             const currentTime = Date.now();
             const timeInBackground = currentTime - backgroundTime;
 
-            // If app was in background for more than 30 minutes (1800000 ms), sign out
             if (timeInBackground > 1800000) {
               console.log("App was in background for too long, signing out...");
               await signOut();
             }
 
-            // Clear the timestamp
             await AsyncStorage.removeItem("app_background_time");
           }
         } catch (error) {
@@ -279,7 +308,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     };
 
-    // Subscribe to app state changes
     const subscription = AppState.addEventListener(
       "change",
       handleAppStateChange
@@ -290,7 +318,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  // Add a useEffect to check admin status when user changes
+  /**
+   * Check and update admin status when user changes
+   *
+   * This effect ensures that the admin status is always up-to-date
+   * whenever the authenticated user changes.
+   */
   useEffect(() => {
     const checkUserAdminStatus = async () => {
       if (user) {
@@ -310,7 +343,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     checkUserAdminStatus();
   }, [user]);
 
-  // Add new useEffect for push notification registration
+  /**
+   * Register for push notifications when user is authenticated
+   *
+   * This effect handles push notification registration and token storage
+   * for the authenticated user.
+   */
   useEffect(() => {
     const registerForPushNotifications = async () => {
       if (user) {
@@ -329,7 +367,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     registerForPushNotifications();
   }, [user]);
 
-  // Improve the signIn function to check admin status after successful login
+  /**
+   * Sign in with email and password
+   *
+   * Authenticates a user with their email and password, and updates
+   * the admin status if authentication is successful.
+   *
+   * @param {string} email - User's email address
+   * @param {string} password - User's password
+   * @returns {Promise<{error: any}>} - Object containing error if sign-in failed
+   */
   const signIn = async (email: string, password: string) => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -337,20 +384,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         password,
       });
 
-      // If login was successful, immediately check admin status
       if (!error) {
-        // Get the current user
         const {
           data: { user },
         } = await supabase.auth.getUser();
 
         if (user) {
-          // Check and update admin status
           const adminStatus = await checkAdminStatus(user.id);
           setIsAdmin(adminStatus);
           console.log("User logged in, admin status:", adminStatus);
 
-          // Add a small delay to ensure state is updated
           await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }
@@ -361,13 +404,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  /**
+   * Sign up with email and password
+   *
+   * Creates a new user account with the provided email, password, and optional metadata.
+   * Sends a confirmation email with a redirect back to the app.
+   *
+   * @param {string} email - User's email address
+   * @param {string} password - User's password
+   * @param {Object} metadata - Optional additional user data
+   * @returns {Promise<{error: any}>} - Object containing error if sign-up failed
+   */
   const signUp = async (
     email: string,
     password: string,
     metadata?: { [key: string]: any }
   ) => {
     try {
-      // Get the URL for your app's scheme
       const redirectUrl = Linking.createURL("auth/callback");
       console.log("Sign up redirect URL:", redirectUrl);
 
@@ -385,19 +438,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  /**
+   * Sign in with Google OAuth
+   *
+   * Initiates the Google OAuth flow, opens a browser for authentication,
+   * and processes the authentication result.
+   *
+   * This function handles both code-based and token-based authentication flows.
+   */
   const signInWithGoogle = async () => {
     try {
       setGoogleError(null);
       setGoogleAuthLoading(true);
       setAuthEventHandled(false);
 
-      // Get the URL for your app's scheme
       const redirectUrl = Linking.createURL("auth/callback");
-
-      // Log the redirect URL for debugging
       console.log("Google auth redirect URL:", redirectUrl);
 
-      // Start the OAuth flow
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -422,7 +479,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       console.log("Opening browser for OAuth with URL:", data.url);
 
-      // Open the browser for authentication
       const result = await WebBrowser.openAuthSessionAsync(
         data.url,
         redirectUrl,
@@ -440,10 +496,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           result.url
         );
 
-        // Manually handle the URL if the deep link handler doesn't catch it
         if (result.url) {
           try {
-            // First check for code in query params
             const urlObj = new URL(result.url);
             const code = urlObj.searchParams.get("code");
 
@@ -462,7 +516,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 setSession(data.session);
                 setUser(data.session?.user ?? null);
 
-                // Check admin status
                 if (data.session?.user) {
                   const adminStatus = await checkAdminStatus(
                     data.session.user.id
@@ -470,9 +523,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                   setIsAdmin(adminStatus);
                 }
               }
-            }
-            // If no code, check for hash fragment with access_token
-            else if (result.url.includes("#")) {
+            } else if (result.url.includes("#")) {
               console.log(
                 "No code found in WebBrowser result, checking hash fragment"
               );
@@ -481,7 +532,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               if (hashParams && hashParams.access_token) {
                 console.log("Access token found in hash fragment");
 
-                // Set the session directly with the token
                 const { data, error } = await supabase.auth.setSession({
                   access_token: hashParams.access_token,
                   refresh_token: hashParams.refresh_token || "",
@@ -496,7 +546,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                     setSession(data.session);
                     setUser(data.session.user);
 
-                    // Check admin status
                     if (data.session.user) {
                       const adminStatus = await checkAdminStatus(
                         data.session.user.id
@@ -533,11 +582,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Improve the signOut function to be more thorough
+  /**
+   * Sign out the current user
+   *
+   * Performs a complete sign-out by:
+   * 1. Signing out from Supabase
+   * 2. Clearing all authentication-related data from AsyncStorage
+   * 3. Resetting all auth state variables
+   *
+   * This function is designed to be thorough to prevent any auth state persistence issues.
+   */
   const signOut = async () => {
     console.log("Signing out user...");
     try {
-      // Clear any app-specific data from AsyncStorage
       const keysToRemove = [
         "hasSeenOnboarding",
         "userSettings",
@@ -545,17 +602,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         "last_activity_time",
         "app_background_time",
         "supabase.auth.token",
-        // Add any other keys that should be cleared on logout
       ];
 
       await Promise.all([
-        // Sign out from Supabase
         supabase.auth.signOut(),
-        // Clear AsyncStorage items
         ...keysToRemove.map((key) => AsyncStorage.removeItem(key)),
       ]);
 
-      // Reset auth state
       setUser(null);
       setSession(null);
       setIsAdmin(false);
@@ -565,16 +618,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       console.error("Error during sign out:", error);
 
-      // Force reset auth state even if there's an error
       setUser(null);
       setSession(null);
       setIsAdmin(false);
       setAuthEventHandled(false);
 
-      throw error; // Re-throw to handle in the UI
+      throw error;
     }
   };
 
+  /**
+   * Reset password for a user
+   *
+   * Sends a password reset email to the specified email address.
+   * The email contains a link that redirects back to the app.
+   *
+   * @param {string} email - Email address of the user
+   * @returns {Promise<{error: any}>} - Object containing error if reset failed
+   */
   const resetPassword = async (email: string) => {
     try {
       const redirectUrl = Linking.createURL("auth/reset-password");
@@ -589,7 +650,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Add a function to refresh admin status
+  /**
+   * Refresh the admin status of the current user
+   *
+   * Useful when admin status might have changed without a full auth state change,
+   * such as after an admin grants or revokes admin privileges.
+   *
+   * @returns {Promise<boolean>} - The updated admin status
+   */
   const refreshAdminStatus = async () => {
     if (!user) {
       setIsAdmin(false);
@@ -606,7 +674,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Add expoPushToken to the context value
   return (
     <AuthContext.Provider
       value={{
@@ -630,6 +697,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
+/**
+ * Custom hook to use the auth context
+ *
+ * Provides easy access to all authentication-related state and functions.
+ * Throws an error if used outside of an AuthProvider.
+ *
+ * @returns {AuthContextType} The auth context value
+ */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

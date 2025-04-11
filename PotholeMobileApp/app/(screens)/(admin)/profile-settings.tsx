@@ -1,3 +1,16 @@
+/**
+ * Admin Profile Settings Screen
+ *
+ * This screen allows administrators to view and edit their profile information,
+ * manage application settings, and log out of the admin portal.
+ *
+ * Key features:
+ * - Profile information editing (username, full name, avatar)
+ * - Admin badge display
+ * - General settings management (notifications, dark mode)
+ * - Secure logout functionality with confirmation dialog
+ */
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -32,7 +45,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Portal, Dialog } from "react-native-paper";
 import { useRouter } from "expo-router";
 
-// Update the component to remove AdminHeader
 export default function AdminProfileSettings() {
   const { user, signOut } = useAuth();
   const router = useRouter();
@@ -61,11 +73,17 @@ export default function AdminProfileSettings() {
   const [showApiDialog, setShowApiDialog] = useState(false);
   const [editingApiUrl, setEditingApiUrl] = useState("");
 
-  // Fetch user profile when component mounts
+  /**
+   * Fetch user profile when component mounts
+   */
   useEffect(() => {
     fetchUserProfile();
   }, []);
 
+  /**
+   * Fetches the current user's profile information from the database
+   * and updates the local state with the retrieved data.
+   */
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
@@ -87,6 +105,10 @@ export default function AdminProfileSettings() {
     }
   };
 
+  /**
+   * Updates the user's profile information in the database
+   * with the current values from the local state.
+   */
   const handleUpdateProfile = async () => {
     try {
       setUpdating(true);
@@ -111,6 +133,10 @@ export default function AdminProfileSettings() {
     }
   };
 
+  /**
+   * Opens the device image picker and uploads the selected image
+   * as the user's profile avatar.
+   */
   const pickImage = async () => {
     if (!editMode) return;
 
@@ -151,6 +177,10 @@ export default function AdminProfileSettings() {
     }
   };
 
+  /**
+   * Handles the logout process, including closing the dialog,
+   * signing out the user, and redirecting to the login screen.
+   */
   const handleLogout = async () => {
     try {
       setShowLogoutDialog(false);
@@ -172,13 +202,19 @@ export default function AdminProfileSettings() {
     }
   };
 
+  /**
+   * Saves the API URL settings and closes the dialog
+   */
   const saveApiSettings = () => {
     setApiUrl(editingApiUrl);
     setShowApiDialog(false);
     Alert.alert("Success", "API settings updated successfully");
   };
 
-  // Get initials for avatar fallback
+  /**
+   * Gets the user's initials for the avatar fallback
+   * @returns {string} The user's initials or first two letters of username
+   */
   const getInitials = () => {
     if (profile.full_name) {
       return profile.full_name
@@ -348,7 +384,6 @@ export default function AdminProfileSettings() {
             </Card.Content>
           </Card>
 
-          {/* The rest of the component remains unchanged */}
           <Divider style={styles.divider} />
 
           {/* General Settings */}
@@ -444,7 +479,7 @@ export default function AdminProfileSettings() {
         </Dialog>
       </Portal>
 
-      {/* Update the Logout Dialog to match the iOS style exactly */}
+      {/* Logout Dialog styled to match iOS */}
       <Portal>
         <Dialog
           visible={showLogoutDialog}
@@ -458,7 +493,6 @@ export default function AdminProfileSettings() {
             </Text>
           </Dialog.Content>
           <Divider style={styles.dialogDivider} />
-          {/* Update the Dialog.Actions section to ensure buttons are properly visible */}
           <Dialog.Actions style={styles.logoutDialogActions}>
             <Button
               onPress={() => setShowLogoutDialog(false)}
@@ -486,7 +520,6 @@ export default function AdminProfileSettings() {
   );
 }
 
-// Update the styles for the logout dialog to match iOS style exactly
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -704,7 +737,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#94A3B8",
   },
-  // Update the styles for the logout dialog to match iOS style exactly
   logoutDialog: {
     backgroundColor: "#FFFFFF",
     borderRadius: 14,
@@ -766,7 +798,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#E2E8F0",
     alignSelf: "center",
   },
-  // Add these styles that were referenced but not defined
   apiInput: {
     marginTop: 8,
     backgroundColor: "#FFFFFF",

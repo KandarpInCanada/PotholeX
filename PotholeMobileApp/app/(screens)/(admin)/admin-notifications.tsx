@@ -1,3 +1,17 @@
+/**
+ * Admin Notifications Screen
+ *
+ * This screen displays notifications specifically for administrators, including
+ * new report submissions, status changes, and system alerts. Admins can view,
+ * mark as read, and delete notifications.
+ *
+ * Key features:
+ * - Real-time notification updates via Supabase subscription
+ * - Swipe-to-delete functionality for notifications
+ * - Visual distinction between read and unread notifications
+ * - Detailed report view when clicking on a notification
+ */
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -27,6 +41,9 @@ import { Swipeable } from "react-native-gesture-handler";
 import { supabase } from "../../../lib/supabase";
 import { FlashList } from "@shopify/flash-list";
 
+/**
+ * Interface for notification data structure
+ */
 interface Notification {
   id: string;
   title: string;
@@ -47,6 +64,9 @@ export default function AdminNotificationsScreen() {
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  /**
+   * Fetches admin notifications from the database
+   */
   const fetchNotifications = useCallback(async () => {
     if (!isAdmin) {
       router.replace("/(screens)/(dashboard)/home");
@@ -65,7 +85,9 @@ export default function AdminNotificationsScreen() {
     }
   }, [isAdmin, router]);
 
-  // Set up real-time subscription to notifications table
+  /**
+   * Set up real-time subscription to notifications table
+   */
   useEffect(() => {
     if (!isAdmin) return;
 
@@ -94,7 +116,9 @@ export default function AdminNotificationsScreen() {
     };
   }, [isAdmin, fetchNotifications]);
 
-  // Set up polling as a fallback mechanism
+  /**
+   * Set up polling as a fallback mechanism for real-time updates
+   */
   useEffect(() => {
     if (!isAdmin) return;
 
@@ -110,15 +134,24 @@ export default function AdminNotificationsScreen() {
     };
   }, [isAdmin, fetchNotifications]);
 
+  /**
+   * Fetch notifications when component mounts
+   */
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
 
+  /**
+   * Handle pull-to-refresh functionality
+   */
   const handleRefresh = () => {
     setRefreshing(true);
     fetchNotifications();
   };
 
+  /**
+   * Handles notification press - marks as read and shows report details if available
+   */
   const handleNotificationPress = async (notification: Notification) => {
     try {
       // Mark notification as read
@@ -142,11 +175,17 @@ export default function AdminNotificationsScreen() {
     }
   };
 
+  /**
+   * Formats date string to localized date and time
+   */
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString();
   };
 
+  /**
+   * Renders a notification item with animations and swipe actions
+   */
   const renderNotificationItem = ({
     item,
     index,
@@ -154,7 +193,9 @@ export default function AdminNotificationsScreen() {
     item: Notification;
     index: number;
   }) => {
-    // Function to handle notification deletion
+    /**
+     * Handles notification deletion
+     */
     const handleDelete = async (notificationId: string) => {
       try {
         // Delete the notification from the database
@@ -173,7 +214,9 @@ export default function AdminNotificationsScreen() {
       }
     };
 
-    // Render right actions (delete button) when swiped
+    /**
+     * Renders the delete action when swiping a notification
+     */
     const renderRightActions = () => {
       return (
         <MotiView
@@ -338,7 +381,6 @@ export default function AdminNotificationsScreen() {
   );
 }
 
-// Add these styles at the end of the styles object
 const styles = StyleSheet.create({
   container: {
     flex: 1,

@@ -1,6 +1,18 @@
+/**
+ * Admin Layout Component
+ *
+ * This component provides the layout and tab navigation for the admin section of the app.
+ * It includes tabs for Dashboard, Reports, Users, Notifications, and Settings.
+ *
+ * Key features:
+ * - Tab-based navigation with icons and labels
+ * - Authentication check to restrict access to admin users only
+ * - Smooth animations for tab transitions
+ * - Notification badges for unread notifications
+ */
+
 "use client";
 
-// Update the tab navigation animations to be smoother
 import { StyleSheet, View, Dimensions } from "react-native";
 import { Tabs } from "expo-router";
 import { useAuth } from "../../../context/auth-context";
@@ -37,7 +49,10 @@ export default function AdminLayout() {
   const tabBarOpacity = useSharedValue(0);
   const tabBarTranslateY = useSharedValue(20);
 
-  // Redirect non-admin users away from admin screens
+  /**
+   * Redirect non-admin users away from admin screens and
+   * animate tab bar entrance when admin is confirmed
+   */
   useEffect(() => {
     if (!isAdmin) {
       router.replace("/(screens)/(auth)/login");
@@ -54,12 +69,17 @@ export default function AdminLayout() {
     }
   }, [isAdmin, router]);
 
-  // Set status bar to match admin header
+  /**
+   * Set status bar to match admin header
+   */
   useEffect(() => {
     StatusBar.setBarStyle("dark-content");
     StatusBar.setBackgroundColor("#F0F4FF"); // Updated to match new background color
   }, []);
 
+  /**
+   * Update active tab index when route changes
+   */
   useEffect(() => {
     if (currentRouteName) {
       const index = [
@@ -86,7 +106,6 @@ export default function AdminLayout() {
     };
   });
 
-  // Admin-specific tab navigation
   return (
     <>
       <Animated.View style={[styles.tabBarContainer, tabBarAnimatedStyle]}>
@@ -107,7 +126,6 @@ export default function AdminLayout() {
                 } else if (route.name === "profile-settings") {
                   iconName = focused ? "settings" : "settings-outline";
                 } else if (route.name === "admin-notifications") {
-                  // Changed from "notifications" to "admin-notifications"
                   iconName = focused
                     ? "notifications"
                     : "notifications-outline";
@@ -186,7 +204,6 @@ export default function AdminLayout() {
                   </Animated.View>
                 );
               },
-              // Add smooth animation for tab transitions
             };
           }}
         >
@@ -209,7 +226,7 @@ export default function AdminLayout() {
             }}
           />
           <Tabs.Screen
-            name="admin-notifications" // Changed from "notifications" to "admin-notifications"
+            name="admin-notifications"
             options={{
               title: "Notifications",
             }}
@@ -226,7 +243,6 @@ export default function AdminLayout() {
   );
 }
 
-// Enhanced styles for a more modern tab bar
 const styles = StyleSheet.create({
   tabBarContainer: {
     flex: 1,

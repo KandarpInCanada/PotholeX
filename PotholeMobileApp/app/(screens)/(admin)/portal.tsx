@@ -1,3 +1,17 @@
+/**
+ * Admin Portal Dashboard Screen
+ *
+ * This screen serves as the main dashboard for administrators, displaying
+ * analytics and statistics about pothole reports and users. It includes
+ * pie charts for report status and severity, and quick action buttons.
+ *
+ * Key features:
+ * - Visual analytics with pie charts
+ * - Report status and severity distribution
+ * - Quick action buttons for common admin tasks
+ * - Animated UI elements for better user experience
+ */
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -32,7 +46,9 @@ import Animated, {
 // Define the screen width for responsive charts
 const screenWidth = Dimensions.get("window").width - 32; // Full width minus padding
 
-// Define types for our analytics data
+/**
+ * Interface for dashboard statistics data
+ */
 interface DashboardStats {
   totalReports: number;
   totalUsers: number;
@@ -90,6 +106,9 @@ export default function AdminPortal() {
   const actionsOpacity = useSharedValue(0);
   const actionsTranslateY = useSharedValue(20);
 
+  /**
+   * Fetch dashboard data and start animations when component mounts
+   */
   useEffect(() => {
     fetchDashboardData();
 
@@ -122,6 +141,9 @@ export default function AdminPortal() {
     );
   }, []);
 
+  /**
+   * Fetches and processes dashboard data from the database
+   */
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
@@ -194,7 +216,9 @@ export default function AdminPortal() {
     }
   };
 
-  // Helper function to process reports per day
+  /**
+   * Helper function to process reports per day for the last 7 days
+   */
   const processReportsPerDay = (reports: any[]) => {
     // Get dates for the last 7 days
     const dates = Array.from({ length: 7 }, (_, i) => {
@@ -212,7 +236,9 @@ export default function AdminPortal() {
     });
   };
 
-  // Helper function to process user growth
+  /**
+   * Helper function to process user growth for the last 7 days
+   */
   const processUserGrowth = (users: any[]) => {
     // Get dates for the last 7 days
     const dates = Array.from({ length: 7 }, (_, i) => {
@@ -317,7 +343,9 @@ export default function AdminPortal() {
     };
   });
 
-  // Loading animation for refresh
+  /**
+   * Handle pull-to-refresh functionality
+   */
   const handleRefresh = () => {
     setRefreshing(true);
 

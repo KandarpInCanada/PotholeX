@@ -1,3 +1,16 @@
+/**
+ * Admin Users Screen
+ *
+ * This screen allows administrators to view and manage all users in the system.
+ * Admins can search for users, view their details, and grant or revoke admin privileges.
+ *
+ * Key features:
+ * - User search functionality
+ * - Admin privilege management
+ * - User information display with avatars
+ * - Animated UI elements for better user experience
+ */
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -24,6 +37,9 @@ import { useAuth } from "../../../context/auth-context";
 import { MotiView } from "moti";
 import { FlashList } from "@shopify/flash-list";
 
+/**
+ * Interface for user data structure
+ */
 interface User {
   id: string;
   username: string;
@@ -35,7 +51,7 @@ interface User {
 }
 
 export default function UsersScreen() {
-  const { isAdmin } = useAuth(); // Add useAuth hook
+  const { isAdmin } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,10 +59,16 @@ export default function UsersScreen() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showAdminDialog, setShowAdminDialog] = useState(false);
 
+  /**
+   * Fetch users when component mounts
+   */
   useEffect(() => {
     fetchUsers();
   }, []);
 
+  /**
+   * Filter users when search query or users list changes
+   */
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredUsers(users);
@@ -62,6 +84,10 @@ export default function UsersScreen() {
       );
     }
   }, [users, searchQuery]);
+
+  /**
+   * Fetches all users from the database with their admin status and email
+   */
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -111,11 +137,17 @@ export default function UsersScreen() {
     }
   };
 
+  /**
+   * Opens the admin privilege dialog for a user
+   */
   const handleToggleAdmin = (user: User) => {
     setSelectedUser(user);
     setShowAdminDialog(true);
   };
 
+  /**
+   * Grants or revokes admin privileges for the selected user
+   */
   const confirmToggleAdmin = async () => {
     if (!selectedUser) return;
 
@@ -139,7 +171,9 @@ export default function UsersScreen() {
     }
   };
 
-  // Update the renderUserItem function to add staggered animations
+  /**
+   * Renders a user item with animations
+   */
   const renderUserItem = ({ item, index }: { item: User; index: number }) => (
     <MotiView
       from={{ opacity: 0, translateY: 20 }}
@@ -234,11 +268,10 @@ export default function UsersScreen() {
     </MotiView>
   );
 
-  // Update the Searchbar iconColor and Dialog button color
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.content}>
-        {/* Purple Header Banner */}
+        {/* Header Banner */}
         <LinearGradient
           colors={["#374151", "#1F2937"]}
           start={{ x: 0, y: 0 }}
@@ -260,7 +293,7 @@ export default function UsersScreen() {
               onChangeText={setSearchQuery}
               value={searchQuery}
               style={styles.searchBar}
-              iconColor="#3B82F6" // Changed from #8B5CF6 to blue
+              iconColor="#3B82F6"
               inputStyle={styles.searchInput}
             />
           </View>
@@ -290,6 +323,7 @@ export default function UsersScreen() {
         }
       />
 
+      {/* Admin Privilege Dialog */}
       <Portal>
         <Dialog
           visible={showAdminDialog}

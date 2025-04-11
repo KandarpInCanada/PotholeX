@@ -1,12 +1,32 @@
+/**
+ * Supabase Client Module
+ *
+ * This module initializes and exports the Supabase client for database operations.
+ * It also defines core interfaces and enums used throughout the application.
+ *
+ * The module provides:
+ * - Standard client for authenticated user operations
+ * - Admin client factory for privileged operations
+ * - Type definitions for database entities
+ */
+
 import "react-native-url-polyfill/auto"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { createClient } from "@supabase/supabase-js"
 import { EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY } from "@env"
 
-// Replace with your Supabase URL and anon key
 const supabaseUrl = EXPO_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = EXPO_PUBLIC_SUPABASE_ANON_KEY
 
+/**
+ * Primary Supabase client instance
+ *
+ * Configured with:
+ * - AsyncStorage for session persistence
+ * - Automatic token refresh
+ * - Session persistence enabled
+ * - URL detection disabled (not needed in React Native)
+ */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
@@ -17,12 +37,18 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 })
 
 /**
- * Creates a Supabase client with admin privileges.
- * IMPORTANT: This should ONLY be used server-side or in secure environments.
- * DO NOT expose the service role key in client-side code.
+ * Creates a Supabase client with admin privileges
  *
- * @param serviceKey The Supabase service role key
- * @returns A Supabase client with admin privileges
+ * SECURITY WARNING: This should ONLY be used server-side or in secure environments.
+ * The service role key grants full database access and should never be exposed
+ * in client-side code or included in app bundles.
+ *
+ * This client is configured with:
+ * - Token refresh disabled (not needed for service role)
+ * - Session persistence disabled (stateless operation)
+ *
+ * @param {string} serviceKey - The Supabase service role key
+ * @returns {SupabaseClient} A Supabase client with admin privileges
  */
 export const createAdminClient = (serviceKey: string) => {
   if (!serviceKey) {
@@ -30,7 +56,6 @@ export const createAdminClient = (serviceKey: string) => {
     // Return regular client as fallback
     return supabase
   }
-
   return createClient(supabaseUrl, serviceKey, {
     auth: {
       autoRefreshToken: false,
@@ -39,6 +64,12 @@ export const createAdminClient = (serviceKey: string) => {
   })
 }
 
+/**
+ * Enum defining all possible pothole report statuses
+ *
+ * These status values are used in the database and throughout the application
+ * to track the lifecycle of a pothole report.
+ */
 // Report status types
 export enum ReportStatus {
   SUBMITTED = "submitted",
@@ -47,6 +78,12 @@ export enum ReportStatus {
   REJECTED = "rejected",
 }
 
+/**
+ * Interface representing a user profile in the database
+ *
+ * Maps to the 'profiles' table structure and includes all user attributes
+ * that may be accessed throughout the application.
+ */
 // Add Profile interface
 export interface Profile {
   id: string
@@ -58,6 +95,12 @@ export interface Profile {
   is_admin?: boolean
 }
 
+/**
+ * Enum defining pothole severity levels
+ *
+ * These values represent the assessed danger level of reported potholes
+ * and affect prioritization and display throughout the application.
+ */
 // Severity types
 export enum SeverityLevel {
   LOW = "Low",
@@ -65,6 +108,16 @@ export enum SeverityLevel {
   DANGER = "Danger",
 }
 
+/**
+ * Interface representing a pothole report in the database
+ *
+ * Maps to the 'reports' table structure and includes all report attributes.
+ * This interface is used for type safety when working with report data
+ * throughout the application.
+ *
+ * Note: The optional fields (marked with ?) are typically populated by the
+ * database or may be absent in new report creation.
+ */
 // Update PotholeReport interface
 export interface PotholeReport {
   id?: string
@@ -83,6 +136,5 @@ export interface PotholeReport {
   likes?: number
   comments?: number
   admin_notes?: string
-  profiles?: Profile // Add profiles relationship
+  profiles?: Profile
 }
-
