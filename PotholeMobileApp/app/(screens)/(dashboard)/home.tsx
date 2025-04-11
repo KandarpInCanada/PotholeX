@@ -36,6 +36,11 @@ import ReportDetailsSheet, {
   type ReportDetailsSheetRef,
 } from "../../components/dashboard-components/report-details-sheet";
 
+// Create a context to share the report details ref
+import { createContext } from "react";
+export const ReportDetailsContext =
+  createContext<React.RefObject<ReportDetailsSheetRef> | null>(null);
+
 // Define category types for filtering
 const CATEGORIES = [
   { id: "all", label: "All", icon: "view-dashboard-outline" },
@@ -60,6 +65,12 @@ const HomeScreen: React.FC = () => {
 
   // Add this inside the HomeScreen function, after other state declarations:
   const reportDetailsRef = useRef<ReportDetailsSheetRef>(null);
+
+  // Make the ref available globally through a module-level variable
+  useEffect(() => {
+    // @ts-ignore - We're using a module-level variable to share the ref
+    window._reportDetailsRef = reportDetailsRef;
+  }, []);
 
   // Fetch user profile
   const fetchUserProfile = useCallback(async () => {
@@ -245,120 +256,122 @@ const HomeScreen: React.FC = () => {
   // Render stats summary
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={Platform.OS === "android" ? "#1F2937" : undefined}
-      />
+    <ReportDetailsContext.Provider value={reportDetailsRef}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor={Platform.OS === "android" ? "#1F2937" : undefined}
+        />
 
-      {/* Header with profile */}
-      <LinearGradient
-        colors={["#374151", "#1F2937"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.headerBanner}
-      >
-        <View style={styles.headerContent}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>User Dashboard</Text>
-            <Text style={styles.headerSubtitle}>
-              Overview of your pothole reports
-            </Text>
+        {/* Header with profile */}
+        <LinearGradient
+          colors={["#374151", "#1F2937"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.headerBanner}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <Text style={styles.headerTitle}>User Dashboard</Text>
+              <Text style={styles.headerSubtitle}>
+                Overview of your pothole reports
+              </Text>
+            </View>
           </View>
-        </View>
 
-        {/* Search bar */}
-        <View style={styles.searchContainer}>
-          <SearchBar
-            value={searchQuery}
-            onChangeText={handleSearch}
-            placeholder="Search reports..."
+          {/* Search bar */}
+          <View style={styles.searchContainer}>
+            <SearchBar
+              value={searchQuery}
+              onChangeText={handleSearch}
+              placeholder="Search reports..."
+            />
+          </View>
+        </LinearGradient>
+
+        {/* Welcome banner */}
+        {renderWelcomeBanner()}
+
+        {/* Category filters */}
+        <View style={styles.filterButtonsContainer}>
+          <MemoizedScrollableCategories
+            categories={CATEGORIES}
+            activeCategory={activeCategory}
+            onSelectCategory={setActiveCategory}
           />
         </View>
-      </LinearGradient>
 
-      {/* Welcome banner */}
-      {renderWelcomeBanner()}
+        {/* Stats summary */}
+        {!loading && !refreshing && reports.length > 0}
 
-      {/* Category filters */}
-      <View style={styles.filterButtonsContainer}>
-        <MemoizedScrollableCategories
-          categories={CATEGORIES}
-          activeCategory={activeCategory}
-          onSelectCategory={setActiveCategory}
+        {/* Conditional rendering based on loading and report availability */}
+        {loading && !refreshing ? (
+          <LoadingState />
+        ) : filteredReports.length === 0 ? (
+          <EmptyState
+            message={
+              searchQuery
+                ? "No matching reports found"
+                : activeCategory === "recent"
+                ? "No reports in the last 24 hours"
+                : activeCategory !== "all"
+                ? `No ${activeCategory} reports found`
+                : "No reports yet"
+            }
+            subMessage={
+              searchQuery || activeCategory !== "all"
+                ? "Try a different search term or filter"
+                : "Be the first to report a pothole!"
+            }
+          />
+        ) : (
+          <FlashList
+            data={filteredReports}
+            renderItem={({ item, index }) => (
+              // Change the onPress handler in the ReportCard component:
+              <ReportCard
+                item={item}
+                index={index}
+                onLike={handleLike}
+                onPress={() => handleReportPress(item.id || "")}
+              />
+            )}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                colors={["#4B5563"]}
+                tintColor="#4B5563"
+                title="Pull to refresh"
+                titleColor="#64748B"
+              />
+            }
+            estimatedItemSize={200}
+            ListHeaderComponent={
+              <Text style={styles.sectionTitle}>
+                {activeCategory === "all"
+                  ? "Recent Reports"
+                  : `${
+                      CATEGORIES.find((c) => c.id === activeCategory)?.label
+                    } Reports`}
+              </Text>
+            }
+          />
+        )}
+
+        {/* Floating Action Button to add new report */}
+        <FAB
+          icon="plus"
+          style={styles.fab}
+          color="#FFFFFF"
+          onPress={() => router.push("(screens)/(dashboard)/add-report")}
         />
-      </View>
-
-      {/* Stats summary */}
-      {!loading && !refreshing && reports.length > 0}
-
-      {/* Conditional rendering based on loading and report availability */}
-      {loading && !refreshing ? (
-        <LoadingState />
-      ) : filteredReports.length === 0 ? (
-        <EmptyState
-          message={
-            searchQuery
-              ? "No matching reports found"
-              : activeCategory === "recent"
-              ? "No reports in the last 24 hours"
-              : activeCategory !== "all"
-              ? `No ${activeCategory} reports found`
-              : "No reports yet"
-          }
-          subMessage={
-            searchQuery || activeCategory !== "all"
-              ? "Try a different search term or filter"
-              : "Be the first to report a pothole!"
-          }
-        />
-      ) : (
-        <FlashList
-          data={filteredReports}
-          renderItem={({ item, index }) => (
-            // Change the onPress handler in the ReportCard component:
-            <ReportCard
-              item={item}
-              index={index}
-              onLike={handleLike}
-              onPress={() => handleReportPress(item.id || "")}
-            />
-          )}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={["#4B5563"]}
-              tintColor="#4B5563"
-              title="Pull to refresh"
-              titleColor="#64748B"
-            />
-          }
-          estimatedItemSize={200}
-          ListHeaderComponent={
-            <Text style={styles.sectionTitle}>
-              {activeCategory === "all"
-                ? "Recent Reports"
-                : `${
-                    CATEGORIES.find((c) => c.id === activeCategory)?.label
-                  } Reports`}
-            </Text>
-          }
-        />
-      )}
-
-      {/* Floating Action Button to add new report */}
-      <FAB
-        icon="plus"
-        style={styles.fab}
-        color="#FFFFFF"
-        onPress={() => router.push("(screens)/(dashboard)/add-report")}
-      />
-      {/* Add this at the end of the return statement, right before the closing tag of SafeAreaView: */}
-      <ReportDetailsSheet ref={reportDetailsRef} />
-    </SafeAreaView>
+        {/* Add this at the end of the return statement, right before the closing tag of SafeAreaView: */}
+        <ReportDetailsSheet ref={reportDetailsRef} />
+      </SafeAreaView>
+    </ReportDetailsContext.Provider>
   );
 };
 

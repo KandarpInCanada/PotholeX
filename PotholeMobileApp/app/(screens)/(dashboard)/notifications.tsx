@@ -5,7 +5,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   RefreshControl,
   Alert,
@@ -24,6 +23,7 @@ import { MotiView } from "moti";
 import { useAuth } from "../../../context/auth-context";
 import { Swipeable } from "react-native-gesture-handler";
 import { supabase } from "../../../lib/supabase";
+import { FlashList } from "@shopify/flash-list";
 
 interface Notification {
   id: string;
@@ -43,6 +43,7 @@ export default function NotificationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     if (!user) {
@@ -65,6 +66,51 @@ export default function NotificationsScreen() {
       setRefreshing(false);
     }
   }, [user, router]);
+
+  // Set up real-time subscription to notifications table
+  useEffect(() => {
+    if (!user) return;
+
+    // Set up Supabase real-time subscription
+    const subscription = supabase
+      .channel("notifications-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `for_admins=eq.false`,
+        },
+        (payload) => {
+          console.log("Notification change received:", payload);
+          // Refresh notifications when there's a change
+          fetchNotifications();
+        }
+      )
+      .subscribe();
+
+    // Clean up subscription
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [user, fetchNotifications]);
+
+  // Set up polling as a fallback mechanism
+  useEffect(() => {
+    if (!user) return;
+
+    // Poll for new notifications every 30 seconds as a fallback
+    pollingIntervalRef.current = setInterval(() => {
+      fetchNotifications();
+    }, 30000);
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [user, fetchNotifications]);
 
   useEffect(() => {
     fetchNotifications();
@@ -98,9 +144,19 @@ export default function NotificationsScreen() {
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
 
-      // Navigate to report details if there's a report_id
+      // Open report details if there's a report_id
       if (notification.report_id) {
-        router.push(`/dashboard/report-details/${notification.report_id}`);
+        // Try to access the report details ref from the window object
+        // @ts-ignore - We're using a module-level variable to access the ref
+        const reportDetailsRef = window._reportDetailsRef;
+
+        if (reportDetailsRef && reportDetailsRef.current) {
+          // Open the report details sheet with the report ID
+          reportDetailsRef.current.open(notification.report_id);
+        } else {
+          // Fallback to navigation if the ref isn't available
+          router.push(`/dashboard/report-details/${notification.report_id}`);
+        }
       }
     } catch (error) {
       console.error("Error handling notification:", error);
@@ -175,7 +231,7 @@ export default function NotificationsScreen() {
           rightThreshold={40}
           overshootRight={false}
           onSwipeableOpen={() => {
-            // Close other open swipeables
+            // Close other open swipeables when this one is opened
             swipeableRefs.current.forEach((ref, key) => {
               if (key !== item.id) {
                 ref.close();
@@ -248,7 +304,7 @@ export default function NotificationsScreen() {
       </LinearGradient>
 
       {/* Notification List */}
-      <FlatList
+      <FlashList
         data={notifications}
         renderItem={renderNotificationItem}
         keyExtractor={(item) => item.id}
@@ -261,6 +317,7 @@ export default function NotificationsScreen() {
             colors={["#3B82F6"]}
           />
         }
+        estimatedItemSize={100}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <MaterialCommunityIcons

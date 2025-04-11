@@ -32,6 +32,7 @@ import Animated, {
 
 const { height, width } = Dimensions.get("window");
 
+// Make sure the export interface is properly exported
 export interface ReportDetailsSheetRef {
   open: (reportId: string) => void;
   close: () => void;

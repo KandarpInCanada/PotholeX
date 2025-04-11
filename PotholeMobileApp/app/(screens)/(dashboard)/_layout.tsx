@@ -1,6 +1,8 @@
 "use client";
 
-import { Tabs } from "expo-router";
+import type React from "react";
+
+import { Tabs, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
   Platform,
@@ -9,7 +11,7 @@ import {
   View,
   Dimensions,
 } from "react-native";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, createRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   useSharedValue,
@@ -18,8 +20,19 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import NotificationBadge from "../../components/dashboard-components/notification-badge";
+import type { ReportDetailsSheetRef } from "../../components/dashboard-components/report-details-sheet";
 
 const { width } = Dimensions.get("window");
+
+// Create a global ref that can be accessed from anywhere
+declare global {
+  var reportDetailsSheetRef: React.RefObject<ReportDetailsSheetRef> | undefined;
+}
+
+// Initialize the global ref if it doesn't exist
+if (!global.reportDetailsSheetRef) {
+  global.reportDetailsSheetRef = createRef<ReportDetailsSheetRef>();
+}
 
 // Regular user tabs only - admin screens are now completely separate
 export default function DashboardLayout() {
@@ -32,6 +45,7 @@ export default function DashboardLayout() {
   const [isTabActive, setIsTabActive] = useState<boolean[]>(
     Array(6).fill(false)
   );
+  const pathname = usePathname();
 
   // Animation values for tab transitions
   const tabBarOpacity = useSharedValue(0);
@@ -52,6 +66,13 @@ export default function DashboardLayout() {
       easing: Easing.out(Easing.cubic),
     });
   }, []);
+
+  useEffect(() => {
+    if (pathname) {
+      const routeName = pathname.split("/").pop();
+      setCurrentRouteName(routeName);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     if (currentRouteName) {

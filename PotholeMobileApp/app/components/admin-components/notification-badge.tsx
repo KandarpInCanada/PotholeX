@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { StyleSheet, Text } from "react-native";
 import { countUnreadNotifications } from "../../../lib/notifications";
 import { MotiView } from "moti";
+import { supabase } from "../../../lib/supabase";
 
 interface NotificationBadgeProps {
   isAdmin: boolean;
@@ -11,9 +12,11 @@ interface NotificationBadgeProps {
 
 export default function NotificationBadge({ isAdmin }: NotificationBadgeProps) {
   const [count, setCount] = useState(0);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     let isMounted = true;
+
     const fetchCount = async () => {
       try {
         const unreadCount = await countUnreadNotifications(isAdmin);
@@ -25,12 +28,36 @@ export default function NotificationBadge({ isAdmin }: NotificationBadgeProps) {
       }
     };
 
+    // Initial fetch
     fetchCount();
-    const interval = setInterval(fetchCount, 60000); // Check every minute
+
+    // Set up real-time subscription
+    const subscription = supabase
+      .channel(`admin-notification-count`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `for_admins=eq.true`,
+        },
+        () => {
+          // When any notification changes, update the count
+          fetchCount();
+        }
+      )
+      .subscribe();
+
+    // Set up polling as a fallback (every 15 seconds)
+    pollingIntervalRef.current = setInterval(fetchCount, 15000);
 
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      subscription.unsubscribe();
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
     };
   }, [isAdmin]);
 

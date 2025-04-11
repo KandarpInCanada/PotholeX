@@ -23,10 +23,8 @@ import { useAuth } from "../../../context/auth-context";
 import ReportDetailsSheet, {
   type ReportDetailsSheetRef,
 } from "../../components/admin-components/report-details-sheet";
-// First, import the necessary components for swipe gestures
 import { Swipeable } from "react-native-gesture-handler";
 import { supabase } from "../../../lib/supabase";
-// Replace FlatList with FlashList
 import { FlashList } from "@shopify/flash-list";
 
 interface Notification {
@@ -40,14 +38,14 @@ interface Notification {
 }
 
 export default function AdminNotificationsScreen() {
-  // Renamed function to match new screen name
   const { isAdmin } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const reportDetailsRef = useRef<ReportDetailsSheetRef>(null);
-  const swipeableRefs = useRef<Map<string, Swipeable>>(new Map()); // Store swipeable refs
+  const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     if (!isAdmin) {
@@ -66,6 +64,51 @@ export default function AdminNotificationsScreen() {
       setRefreshing(false);
     }
   }, [isAdmin, router]);
+
+  // Set up real-time subscription to notifications table
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    // Set up Supabase real-time subscription
+    const subscription = supabase
+      .channel("admin-notifications-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `for_admins=eq.true`,
+        },
+        (payload) => {
+          console.log("Admin notification change received:", payload);
+          // Refresh notifications when there's a change
+          fetchNotifications();
+        }
+      )
+      .subscribe();
+
+    // Clean up subscription
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [isAdmin, fetchNotifications]);
+
+  // Set up polling as a fallback mechanism
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    // Poll for new notifications every 30 seconds as a fallback
+    pollingIntervalRef.current = setInterval(() => {
+      fetchNotifications();
+    }, 30000);
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [isAdmin, fetchNotifications]);
 
   useEffect(() => {
     fetchNotifications();
@@ -104,7 +147,6 @@ export default function AdminNotificationsScreen() {
     return date.toLocaleString();
   };
 
-  // Update the renderNotificationItem function to include swipe functionality
   const renderNotificationItem = ({
     item,
     index,
