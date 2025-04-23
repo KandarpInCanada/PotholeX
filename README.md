@@ -12,6 +12,7 @@ A community-driven mobile application that empowers citizens to report and track
 
 https://github.com/user-attachments/assets/3733e129-37a5-41ef-aafc-c85f0f7a4447
 
+<img width="1512" alt="Screenshot 2025-04-23 at 1 24 16 PM" src="https://github.com/user-attachments/assets/e1656084-aee0-47dd-9531-33de746ada78" />
 
 ## Features
 
