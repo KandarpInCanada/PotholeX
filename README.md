@@ -9,6 +9,10 @@
 
 A community-driven mobile application that empowers citizens to report and track potholes in their neighborhoods. Built with React Native and Expo, PotholeX helps local authorities identify and prioritize road repairs through crowdsourced data.
 
+
+https://github.com/user-attachments/assets/3733e129-37a5-41ef-aafc-c85f0f7a4447
+
+
 ## Features
 
 ### For Citizens
